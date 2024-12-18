@@ -1,0 +1,47 @@
+name: Nightly Tests
+on:
+  pull_request:
+  schedule:
+    - cron: '22 02 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CCACHE_DIR: ${{ github.workspace }}/ccache
+
+jobs:
+  freebsd:
+    name: 'FreeBSD: system libs, no BDB, no USDT, no GUI'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v4
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Ccache cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ github.job }}-ccache-${{ github.run_id }}
+          restore-keys: ${{ github.job }}-ccache-
+
+      - name: Build and test in FreeBSD VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          envs: 'CCACHE_DIR'
+          prepare: |
+            pkg install -y cmake-core pkgconf ccache boost-libs libevent sqlite3 libzmq4 python3 databases/py-sqlite3 net/py-pyzmq
+          run: |
+            set -e
+            cmake -B build -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+            ccache --zero-stats
+            cmake --build build -j $(sysctl -n hw.ncpu)
+            ccache --show-stats
+            ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
+            ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
+            rm -rf build
