@@ -78,3 +78,35 @@ jobs:
             ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
             ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
             rm -rf build
+
+  netbsd:
+    name: 'NetBSD: system libs, no USDT, no GUI'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v4
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Ccache cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ github.job }}-ccache-${{ github.run_id }}
+          restore-keys: ${{ github.job }}-ccache-
+
+      - name: Build and test in NetBSD VM
+        uses: vmactions/netbsd-vm@v1
+        with:
+          envs: 'CCACHE_DIR'
+          prepare: |
+            /usr/sbin/pkg_add cmake gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
+          run: |
+            set -e
+            cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+            ccache --zero-stats
+            cmake --build build -j $(sysctl -n hw.ncpu)
+            ccache --show-stats --verbose
+            ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
+            rm -rf build
