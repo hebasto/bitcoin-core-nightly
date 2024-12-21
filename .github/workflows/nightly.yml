@@ -35,10 +35,10 @@ jobs:
         with:
           envs: 'CCACHE_DIR'
           prepare: |
-            /usr/sbin/pkg_add cmake gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
+            /usr/sbin/pkg_add cmake clang libcxx pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
           run: |
             set -e
-            cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+            cmake -B build -DCMAKE_C_COMPILER="clang" -DCMAKE_CXX_COMPILER="clang++;-stdlib=libc++" -DCMAKE_EXE_LINKER_FLAGS="-L/usr/pkg/lib" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
             ccache --zero-stats
             cmake --build build -j $(sysctl -n hw.ncpu)
             ccache --show-stats --verbose
