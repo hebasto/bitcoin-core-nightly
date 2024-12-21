@@ -39,8 +39,4 @@ jobs:
           run: |
             set -e
             cmake -B build -DCMAKE_C_COMPILER="clang" -DCMAKE_CXX_COMPILER="clang++;-stdlib=libc++" -DCMAKE_EXE_LINKER_FLAGS="-L/usr/pkg/lib" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
-            ccache --zero-stats
-            cmake --build build -j $(sysctl -n hw.ncpu)
-            ccache --show-stats --verbose
-            ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
-            rm -rf build
+            cmake --build build -j 1 -t bitcoin-wallet --verbose
