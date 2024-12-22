@@ -260,6 +260,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          ls -l /home/runner
           /usr/sbin/pkg_add cmake gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
 
       - name: Generate buildsystem and build
