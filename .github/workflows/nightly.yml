@@ -41,16 +41,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          ls -l /home/runner/work/bitcoin-core-nightly
-          cd /home/runner/work/bitcoin-core-nightly
-          pwd
           /usr/sbin/pkg_add cmake gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
 
       - name: Generate buildsystem and build
         run: |
-          pwd
           set -e
-          pwd
           cd ${{ github.workspace }}
           cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
           ccache --zero-stats
