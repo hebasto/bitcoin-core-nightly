@@ -16,6 +16,9 @@ jobs:
   freebsd-syslibs:
     name: 'FreeBSD: system libs, no BDB, no GUI'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: freebsd {0}
 
     steps:
       - name: Checkout Bitcoin Core repo
@@ -30,25 +33,41 @@ jobs:
           key: ${{ github.job }}-ccache-${{ github.run_id }}
           restore-keys: ${{ github.job }}-ccache-
 
-      - name: Build and test in FreeBSD VM
+      - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
           envs: 'CCACHE_DIR'
-          prepare: |
-            pkg install -y cmake-core pkgconf ccache boost-libs libevent sqlite3 libzmq4 python3 databases/py-sqlite3 net/py-pyzmq
-          run: |
-            set -e
-            cmake -B build -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
-            ccache --zero-stats
-            cmake --build build -j $(sysctl -n hw.ncpu)
-            ccache --show-stats
-            ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
-            ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
-            rm -rf build
+          sync: sshfs
+
+      - name: Install dependencies
+        run: |
+          pkg install -y cmake-core pkgconf ccache boost-libs libevent sqlite3 libzmq4 python3 databases/py-sqlite3 net/py-pyzmq
+
+      - name: Generate buildsystem and build
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          cmake -B build -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          ccache --zero-stats
+          cmake --build build -j $(sysctl -n hw.ncpu)
+          ccache --show-stats
+
+      - name: Run test suite
+        run: |
+          cd ${{ github.workspace }}
+          ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
+
+      - name: Run functional tests
+        run: |
+          cd ${{ github.workspace }}
+          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
 
   freebsd-depends:
     name: 'FreeBSD: depends, MP'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: freebsd {0}
 
     steps:
       - name: Checkout Bitcoin Core repo
@@ -69,29 +88,46 @@ jobs:
           key: ${{ github.job }}-ccache-${{ github.run_id }}
           restore-keys: ${{ github.job }}-ccache-
 
-      - name: Build and test in FreeBSD VM
+      - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
           envs: 'CCACHE_DIR'
-          prepare: |
-            pkg install -y bash curl gmake cmake-core perl5 pkgconf ccache python3 databases/py-sqlite3 net/py-pyzmq
-          run: |
-            set -e
-            gmake -C depends -j $(sysctl -n hw.ncpu) MULTIPROCESS=1 LOG=1
-            cmake -B build --toolchain depends/$(./depends/config.guess)/toolchain.cmake -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
-            ccache --zero-stats
-            cmake --build build -j $(sysctl -n hw.ncpu)
-            ccache --show-stats
-            ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
-            ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
-            rm -rf build
-            rm -rf depends/sources
-            rm -rf depends/work
-            rm -rf depends/$(./depends/config.guess)
+          sync: sshfs
+
+      - name: Install dependencies
+        run: |
+          pkg install -y bash curl gmake cmake-core perl5 pkgconf ccache python3 databases/py-sqlite3 net/py-pyzmq
+
+      - name: Build depends
+        run: |
+          cd ${{ github.workspace }}
+          gmake -C depends -j $(sysctl -n hw.ncpu) MULTIPROCESS=1 LOG=1
+
+      - name: Generate buildsystem and build
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          cmake -B build --toolchain depends/$(./depends/config.guess)/toolchain.cmake -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          ccache --zero-stats
+          cmake --build build -j $(sysctl -n hw.ncpu)
+          ccache --show-stats
+
+      - name: Run test suite
+        run: |
+          cd ${{ github.workspace }}
+          ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
+
+      - name: Run functional tests
+        run: |
+          cd ${{ github.workspace }}
+          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
 
   openbsd-syslibs:
     name: 'OpenBSD: system libs, no BDB, no GUI'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: openbsd {0}
 
     steps:
       - name: Checkout Bitcoin Core repo
@@ -106,25 +142,41 @@ jobs:
           key: ${{ github.job }}-ccache-${{ github.run_id }}
           restore-keys: ${{ github.job }}-ccache-
 
-      - name: Build and test in OpenBSD VM
+      - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
         with:
           envs: 'CCACHE_DIR'
-          prepare: |
-            pkg_add cmake ccache boost libevent sqlite3 zeromq python py3-zmq
-          run: |
-            set -e
-            cmake -B build -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
-            ccache --zero-stats
-            cmake --build build -j $(sysctl -n hw.ncpu)
-            ccache --show-stats --verbose
-            ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
-            ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
-            rm -rf build
+          sync: sshfs
+
+      - name: Install dependencies
+        run: |
+          pkg_add cmake ccache boost libevent sqlite3 zeromq python py3-zmq
+
+      - name: Generate buildsystem and build
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          cmake -B build -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          ccache --zero-stats
+          cmake --build build -j $(sysctl -n hw.ncpu)
+          ccache --show-stats
+
+      - name: Run test suite
+        run: |
+          cd ${{ github.workspace }}
+          ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
+
+      - name: Run functional tests
+        run: |
+          cd ${{ github.workspace }}
+          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
 
   openbsd-depends:
     name: 'OpenBSD: depends, no MP'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: openbsd {0}
 
     steps:
       - name: Checkout Bitcoin Core repo
@@ -145,30 +197,47 @@ jobs:
           key: ${{ github.job }}-ccache-${{ github.run_id }}
           restore-keys: ${{ github.job }}-ccache-
 
-      - name: Build and test in OpenBSD VM
+      - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
         with:
           envs: 'CCACHE_DIR'
-          prepare: |
-            pkg_add bash curl gmake gtar-- cmake ccache python py3-zmq
-          run: |
-            set -e
-            # TODO: Fix capnp compilation and enable MULTIPROCESS.
-            gmake -C depends -j $(sysctl -n hw.ncpu) LOG=1
-            cmake -B build --toolchain depends/$(./depends/config.guess)/toolchain.cmake -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
-            ccache --zero-stats
-            cmake --build build -j $(sysctl -n hw.ncpu)
-            ccache --show-stats --verbose
-            ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
-            ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
-            rm -rf build
-            rm -rf depends/sources
-            rm -rf depends/work
-            rm -rf depends/$(./depends/config.guess)
+          sync: sshfs
+
+      - name: Install dependencies
+        run: |
+          pkg_add bash curl gmake gtar-- cmake ccache python py3-zmq
+
+      - name: Build depends
+        # TODO: Fix capnp compilation and enable MULTIPROCESS.
+        run: |
+          cd ${{ github.workspace }}
+          gmake -C depends -j $(sysctl -n hw.ncpu) LOG=1
+
+      - name: Generate buildsystem and build
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          cmake -B build --toolchain depends/$(./depends/config.guess)/toolchain.cmake -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          ccache --zero-stats
+          cmake --build build -j $(sysctl -n hw.ncpu)
+          ccache --show-stats
+
+      - name: Run test suite
+        run: |
+          cd ${{ github.workspace }}
+          ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
+
+      - name: Run functional tests
+        run: |
+          cd ${{ github.workspace }}
+          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
 
   netbsd:
     name: 'NetBSD: system libs, no GUI'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: netbsd {0}
 
     steps:
       - name: Checkout Bitcoin Core repo
@@ -183,17 +252,26 @@ jobs:
           key: ${{ github.job }}-ccache-${{ github.run_id }}
           restore-keys: ${{ github.job }}-ccache-
 
-      - name: Build and test in NetBSD VM
+      - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
           envs: 'CCACHE_DIR'
-          prepare: |
-            /usr/sbin/pkg_add cmake gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
-          run: |
-            set -e
-            cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
-            ccache --zero-stats
-            cmake --build build -j $(sysctl -n hw.ncpu)
-            ccache --show-stats --verbose
-            ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
-            rm -rf build
+          sync: sshfs
+
+      - name: Install dependencies
+        run: |
+          /usr/sbin/pkg_add cmake gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
+
+      - name: Generate buildsystem and build
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          ccache --zero-stats
+          cmake --build build -j $(sysctl -n hw.ncpu)
+          ccache --show-stats
+
+      - name: Run test suite
+        run: |
+          cd ${{ github.workspace }}
+          ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
