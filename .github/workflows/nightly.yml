@@ -174,7 +174,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 241218-maxconn-warn
 
       - name: Ccache cache
         uses: actions/cache@v4
@@ -188,7 +189,7 @@ jobs:
         with:
           envs: 'CCACHE_DIR'
           prepare: |
-            /usr/sbin/pkg_add cmake gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
+            /usr/sbin/pkg_add cmake gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq python312
           run: |
             set -e
             cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
@@ -196,4 +197,6 @@ jobs:
             cmake --build build -j $(sysctl -n hw.ncpu)
             ccache --show-stats --verbose
             ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
+            # TODO: Fix and enable the following tests: rpc_signer.py, tool_wallet.py, wallet_signer.py.
+            python3.12 build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 --exclude=rpc_signer.py,tool_wallet.py,wallet_signer.py
             rm -rf build
