@@ -14,7 +14,7 @@ env:
 
 jobs:
   freebsd-syslibs:
-    name: 'FreeBSD: system libs, no BDB, no USDT, no GUI'
+    name: 'FreeBSD: system libs, no BDB, no GUI'
     runs-on: ubuntu-latest
 
     steps:
@@ -90,7 +90,7 @@ jobs:
             rm -rf depends/$(./depends/config.guess)
 
   openbsd:
-    name: 'OpenBSD: system libs, no BDB, no USDT, no GUI'
+    name: 'OpenBSD: system libs, no BDB, no GUI'
     runs-on: ubuntu-latest
 
     steps:
@@ -123,7 +123,7 @@ jobs:
             rm -rf build
 
   netbsd:
-    name: 'NetBSD: system libs, no USDT, no GUI'
+    name: 'NetBSD: system libs, no GUI'
     runs-on: ubuntu-latest
 
     steps:
