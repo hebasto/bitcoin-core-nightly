@@ -11,6 +11,7 @@ concurrency:
 
 env:
   CCACHE_DIR: ${{ github.workspace }}/ccache
+  DEPENDS_CACHE_DIR: ${{ github.workspace }}/depends/built
 
 jobs:
   freebsd-syslibs:
@@ -59,7 +60,7 @@ jobs:
       - name: Depends cache
         uses: actions/cache@v4
         with:
-          path: depends/built
+          path: ${{ env.DEPENDS_CACHE_DIR }}
           key: ${{ github.job }}-depends-${{ hashFiles('depends/**') }}
 
       - name: Ccache cache
@@ -135,7 +136,7 @@ jobs:
       - name: Depends cache
         uses: actions/cache@v4
         with:
-          path: depends/built
+          path: ${{ env.DEPENDS_CACHE_DIR }}
           key: ${{ github.job }}-depends-${{ hashFiles('depends/**') }}
 
       - name: Ccache cache
