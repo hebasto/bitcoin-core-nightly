@@ -45,8 +45,8 @@ jobs:
 
       - name: Generate buildsystem and build
         run: |
-          set -e
           cd ${{ github.workspace }}
+          set -e
           cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
           ccache --zero-stats
           cmake --build build -j $(sysctl -n hw.ncpu)
