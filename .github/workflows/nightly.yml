@@ -1,9 +1,6 @@
 name: Nightly Tests
 on:
-  pull_request:
-  schedule:
-    - cron: '22 02 * * *'
-  workflow_dispatch:
+  push:
 
 concurrency:
   group: ${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
@@ -38,7 +35,7 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           envs: 'CCACHE_DIR'
-          prepare: pkg install -y cmake-core pkgconf ccache boost-libs libevent sqlite3 libzmq4 python3 databases/py-sqlite3 net/py-pyzmq
+          prepare: pkg install -y cmake-core pkgconf ccache boost-libs libevent sqlite3 libzmq4 python311 py311-pyzmq py311-sqlite3
           sync: 'rsync'
           copyback: false
 
@@ -101,7 +98,7 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           envs: 'CCACHE_DIR'
-          prepare: pkg install -y bash curl gmake cmake-core perl5 pkgconf ccache python3 databases/py-sqlite3 net/py-pyzmq
+          prepare: pkg install -y bash curl gmake cmake-core perl5 pkgconf ccache python311 py311-pyzmq py311-sqlite3
           sync: 'rsync'
           copyback: false
 
