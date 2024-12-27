@@ -58,14 +58,20 @@ jobs:
           cd ${{ github.workspace }}
           ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
 
-      - name: Run functional tests
+      - shell: bash -e {0}
         run: |
           df -h
-          find / -mindepth 1 -maxdepth 1 -type d | xargs du -s -h
+          du -h --max-depth=1 /
+
+      - name: Run functional tests
+        run: |
           cd ${{ github.workspace }}
           ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
+
+      - shell: bash -e {0}
+        run: |
           df -h
-          find / -mindepth 1 -maxdepth 1 -type d | xargs du -s -h
+          du -h --max-depth=1 /
 
       - name: Sync caches back from VM
         shell: bash -e {0}
