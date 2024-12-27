@@ -61,11 +61,11 @@ jobs:
       - name: Run functional tests
         run: |
           df -h
-          du -h --max-depth=1 /
+          find / -mindepth 1 -maxdepth 1 -type d | xargs du -s -h
           cd ${{ github.workspace }}
           ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
           df -h
-          du -h --max-depth=1 /
+          find / -mindepth 1 -maxdepth 1 -type d | xargs du -s -h
 
       - name: Sync caches back from VM
         shell: bash -e {0}
