@@ -61,7 +61,7 @@ jobs:
       - shell: bash -e {0}
         run: |
           df -h
-          du -h --max-depth=1 /home || true
+          du -h --max-depth=1 /home/runner || true
 
       - name: Run functional tests
         run: |
@@ -71,7 +71,7 @@ jobs:
       - shell: bash -e {0}
         run: |
           df -h
-          du -h --max-depth=1 /home || true
+          du -h --max-depth=1 /home/runner || true
 
       - name: Sync caches back from VM
         shell: bash -e {0}
