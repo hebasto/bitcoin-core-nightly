@@ -12,6 +12,8 @@ concurrency:
 env:
   CCACHE_DIR: ${{ github.workspace }}/ccache
   DEPENDS_CACHE_DIR: ${{ github.workspace }}/depends/built
+  # See https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+  CI_NCPU: 4
 
 jobs:
   freebsd-syslibs:
@@ -52,19 +54,19 @@ jobs:
           set -e
           cd ${{ github.workspace }}
           ccache --zero-stats
-          cmake --build build -j $(sysctl -n hw.ncpu)
+          cmake --build build -j ${{ env.CI_NCPU }}
           ccache --version
           ccache --show-stats
 
       - name: Run test suite
         run: |
           cd ${{ github.workspace }}
-          ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - name: Run functional tests
         run: |
           cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
+          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
 
       - name: Sync caches back from VM
         shell: bash -e {0}
@@ -108,7 +110,7 @@ jobs:
       - name: Build depends
         run: |
           cd ${{ github.workspace }}
-          gmake -C depends -j $(sysctl -n hw.ncpu) MULTIPROCESS=1 LOG=1
+          gmake -C depends -j ${{ env.CI_NCPU }} MULTIPROCESS=1 LOG=1
 
       - name: Generate buildsystem
         run: |
@@ -120,18 +122,18 @@ jobs:
           set -e
           cd ${{ github.workspace }}
           ccache --zero-stats
-          cmake --build build -j $(sysctl -n hw.ncpu)
+          cmake --build build -j ${{ env.CI_NCPU }}
           ccache --show-stats
 
       - name: Run test suite
         run: |
           cd ${{ github.workspace }}
-          ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - name: Run functional tests
         run: |
           cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
+          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
 
       - name: Sync caches back from VM
         shell: bash -e {0}
@@ -177,18 +179,18 @@ jobs:
           set -e
           cd ${{ github.workspace }}
           ccache --zero-stats
-          cmake --build build -j $(sysctl -n hw.ncpu)
+          cmake --build build -j ${{ env.CI_NCPU }}
           ccache --show-stats --verbose
 
       - name: Run test suite
         run: |
           cd ${{ github.workspace }}
-          ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - name: Run functional tests
         run: |
           cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
+          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
 
       - name: Sync caches back from VM
         shell: bash -e {0}
@@ -233,7 +235,7 @@ jobs:
         # TODO: Fix capnp compilation and enable MULTIPROCESS.
         run: |
           cd ${{ github.workspace }}
-          gmake -C depends -j $(sysctl -n hw.ncpu) LOG=1
+          gmake -C depends -j ${{ env.CI_NCPU }} LOG=1
 
       - name: Generate buildsystem
         run: |
@@ -245,18 +247,18 @@ jobs:
           set -e
           cd ${{ github.workspace }}
           ccache --zero-stats
-          cmake --build build -j $(sysctl -n hw.ncpu)
+          cmake --build build -j ${{ env.CI_NCPU }}
           ccache --show-stats --verbose
 
       - name: Run test suite
         run: |
           cd ${{ github.workspace }}
-          ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - name: Run functional tests
         run: |
           cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
+          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
 
       - name: Sync caches back from VM
         shell: bash -e {0}
@@ -302,13 +304,13 @@ jobs:
           set -e
           cd ${{ github.workspace }}
           ccache --zero-stats
-          cmake --build build -j $(sysctl -n hw.ncpu)
+          cmake --build build -j ${{ env.CI_NCPU }}
           ccache --show-stats --verbose
 
       - name: Run test suite
         run: |
           cd ${{ github.workspace }}
-          ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - name: Sync caches back from VM
         shell: bash -e {0}
