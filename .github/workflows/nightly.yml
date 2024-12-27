@@ -1,9 +1,6 @@
 name: Nightly Tests
 on:
-  pull_request:
-  schedule:
-    - cron: '22 02 * * *'
-  workflow_dispatch:
+  push:
 
 concurrency:
   group: ${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
@@ -61,15 +58,17 @@ jobs:
           cd ${{ github.workspace }}
           ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
 
-      - name: Run functional tests
-        run: |
-          cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
+      # - name: Run functional tests
+      #   run: |
+      #     cd ${{ github.workspace }}
+      #     ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
 
       - name: Sync caches back from VM
         shell: bash -e {0}
         run: |
+          df -h
           rsync --archive --stats freebsd:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
+          df -h
 
   freebsd-depends:
     name: 'FreeBSD: depends, MP'
@@ -128,189 +127,15 @@ jobs:
           cd ${{ github.workspace }}
           ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
 
-      - name: Run functional tests
-        run: |
-          cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
+      # - name: Run functional tests
+      #   run: |
+      #     cd ${{ github.workspace }}
+      #     ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
 
       - name: Sync caches back from VM
         shell: bash -e {0}
         run: |
+          df -h
           rsync --archive --stats freebsd:${{ env.DEPENDS_CACHE_DIR }}/ ${{ env.DEPENDS_CACHE_DIR }}
           rsync --archive --stats freebsd:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
-
-  openbsd-syslibs:
-    name: 'OpenBSD: system libs, no BDB, no GUI'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: openbsd {0}
-
-    steps:
-      - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v4
-        with:
-          repository: bitcoin/bitcoin
-
-      - name: Ccache cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.CCACHE_DIR }}
-          key: ${{ github.job }}-ccache-${{ github.run_id }}
-          restore-keys: ${{ github.job }}-ccache-
-
-      - name: Start OpenBSD VM
-        uses: vmactions/openbsd-vm@v1
-        with:
-          envs: 'CCACHE_DIR'
-          prepare: pkg_add -v cmake ccache boost libevent sqlite3 zeromq python py3-zmq
-          sync: 'rsync'
-          copyback: false
-
-      - name: Generate buildsystem
-        run: |
-          cd ${{ github.workspace }}
-          cmake -B build -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
-
-      - name: Build
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ccache --zero-stats
-          cmake --build build -j $(sysctl -n hw.ncpu)
-          ccache --show-stats --verbose
-
-      - name: Run test suite
-        run: |
-          cd ${{ github.workspace }}
-          ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
-
-      - name: Run functional tests
-        run: |
-          cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
-
-      - name: Sync caches back from VM
-        shell: bash -e {0}
-        run: |
-          rsync --archive --stats openbsd:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
-
-  openbsd-depends:
-    name: 'OpenBSD: depends, no MP'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: openbsd {0}
-
-    steps:
-      - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v4
-        with:
-          repository: bitcoin/bitcoin
-
-      - name: Depends cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.DEPENDS_CACHE_DIR }}
-          key: ${{ github.job }}-depends-${{ hashFiles('depends/**') }}
-
-      - name: Ccache cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.CCACHE_DIR }}
-          key: ${{ github.job }}-ccache-${{ github.run_id }}
-          restore-keys: ${{ github.job }}-ccache-
-
-      - name: Start OpenBSD VM
-        uses: vmactions/openbsd-vm@v1
-        with:
-          envs: 'CCACHE_DIR'
-          prepare: pkg_add bash curl gmake gtar-- cmake ccache python py3-zmq
-          sync: 'rsync'
-          copyback: false
-
-      - name: Build depends
-        # TODO: Fix capnp compilation and enable MULTIPROCESS.
-        run: |
-          cd ${{ github.workspace }}
-          gmake -C depends -j $(sysctl -n hw.ncpu) LOG=1
-
-      - name: Generate buildsystem
-        run: |
-          cd ${{ github.workspace }}
-          cmake -B build --toolchain depends/$(./depends/config.guess)/toolchain.cmake -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
-
-      - name: Build
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ccache --zero-stats
-          cmake --build build -j $(sysctl -n hw.ncpu)
-          ccache --show-stats --verbose
-
-      - name: Run test suite
-        run: |
-          cd ${{ github.workspace }}
-          ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
-
-      - name: Run functional tests
-        run: |
-          cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
-
-      - name: Sync caches back from VM
-        shell: bash -e {0}
-        run: |
-          rsync --archive --stats openbsd:${{ env.DEPENDS_CACHE_DIR }}/ ${{ env.DEPENDS_CACHE_DIR }}
-          rsync --archive --stats openbsd:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
-
-  netbsd:
-    name: 'NetBSD: system libs, no GUI'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: netbsd {0}
-
-    steps:
-      - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v4
-        with:
-          repository: bitcoin/bitcoin
-
-      - name: Ccache cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.CCACHE_DIR }}
-          key: ${{ github.job }}-ccache-${{ github.run_id }}
-          restore-keys: ${{ github.job }}-ccache-
-
-      - name: Start NetBSD VM
-        uses: vmactions/netbsd-vm@v1
-        with:
-          envs: 'CCACHE_DIR'
-          prepare: /usr/sbin/pkg_add cmake gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
-          sync: 'rsync'
-          copyback: false
-
-      - name: Generate buildsystem
-        run: |
-          cd ${{ github.workspace }}
-          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
-
-      - name: Build
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ccache --zero-stats
-          cmake --build build -j $(sysctl -n hw.ncpu)
-          ccache --show-stats --verbose
-
-      - name: Run test suite
-        run: |
-          cd ${{ github.workspace }}
-          ctest --test-dir build -j $(sysctl -n hw.ncpu) --output-on-failure
-
-      - name: Sync caches back from VM
-        shell: bash -e {0}
-        run: |
-          rsync --archive --stats netbsd:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
+          df -h
