@@ -61,17 +61,21 @@ jobs:
       - shell: bash -e {0}
         run: |
           df -h
-          du -h /home/runner/work || true
+          du -h -s /home/runner/work/_actions/vmactions/freebsd-vm/v1
+          ls -l /home/runner/work/_actions/vmactions/freebsd-vm/v1
 
       - name: Run functional tests
         run: |
           cd ${{ github.workspace }}
+          df -h
           ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
+          df -h
 
       - shell: bash -e {0}
         run: |
           df -h
-          du -h /home/runner/work || true
+          du -h -s /home/runner/work/_actions/vmactions/freebsd-vm/v1
+          ls -l /home/runner/work/_actions/vmactions/freebsd-vm/v1
 
       - name: Sync caches back from VM
         shell: bash -e {0}
