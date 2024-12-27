@@ -66,7 +66,7 @@ jobs:
       - name: Run functional tests
         run: |
           cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --timeout-factor=8
+          ./build/test/functional/test_runner.py --ci --extended -j $(sysctl -n hw.ncpu) --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
 
       - shell: bash -e {0}
         run: |
