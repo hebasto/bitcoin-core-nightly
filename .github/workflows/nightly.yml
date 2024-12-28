@@ -124,6 +124,7 @@ jobs:
           cd ${{ github.workspace }}
           ccache --zero-stats
           cmake --build build -j ${{ env.CI_NCPU }}
+          ccache --version
           ccache --show-stats
 
       - name: Run test suite
