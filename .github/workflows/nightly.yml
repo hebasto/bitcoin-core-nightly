@@ -28,48 +28,51 @@ jobs:
           repository: hebasto/bitcoin
           ref: 241228-findbdb
 
-      - name: Ccache cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.CCACHE_DIR }}
-          key: ${{ github.job }}-ccache-${{ github.run_id }}
-          restore-keys: ${{ github.job }}-ccache-
+      # - name: Ccache cache
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ${{ env.CCACHE_DIR }}
+      #     key: ${{ github.job }}-ccache-${{ github.run_id }}
+      #     restore-keys: ${{ github.job }}-ccache-
 
       - name: Start OmniOS VM
         uses: vmactions/omnios-vm@v1
         with:
           envs: 'CCACHE_DIR CCACHE_MAXFILES'
-          prepare: |
-            pkg list -H -o name,publisher,version > packages_before
-            pkg install cmake gcc14 pkg-config ccache sqlite-3 bdb python-312
-            pkg set-publisher -g https://sfe.opencsw.org/localhostomnios localhostomnios
-            pkg install boost/header-boost libevent2
-            pkg list -H -o name,publisher,version > packages_after
-            diff -w packages_before packages_after | grep '^>'
+          prepare: pkg install bdb
+          # prepare: |
+          #   pkg list -H -o name,publisher,version > packages_before
+          #   pkg install cmake gcc14 pkg-config ccache sqlite-3 bdb python-312
+          #   pkg set-publisher -g https://sfe.opencsw.org/localhostomnios localhostomnios
+          #   pkg install boost/header-boost libevent2
+          #   pkg list -H -o name,publisher,version > packages_after
+          #   diff -w packages_before packages_after | grep '^>'
           sync: 'rsync'
           copyback: false
 
-      - name: Generate buildsystem
-        run: |
-          ls -l /opt/ooce/lib
-          ls -l /opt/ooce/lib/amd64
-          cd ${{ github.workspace }}
-          cmake -B build -DCMAKE_LIBRARY_ARCHITECTURE="amd64" -DCMAKE_PREFIX_PATH="/opt/ooce;/usr/g++;/usr/gnu" -DWITH_BDB=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+      - run: cat /opt/ooce/include/db_cxx.h
 
-      - name: Build
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ccache --zero-stats
-          cmake --build build -- -j ${{ env.CI_NCPU }}
-          ccache --show-stats --verbose
+      # - name: Generate buildsystem
+      #   run: |
+      #     ls -l /opt/ooce/lib
+      #     ls -l /opt/ooce/lib/amd64
+      #     cd ${{ github.workspace }}
+      #     cmake -B build -DCMAKE_LIBRARY_ARCHITECTURE="amd64" -DCMAKE_PREFIX_PATH="/opt/ooce;/usr/g++;/usr/gnu" -DWITH_BDB=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
-      - name: Run test suite
-        run: |
-          cd ${{ github.workspace }}
-          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
+      # - name: Build
+      #   run: |
+      #     set -e
+      #     cd ${{ github.workspace }}
+      #     ccache --zero-stats
+      #     cmake --build build -- -j ${{ env.CI_NCPU }}
+      #     ccache --show-stats --verbose
 
-      - name: Sync caches back from VM
-        shell: bash -e {0}
-        run: |
-          rsync --archive --stats omnios:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
+      # - name: Run test suite
+      #   run: |
+      #     cd ${{ github.workspace }}
+      #     ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
+
+      # - name: Sync caches back from VM
+      #   shell: bash -e {0}
+      #   run: |
+      #     rsync --archive --stats omnios:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
