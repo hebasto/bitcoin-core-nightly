@@ -61,7 +61,7 @@ jobs:
           set -e
           cd ${{ github.workspace }}
           ccache --zero-stats
-          cmake --build build -j ${{ env.CI_NCPU }}
+          cmake --build build -- -j ${{ env.CI_NCPU }}
           ccache --show-stats --verbose
 
       - name: Run test suite
