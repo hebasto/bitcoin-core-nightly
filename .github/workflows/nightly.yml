@@ -51,6 +51,8 @@ jobs:
 
       - name: Generate buildsystem
         run: |
+          ls -l /opt/ooce/lib
+          ls -l /opt/ooce/lib/amd64
           cd ${{ github.workspace }}
           cmake -B build -DCMAKE_LIBRARY_ARCHITECTURE="amd64" -DCMAKE_PREFIX_PATH="/opt/ooce;/usr/g++;/usr/gnu" -DWITH_BDB=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
