@@ -124,6 +124,7 @@ jobs:
           cd ${{ github.workspace }}
           ccache --zero-stats
           cmake --build build -j ${{ env.CI_NCPU }}
+          ccache --version
           ccache --show-stats
 
       - name: Run test suite
@@ -317,3 +318,58 @@ jobs:
         shell: bash -e {0}
         run: |
           rsync --archive --stats netbsd:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
+
+  omnios:
+    name: 'OmniOS: system libs, no BDB, no GUI'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: omnios {0}
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v4
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Ccache cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ github.job }}-ccache-${{ github.run_id }}
+          restore-keys: ${{ github.job }}-ccache-
+
+      - name: Start OmniOS VM
+        uses: vmactions/omnios-vm@v1
+        with:
+          envs: 'CCACHE_DIR CCACHE_MAXFILES'
+          prepare: |
+            pkg list -H -o name,publisher,version > packages_before
+            pkg install cmake gcc14 pkg-config ccache sqlite-3 python-312
+            pkg set-publisher -g https://sfe.opencsw.org/localhostomnios localhostomnios
+            pkg install boost/header-boost libevent2
+            pkg list -H -o name,publisher,version > packages_after
+            diff -w packages_before packages_after | grep '^>'
+          sync: 'rsync'
+          copyback: false
+
+      - name: Generate buildsystem
+        run: |
+          cd ${{ github.workspace }}
+          export CMAKE_PREFIX_PATH="/usr/g++"                    # For boost/header-boost package.
+          export PKG_CONFIG_PATH="/usr/gnu/lib/amd64/pkgconfig"  # For libevent2 package.
+          cmake -B build -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+
+      - name: Build
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ccache --zero-stats
+          cmake --build build -- -j ${{ env.CI_NCPU }}
+          ccache --version
+          ccache --show-stats
+
+      - name: Sync caches back from VM
+        shell: bash -e {0}
+        run: |
+          rsync --archive --stats omnios:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
