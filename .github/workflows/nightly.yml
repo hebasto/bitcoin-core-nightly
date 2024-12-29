@@ -66,6 +66,15 @@ jobs:
           ccache --version
           ccache --show-stats
 
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          ldd ./build/src/bitcoind
+          ./build/src/bitcoind -version
+
       - name: Run test suite
         run: |
           cd ${{ github.workspace }}
@@ -135,6 +144,15 @@ jobs:
           ccache --version
           ccache --show-stats
 
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          ldd ./build/src/bitcoind
+          ./build/src/bitcoind -version
+
       - name: Run test suite
         run: |
           cd ${{ github.workspace }}
@@ -192,6 +210,15 @@ jobs:
           ccache --zero-stats
           cmake --build build -j ${{ env.CI_NCPU }}
           ccache --show-stats --verbose
+
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          ldd ./build/src/bitcoind
+          ./build/src/bitcoind -version
 
       - name: Run test suite
         run: |
@@ -262,6 +289,15 @@ jobs:
           cmake --build build -j ${{ env.CI_NCPU }}
           ccache --show-stats --verbose
 
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          ldd ./build/src/bitcoind
+          ./build/src/bitcoind -version
+
       - name: Run test suite
         run: |
           cd ${{ github.workspace }}
@@ -324,6 +360,16 @@ jobs:
           cmake --build build -j ${{ env.CI_NCPU }}
           ccache --show-stats --verbose
 
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          # FIXME: The `-Wl,-z,separate-code` flag is incompatible with NetBSD.
+          ldd ./build/src/bitcoind || true
+          ./build/src/bitcoind -version
+
       - name: Run test suite
         run: |
           cd ${{ github.workspace }}
@@ -383,6 +429,16 @@ jobs:
           cmake --build build -- -j ${{ env.CI_NCPU }}
           ccache --version
           ccache --show-stats
+
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          export LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          ldd ./build/src/bitcoind
+          ./build/src/bitcoind -version
 
       - name: Sync caches back from VM
         shell: bash -e {0}
