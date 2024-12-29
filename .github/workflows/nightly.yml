@@ -82,5 +82,7 @@ jobs:
       - name: Sync caches back from VM
         shell: bash -e {0}
         run: |
+          df -h
           rsync --archive --stats freebsd:${{ env.DEPENDS_CACHE_DIR }}/ ${{ env.DEPENDS_CACHE_DIR }}
           rsync --archive --stats freebsd:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
+          df -h
