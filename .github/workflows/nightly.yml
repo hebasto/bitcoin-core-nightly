@@ -411,9 +411,9 @@ jobs:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
           prepare: |
             pkg list -H -o name,publisher,version > packages_before
-            pkg install cmake gcc14 pkg-config ccache sqlite-3 python-312
+            pkg install cmake git gcc14 pkg-config ccache sqlite-3 python-312
             pkg set-publisher -g https://sfe.opencsw.org/localhostomnios localhostomnios
-            pkg install git boost/header-boost libevent2
+            pkg install boost/header-boost libevent2
             pkg list -H -o name,publisher,version > packages_after
             diff -w packages_before packages_after | grep '^>'
           run: git config --global --add safe.directory ${{ github.workspace }}
@@ -445,6 +445,13 @@ jobs:
           file ./build/src/bitcoind
           ldd ./build/src/bitcoind
           ./build/src/bitcoind -version
+
+      - name: Run test suite
+        run: |
+          cd ${{ github.workspace }}
+          export LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"
+          # TODO: Fix the code and/or tests, then enable the excluded tests.
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure --exclude-regex "^(bench_sanity_check_high_priority|group_outputs_tests|net_tests|psbt_wallet_tests|system_tests|wallet_tests)$"
 
       - name: Sync caches back from VM
         shell: bash -e {0}
