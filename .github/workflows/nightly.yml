@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '22 02 * * *'
   workflow_dispatch:
+    inputs:
+      skip_functional_tests:
+        description: 'Skip functional tests'
+        required: true
+        default: false
+        type: boolean
 
 concurrency:
   group: ${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
@@ -66,6 +72,7 @@ jobs:
           ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
           ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
@@ -134,6 +141,7 @@ jobs:
           ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
           ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
@@ -191,6 +199,7 @@ jobs:
           ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
           ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
@@ -259,6 +268,7 @@ jobs:
           ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
           ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
