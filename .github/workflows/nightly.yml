@@ -48,7 +48,8 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
-          prepare: pkg install -y cmake-core pkgconf ccache boost-libs libevent sqlite3 libzmq4 python3 databases/py-sqlite3 net/py-pyzmq
+          prepare: pkg install -y cmake-core git pkgconf ccache boost-libs libevent sqlite3 libzmq4 python3 databases/py-sqlite3 net/py-pyzmq
+          run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
@@ -65,6 +66,15 @@ jobs:
           cmake --build build -j ${{ env.CI_NCPU }}
           ccache --version
           ccache --show-stats
+
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          ldd ./build/src/bitcoind
+          ./build/src/bitcoind -version
 
       - name: Run test suite
         run: |
@@ -112,7 +122,8 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
-          prepare: pkg install -y bash curl gmake cmake-core perl5 pkgconf ccache python3 databases/py-sqlite3 net/py-pyzmq
+          prepare: pkg install -y bash curl gmake cmake-core git perl5 pkgconf ccache python3 databases/py-sqlite3 net/py-pyzmq
+          run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
@@ -134,6 +145,15 @@ jobs:
           cmake --build build -j ${{ env.CI_NCPU }}
           ccache --version
           ccache --show-stats
+
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          ldd ./build/src/bitcoind
+          ./build/src/bitcoind -version
 
       - name: Run test suite
         run: |
@@ -176,7 +196,8 @@ jobs:
         uses: vmactions/openbsd-vm@v1
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
-          prepare: pkg_add -v cmake ccache boost libevent sqlite3 zeromq python py3-zmq
+          prepare: pkg_add -v cmake git ccache boost libevent sqlite3 zeromq python py3-zmq
+          run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
@@ -192,6 +213,15 @@ jobs:
           ccache --zero-stats
           cmake --build build -j ${{ env.CI_NCPU }}
           ccache --show-stats --verbose
+
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          ldd ./build/src/bitcoind
+          ./build/src/bitcoind -version
 
       - name: Run test suite
         run: |
@@ -239,7 +269,8 @@ jobs:
         uses: vmactions/openbsd-vm@v1
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
-          prepare: pkg_add bash curl gmake gtar-- cmake ccache python py3-zmq
+          prepare: pkg_add bash curl gmake gtar-- cmake git ccache python py3-zmq
+          run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
@@ -261,6 +292,15 @@ jobs:
           ccache --zero-stats
           cmake --build build -j ${{ env.CI_NCPU }}
           ccache --show-stats --verbose
+
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          ldd ./build/src/bitcoind
+          ./build/src/bitcoind -version
 
       - name: Run test suite
         run: |
@@ -305,9 +345,10 @@ jobs:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
           prepare: |
             /usr/sbin/pkg_info > packages_before
-            /usr/sbin/pkg_add cmake gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
+            /usr/sbin/pkg_add cmake git gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
             /usr/sbin/pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
+          run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
@@ -323,6 +364,16 @@ jobs:
           ccache --zero-stats
           cmake --build build -j ${{ env.CI_NCPU }}
           ccache --show-stats --verbose
+
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          # FIXME: The `-Wl,-z,separate-code` flag is incompatible with NetBSD.
+          ldd ./build/src/bitcoind || true
+          ./build/src/bitcoind -version
 
       - name: Run test suite
         run: |
@@ -362,9 +413,10 @@ jobs:
             pkg list -H -o name,publisher,version > packages_before
             pkg install cmake gcc14 pkg-config ccache sqlite-3 python-312
             pkg set-publisher -g https://sfe.opencsw.org/localhostomnios localhostomnios
-            pkg install boost/header-boost libevent2
+            pkg install git boost/header-boost libevent2
             pkg list -H -o name,publisher,version > packages_after
             diff -w packages_before packages_after | grep '^>'
+          run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
@@ -383,6 +435,16 @@ jobs:
           cmake --build build -- -j ${{ env.CI_NCPU }}
           ccache --version
           ccache --show-stats
+
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          export LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          ldd ./build/src/bitcoind
+          ./build/src/bitcoind -version
 
       - name: Sync caches back from VM
         shell: bash -e {0}
