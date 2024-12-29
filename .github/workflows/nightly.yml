@@ -292,7 +292,11 @@ jobs:
         uses: vmactions/netbsd-vm@v1
         with:
           envs: 'CCACHE_DIR CCACHE_MAXFILES'
-          prepare: /usr/sbin/pkg_add cmake gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
+          prepare: |
+            /usr/sbin/pkg_info > packages_before
+            /usr/sbin/pkg_add cmake gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
+            /usr/sbin/pkg_info > packages_after
+            diff -w packages_before packages_after | grep '^>'
           sync: 'rsync'
           copyback: false
 
