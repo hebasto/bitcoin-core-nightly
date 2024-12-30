@@ -425,6 +425,9 @@ jobs:
           cd ${{ github.workspace }}
           export CMAKE_PREFIX_PATH="/usr/g++"                    # For boost/header-boost package.
           export PKG_CONFIG_PATH="/usr/gnu/lib/amd64/pkgconfig"  # For libevent2 package.
+          # Workaround for a bug in the FindThreads module.
+          # See: https://gitlab.kitware.com/cmake/cmake/-/issues/26063
+          export CXXFLAGS="-pthread"
           cmake -B build -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
       - name: Build
@@ -450,8 +453,9 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           export LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"
-          # TODO: Fix the code and/or tests, then enable the excluded tests.
-          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure --exclude-regex "^(bench_sanity_check_high_priority|group_outputs_tests|net_tests|psbt_wallet_tests|system_tests|wallet_tests)$"
+          # TODO: https://github.com/bitcoin/bitcoin/pull/31580
+          # TODO: Fix the code, then enable system_tests.
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure --exclude-regex "^(net_tests|system_tests)$"
 
       - name: Sync caches back from VM
         shell: bash -e {0}
