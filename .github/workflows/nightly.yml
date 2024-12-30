@@ -457,6 +457,13 @@ jobs:
           # TODO: Fix the code, then enable system_tests.
           ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure --exclude-regex "^(net_tests|system_tests)$"
 
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          cd ${{ github.workspace }}
+          export LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"
+          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
+
       - name: Sync caches back from VM
         shell: bash -e {0}
         run: |
