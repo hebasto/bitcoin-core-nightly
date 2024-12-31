@@ -47,7 +47,6 @@ jobs:
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
-          release: "10.0"
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
           prepare: |
             /usr/sbin/pkg_info > packages_before
