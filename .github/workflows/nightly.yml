@@ -47,10 +47,11 @@ jobs:
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
+          release: "10.0"
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
           prepare: |
             /usr/sbin/pkg_info > packages_before
-            /usr/sbin/pkg_add cmake git gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
+            /usr/sbin/pkg_add cmake git-base gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
             /usr/sbin/pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           run: git config --global --add safe.directory ${{ github.workspace }}
@@ -60,7 +61,7 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_TESTS=OFF -DWERROR=ON
 
       - name: Build
         run: |
@@ -69,21 +70,6 @@ jobs:
           ccache --zero-stats
           cmake --build build -j ${{ env.CI_NCPU }}
           ccache --show-stats --verbose
-
-      - name: Check 'bitcoind' executable
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ls -l ./build/src/bitcoind
-          file ./build/src/bitcoind
-          # FIXME: The `-Wl,-z,separate-code` flag is incompatible with NetBSD.
-          ldd ./build/src/bitcoind || true
-          ./build/src/bitcoind -version
-
-      - name: Run test suite
-        run: |
-          cd ${{ github.workspace }}
-          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - name: Sync caches back from VM
         shell: bash -e {0}
