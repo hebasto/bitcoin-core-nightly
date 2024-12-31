@@ -345,7 +345,8 @@ jobs:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
           prepare: |
             /usr/sbin/pkg_info > packages_before
-            /usr/sbin/pkg_add cmake git gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
+            /usr/sbin/pkg_add cmake git-base gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq
+            /usr/sbin/pkg_add http://cdn.netbsd.org/pub/pkgsrc/packages/NetBSD/x86_64/10.0_2024Q3/All/python312-3.12.6.tgz py312-zmq
             /usr/sbin/pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           run: git config --global --add safe.directory ${{ github.workspace }}
@@ -379,6 +380,13 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          cd ${{ github.workspace }}
+          # TODO: Fix and enable the following tests: rpc_signer.py, tool_wallet.py, wallet_signer.py.
+          python3.12 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 --exclude=rpc_signer.py,tool_wallet.py,wallet_signer.py
 
       - name: Sync caches back from VM
         shell: bash -e {0}
