@@ -1,0 +1,100 @@
+name: NetBSD
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/netbsd.yml'
+  schedule:
+    - cron: '22 02 * * *'
+  workflow_dispatch:
+    inputs:
+      skip_functional_tests:
+        description: 'Skip functional tests'
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CCACHE_COMPILERCHECK: content
+  CCACHE_DIR: ${{ github.workspace }}/ccache
+  CCACHE_MAXFILES: 2500
+  DEPENDS_CACHE_DIR: ${{ github.workspace }}/depends/built
+  # See https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+  CI_NCPU: 4
+
+jobs:
+  netbsd:
+    name: 'NetBSD: system libs, no GUI'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: netbsd {0}
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v4
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Ccache cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ github.job }}-ccache-${{ github.run_id }}
+          restore-keys: ${{ github.job }}-ccache-
+
+      - name: Start NetBSD VM
+        uses: vmactions/netbsd-vm@v1
+        with:
+          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
+          prepare: |
+            /usr/sbin/pkg_info > packages_before
+            /usr/sbin/pkg_add cmake git-base gcc14 pkg-config ccache boost-headers libevent sqlite3 db4 zeromq python313 py313-zmq
+            /usr/sbin/pkg_info > packages_after
+            diff -w packages_before packages_after | grep '^>'
+          run: git config --global --add safe.directory ${{ github.workspace }}
+          sync: 'rsync'
+          copyback: false
+
+      - name: Generate buildsystem
+        run: |
+          cd ${{ github.workspace }}
+          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+
+      - name: Build
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ccache --zero-stats
+          cmake --build build -j ${{ env.CI_NCPU }}
+          ccache --show-stats --verbose
+
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          # FIXME: The `-Wl,-z,separate-code` flag is incompatible with NetBSD.
+          ldd ./build/src/bitcoind || true
+          ./build/src/bitcoind -version
+
+      - name: Run test suite
+        run: |
+          cd ${{ github.workspace }}
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          cd ${{ github.workspace }}
+          # TODO: Fix and enable the following tests: rpc_signer.py, tool_wallet.py, wallet_signer.py.
+          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 --exclude=rpc_signer.py,tool_wallet.py,wallet_signer.py
+
+      - name: Sync caches back from VM
+        shell: bash -e {0}
+        run: |
+          rsync --archive --stats netbsd:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}

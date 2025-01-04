@@ -1,0 +1,174 @@
+name: OpenBSD
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/openbsd.yml'
+  schedule:
+    - cron: '22 02 * * *'
+  workflow_dispatch:
+    inputs:
+      skip_functional_tests:
+        description: 'Skip functional tests'
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CCACHE_COMPILERCHECK: content
+  CCACHE_DIR: ${{ github.workspace }}/ccache
+  CCACHE_MAXFILES: 2500
+  DEPENDS_CACHE_DIR: ${{ github.workspace }}/depends/built
+  # See https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+  CI_NCPU: 4
+
+jobs:
+  openbsd-syslibs:
+    name: 'OpenBSD: system libs, no BDB, no GUI'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: openbsd {0}
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v4
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Ccache cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ github.job }}-ccache-${{ github.run_id }}
+          restore-keys: ${{ github.job }}-ccache-
+
+      - name: Start OpenBSD VM
+        uses: vmactions/openbsd-vm@v1
+        with:
+          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
+          prepare: pkg_add -v cmake git ccache boost libevent sqlite3 zeromq python py3-zmq
+          run: git config --global --add safe.directory ${{ github.workspace }}
+          sync: 'rsync'
+          copyback: false
+
+      - name: Generate buildsystem
+        run: |
+          cd ${{ github.workspace }}
+          cmake -B build -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+
+      - name: Build
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ccache --zero-stats
+          cmake --build build -j ${{ env.CI_NCPU }}
+          ccache --show-stats --verbose
+
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          ldd ./build/src/bitcoind
+          ./build/src/bitcoind -version
+
+      - name: Run test suite
+        run: |
+          cd ${{ github.workspace }}
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          cd ${{ github.workspace }}
+          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
+
+      - name: Sync caches back from VM
+        shell: bash -e {0}
+        run: |
+          rsync --archive --stats openbsd:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
+
+  openbsd-depends:
+    name: 'OpenBSD: depends, no MP'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: openbsd {0}
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v4
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Depends cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.DEPENDS_CACHE_DIR }}
+          key: ${{ github.job }}-depends-${{ hashFiles('depends/**') }}
+
+      - name: Ccache cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ${{ github.job }}-ccache-${{ github.run_id }}
+          restore-keys: ${{ github.job }}-ccache-
+
+      - name: Start OpenBSD VM
+        uses: vmactions/openbsd-vm@v1
+        with:
+          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
+          prepare: pkg_add bash curl gmake gtar-- cmake git ccache python py3-zmq
+          run: git config --global --add safe.directory ${{ github.workspace }}
+          sync: 'rsync'
+          copyback: false
+
+      - name: Build depends
+        # TODO: Fix capnp compilation and enable MULTIPROCESS.
+        run: |
+          cd ${{ github.workspace }}
+          gmake -C depends -j ${{ env.CI_NCPU }} LOG=1
+
+      - name: Generate buildsystem
+        run: |
+          cd ${{ github.workspace }}
+          cmake -B build --toolchain depends/$(./depends/config.guess)/toolchain.cmake -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+
+      - name: Build
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ccache --zero-stats
+          cmake --build build -j ${{ env.CI_NCPU }}
+          ccache --show-stats --verbose
+
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          ldd ./build/src/bitcoind
+          ./build/src/bitcoind -version
+
+      - name: Run test suite
+        run: |
+          cd ${{ github.workspace }}
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          cd ${{ github.workspace }}
+          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
+
+      - name: Sync caches back from VM
+        shell: bash -e {0}
+        run: |
+          rsync --archive --stats openbsd:${{ env.DEPENDS_CACHE_DIR }}/ ${{ env.DEPENDS_CACHE_DIR }}
+          rsync --archive --stats openbsd:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
