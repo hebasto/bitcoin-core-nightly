@@ -21,7 +21,7 @@ concurrency:
 env:
   CCACHE_COMPILERCHECK: content
   CCACHE_DIR: ${{ github.workspace }}/ccache
-  CCACHE_MAXFILES: 2500
+  CCACHE_MAXFILES: 2400
   # See https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
   CI_NCPU: 4
 
