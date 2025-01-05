@@ -100,12 +100,6 @@ jobs:
         with:
           repository: bitcoin/bitcoin
 
-      - name: Depends cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.DEPENDS_CACHE_DIR }}
-          key: ${{ github.job }}-depends-${{ hashFiles('depends/**') }}
-
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
@@ -119,14 +113,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           sparse-checkout: |
+            .github/actions/build-depends/action.yml
             .github/actions/build-with-ccache/action.yml
           sparse-checkout-cone-mode: false
           path: ci/nightly
 
       - name: Build depends
-        run: |
-          cd ${{ github.workspace }}
-          gmake -C depends -j ${{ env.CI_NCPU }} MULTIPROCESS=1 LOG=1
+        uses: ./ci/nightly/.github/actions/build-depends
+        with:
+          vm: freebsd
+          options: "MULTIPROCESS=1"
 
       - name: Generate buildsystem
         run: |
@@ -157,8 +153,3 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
-
-      - name: Sync caches back from VM
-        shell: bash -e {0}
-        run: |
-          rsync --archive --stats freebsd:${{ env.DEPENDS_CACHE_DIR }}/ ${{ env.DEPENDS_CACHE_DIR }}

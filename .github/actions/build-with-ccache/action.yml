@@ -5,7 +5,7 @@ inputs:
     description: "The virtual machine used for the build."
     required: true
   build-dir:
-    description: "The project's build directory"
+    description: "The project's build directory."
     required: false
     default: "build"
 
@@ -20,7 +20,9 @@ runs:
 
     - shell: bash -e {0}
       run: |
-        rsync --archive --stats ${{ env.CCACHE_DIR }}/ ${{ inputs.vm }}:${{ env.CCACHE_DIR }}
+        if test -d ${{ env.CCACHE_DIR }}; then
+          rsync --archive --stats ${{ env.CCACHE_DIR }}/ ${{ inputs.vm }}:${{ env.CCACHE_DIR }}
+        fi
 
     - shell: ${{ inputs.vm }} {0}
       run: |

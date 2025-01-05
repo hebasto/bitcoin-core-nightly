@@ -1,0 +1,43 @@
+name: "Build Bitcoin Core depends"
+description: "Build Bitcoin Core depends. Save the built packages cache after a successful build."
+inputs:
+  vm:
+    description: "The virtual machine used for the build."
+    required: true
+  host:
+    description: "The HOST variable definition."
+    required: false
+    default: ""
+  options:
+    description: "The depends build options."
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/cache/restore@v4
+      id: restore-cache
+      with:
+        path: ${{ env.DEPENDS_CACHE_DIR }}
+        key: ${{ github.job }}-depends-${{ hashFiles('depends/**') }}
+
+    - shell: bash -e {0}
+      run: >
+        if test -d ${{ env.DEPENDS_CACHE_DIR }}; then
+          rsync --archive --stats ${{ env.DEPENDS_CACHE_DIR }}/ ${{ inputs.vm }}:${{ env.DEPENDS_CACHE_DIR }}
+        fi
+
+    - shell: ${{ inputs.vm }} {0}
+      run: |
+        cd ${{ github.workspace }}
+        gmake -C depends -j ${{ env.CI_NCPU }} ${{ inputs.host }} ${{ inputs.options }} LOG=1
+
+    - shell: bash -e {0}
+      run: |
+        rsync --archive --stats ${{ inputs.vm }}:${{ env.DEPENDS_CACHE_DIR }}/ ${{ env.DEPENDS_CACHE_DIR }}
+
+    - uses: actions/cache/save@v4
+      with:
+        path: ${{ env.DEPENDS_CACHE_DIR }}
+        key: ${{ steps.restore-cache.outputs.cache-primary-key }}
