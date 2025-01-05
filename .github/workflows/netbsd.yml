@@ -2,6 +2,7 @@ name: NetBSD
 on:
   pull_request:
     paths:
+      - '.github/actions/**'
       - '.github/workflows/netbsd.yml'
   schedule:
     - cron: '22 02 * * *'
@@ -39,13 +40,6 @@ jobs:
         with:
           repository: bitcoin/bitcoin
 
-      - name: Ccache cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.CCACHE_DIR }}
-          key: ${{ github.job }}-ccache-${{ github.run_id }}
-          restore-keys: ${{ github.job }}-ccache-
-
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
@@ -59,18 +53,23 @@ jobs:
           sync: 'rsync'
           copyback: false
 
+      - name: Checkout helper actions
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/actions/build-with-ccache/action.yml
+          sparse-checkout-cone-mode: false
+          path: ci/nightly
+
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
           cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
       - name: Build
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ccache --zero-stats
-          cmake --build build -j ${{ env.CI_NCPU }}
-          ccache --show-stats --verbose
+        uses: ./ci/nightly/.github/actions/build-with-ccache
+        with:
+          vm: netbsd
 
       - name: Check 'bitcoind' executable
         run: |
@@ -93,8 +92,3 @@ jobs:
           cd ${{ github.workspace }}
           # TODO: Fix and enable the following tests: rpc_signer.py, tool_wallet.py, wallet_signer.py.
           python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 --exclude=rpc_signer.py,tool_wallet.py,wallet_signer.py
-
-      - name: Sync caches back from VM
-        shell: bash -e {0}
-        run: |
-          rsync --archive --stats netbsd:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}

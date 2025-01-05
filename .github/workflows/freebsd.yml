@@ -2,6 +2,7 @@ name: FreeBSD
 on:
   pull_request:
     paths:
+      - '.github/actions/**'
       - '.github/workflows/freebsd.yml'
   schedule:
     - cron: '22 02 * * *'
@@ -39,13 +40,6 @@ jobs:
         with:
           repository: bitcoin/bitcoin
 
-      - name: Ccache cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.CCACHE_DIR }}
-          key: ${{ github.job }}-ccache-${{ github.run_id }}
-          restore-keys: ${{ github.job }}-ccache-
-
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
@@ -55,19 +49,23 @@ jobs:
           sync: 'rsync'
           copyback: false
 
+      - name: Checkout helper actions
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/actions/build-with-ccache/action.yml
+          sparse-checkout-cone-mode: false
+          path: ci/nightly
+
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
           cmake -B build -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
       - name: Build
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ccache --zero-stats
-          cmake --build build -j ${{ env.CI_NCPU }}
-          ccache --version
-          ccache --show-stats
+        uses: ./ci/nightly/.github/actions/build-with-ccache
+        with:
+          vm: freebsd
 
       - name: Check 'bitcoind' executable
         run: |
@@ -89,11 +87,6 @@ jobs:
           cd ${{ github.workspace }}
           ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
 
-      - name: Sync caches back from VM
-        shell: bash -e {0}
-        run: |
-          rsync --archive --stats freebsd:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
-
   freebsd-depends:
     name: 'FreeBSD: depends, MP'
     runs-on: ubuntu-latest
@@ -113,13 +106,6 @@ jobs:
           path: ${{ env.DEPENDS_CACHE_DIR }}
           key: ${{ github.job }}-depends-${{ hashFiles('depends/**') }}
 
-      - name: Ccache cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.CCACHE_DIR }}
-          key: ${{ github.job }}-ccache-${{ github.run_id }}
-          restore-keys: ${{ github.job }}-ccache-
-
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
@@ -128,6 +114,14 @@ jobs:
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
+
+      - name: Checkout helper actions
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/actions/build-with-ccache/action.yml
+          sparse-checkout-cone-mode: false
+          path: ci/nightly
 
       - name: Build depends
         run: |
@@ -140,13 +134,9 @@ jobs:
           cmake -B build --toolchain depends/$(./depends/config.guess)/toolchain.cmake -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
       - name: Build
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ccache --zero-stats
-          cmake --build build -j ${{ env.CI_NCPU }}
-          ccache --version
-          ccache --show-stats
+        uses: ./ci/nightly/.github/actions/build-with-ccache
+        with:
+          vm: freebsd
 
       - name: Check 'bitcoind' executable
         run: |
@@ -172,4 +162,3 @@ jobs:
         shell: bash -e {0}
         run: |
           rsync --archive --stats freebsd:${{ env.DEPENDS_CACHE_DIR }}/ ${{ env.DEPENDS_CACHE_DIR }}
-          rsync --archive --stats freebsd:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
