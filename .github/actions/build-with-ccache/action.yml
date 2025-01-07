@@ -7,7 +7,7 @@ inputs:
   build-dir:
     description: "The project's build directory."
     required: false
-    default: "build"
+    default: "${{ github.workspace }}/build"
 
 runs:
   using: "composite"
@@ -27,7 +27,6 @@ runs:
     - shell: ${{ inputs.vm }} {0}
       run: |
         set -e
-        cd ${{ github.workspace }}
         ccache --zero-stats
         cmake --build ${{ inputs.build-dir }} -- -j ${{ env.CI_NCPU }}
         ccache --show-stats --verbose >/dev/null 2>&1 && ccache --show-stats --verbose || { ccache --version; ccache --show-stats; }
