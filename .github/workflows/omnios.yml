@@ -57,9 +57,7 @@ jobs:
       - name: Checkout helper actions
         uses: actions/checkout@v4
         with:
-          sparse-checkout: |
-            .github/actions/build-with-ccache/action.yml
-          sparse-checkout-cone-mode: false
+          sparse-checkout: .github/actions
           path: ci/nightly
 
       - name: Generate buildsystem
@@ -88,12 +86,13 @@ jobs:
           ./build/src/bitcoind -version
 
       - name: Run test suite
-        run: |
-          cd ${{ github.workspace }}
-          export LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"
+        uses: ./ci/nightly/.github/actions/run-test-suite
+        with:
+          vm: omnios
+          envs: 'LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"'
           # TODO: https://github.com/bitcoin/bitcoin/pull/31580
           # TODO: Fix the code, then enable system_tests.
-          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure --exclude-regex "^(net_tests|system_tests)$"
+          options: '--exclude-regex "^(net_tests|system_tests)$"'
 
       - name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}

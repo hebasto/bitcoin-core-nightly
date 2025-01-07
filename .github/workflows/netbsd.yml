@@ -56,9 +56,7 @@ jobs:
       - name: Checkout helper actions
         uses: actions/checkout@v4
         with:
-          sparse-checkout: |
-            .github/actions/build-with-ccache/action.yml
-          sparse-checkout-cone-mode: false
+          sparse-checkout: .github/actions
           path: ci/nightly
 
       - name: Generate buildsystem
@@ -82,9 +80,9 @@ jobs:
           ./build/src/bitcoind -version
 
       - name: Run test suite
-        run: |
-          cd ${{ github.workspace }}
-          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
+        uses: ./ci/nightly/.github/actions/run-test-suite
+        with:
+          vm: netbsd
 
       - name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
@@ -149,10 +147,7 @@ jobs:
       - name: Checkout helper actions
         uses: actions/checkout@v4
         with:
-          sparse-checkout: |
-            .github/actions/build-depends/action.yml
-            .github/actions/build-with-ccache/action.yml
-          sparse-checkout-cone-mode: false
+          sparse-checkout: .github/actions
           path: ci/nightly
 
       - name: Build depends
@@ -183,9 +178,9 @@ jobs:
           ./build/src/bitcoind -version
 
       - name: Run test suite
-        run: |
-          cd ${{ github.workspace }}
-          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
+        uses: ./ci/nightly/.github/actions/run-test-suite
+        with:
+          vm: netbsd
 
       - name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
