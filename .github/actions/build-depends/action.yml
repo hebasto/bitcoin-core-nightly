@@ -8,8 +8,12 @@ inputs:
     description: "The HOST variable definition."
     required: false
     default: ""
+  cache-dir:
+    description: "The built packages cache directory."
+    required: false
+    default: "${{ github.workspace }}/depends/built"
   options:
-    description: "The depends build options."
+    description: "Additional depends build options."
     required: false
     default: ""
 
@@ -19,25 +23,22 @@ runs:
     - uses: actions/cache/restore@v4
       id: restore-cache
       with:
-        path: ${{ env.DEPENDS_CACHE_DIR }}
+        path: ${{ inputs.cache-dir }}
         key: ${{ github.job }}-depends-${{ hashFiles('depends/**') }}
 
-    - shell: bash -e {0}
-      run: >
-        if test -d ${{ env.DEPENDS_CACHE_DIR }}; then
-          rsync --archive --stats ${{ env.DEPENDS_CACHE_DIR }}/ ${{ inputs.vm }}:${{ env.DEPENDS_CACHE_DIR }}
-        fi
+    - if: steps.restore-cache.outputs.cache-hit == 'true'
+      shell: bash -e {0}
+      run: rsync --archive --stats ${{ inputs.cache-dir }}/ ${{ inputs.vm }}:${{ inputs.cache-dir }}
 
     - shell: ${{ inputs.vm }} {0}
-      run: |
-        cd ${{ github.workspace }}
-        gmake -C depends -j ${{ env.CI_NCPU }} ${{ inputs.host }} ${{ inputs.options }} LOG=1
+      run: gmake -C ${{ github.workspace }}/depends -j ${{ env.CI_NCPU }} ${{ inputs.host }} BASE_CACHE=${{ inputs.cache-dir }} ${{ inputs.options }} LOG=1
 
-    - shell: bash -e {0}
-      run: |
-        rsync --archive --stats ${{ inputs.vm }}:${{ env.DEPENDS_CACHE_DIR }}/ ${{ env.DEPENDS_CACHE_DIR }}
+    - if: steps.restore-cache.outputs.cache-hit != 'true'
+      shell: bash -e {0}
+      run: rsync --archive --stats ${{ inputs.vm }}:${{ inputs.cache-dir }}/ ${{ inputs.cache-dir }}
 
-    - uses: actions/cache/save@v4
+    - if: steps.restore-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
       with:
-        path: ${{ env.DEPENDS_CACHE_DIR }}
+        path: ${{ inputs.cache-dir }}
         key: ${{ steps.restore-cache.outputs.cache-primary-key }}
