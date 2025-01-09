@@ -107,6 +107,10 @@ jobs:
           sync: 'rsync'
           copyback: false
 
+      - name: Check 'bitcoind' executable
+        run: |
+          which -a sha256sum
+
       - name: Checkout helper actions
         uses: actions/checkout@v4
         with:
