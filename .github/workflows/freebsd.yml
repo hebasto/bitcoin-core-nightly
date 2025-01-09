@@ -95,15 +95,14 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: hebasto/bitcoin
-          ref: 250109-sha256sum
+          repository: bitcoin/bitcoin
 
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
           release: "13.4"
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
-          prepare: pkg install -y bash curl gmake cmake-core git pkgconf ccache python3 databases/py-sqlite3 net/py-pyzmq
+          prepare: pkg install -y bash curl gmake cmake-core git perl5 pkgconf ccache python3 databases/py-sqlite3 net/py-pyzmq
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
