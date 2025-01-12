@@ -61,7 +61,8 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          # FIXME: The `-Wl,-z,separate-code` flag is incompatible with NetBSD's dynamic linker.
+          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON -DAPPEND_LDFLAGS="-Wl,-z,noseparate-code"
 
       - name: Build
         uses: ./ci/nightly/.github/actions/build-with-ccache
@@ -76,8 +77,7 @@ jobs:
           export LD_LIBRARY_PATH=/usr/pkg/lib
           ls -l ./build/src/bitcoind
           file ./build/src/bitcoind
-          # FIXME: The `-Wl,-z,separate-code` flag is incompatible with NetBSD.
-          ldd ./build/src/bitcoind || true
+          ldd ./build/src/bitcoind
           ./build/src/bitcoind -version
 
       - name: Run test suite
@@ -162,7 +162,8 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          cmake -B build --toolchain depends/$(./depends/config.guess)/toolchain.cmake -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          # FIXME: The `-Wl,-z,separate-code` flag is incompatible with NetBSD's dynamic linker.
+          cmake -B build --toolchain depends/$(./depends/config.guess)/toolchain.cmake -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON -DAPPEND_LDFLAGS="-Wl,-z,noseparate-code"
 
       - name: Build
         uses: ./ci/nightly/.github/actions/build-with-ccache
@@ -175,8 +176,7 @@ jobs:
           cd ${{ github.workspace }}
           ls -l ./build/src/bitcoind
           file ./build/src/bitcoind
-          # FIXME: The `-Wl,-z,separate-code` flag is incompatible with NetBSD.
-          ldd ./build/src/bitcoind || true
+          ldd ./build/src/bitcoind
           ./build/src/bitcoind -version
 
       - name: Run test suite
