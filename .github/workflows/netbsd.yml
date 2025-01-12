@@ -61,7 +61,8 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          # FIXME: The `-Wl,-z,separate-code` flag is incompatible with NetBSD's dynamic linker.
+          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON -DAPPEND_LDFLAGS="-Wl,-z,noseparate-code"
 
       - name: Build
         uses: ./ci/nightly/.github/actions/build-with-ccache
@@ -72,10 +73,11 @@ jobs:
         run: |
           set -e
           cd ${{ github.workspace }}
+          # TODO: Remove this line after https://github.com/bitcoin/bitcoin/pull/31543 is merged.
+          export LD_LIBRARY_PATH=/usr/pkg/lib
           ls -l ./build/src/bitcoind
           file ./build/src/bitcoind
-          # FIXME: The `-Wl,-z,separate-code` flag is incompatible with NetBSD.
-          ldd ./build/src/bitcoind || true
+          ldd ./build/src/bitcoind
           ./build/src/bitcoind -version
 
       - name: Run test suite
@@ -87,11 +89,12 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
-          # TODO: Fix and enable the following tests: rpc_signer.py, tool_wallet.py, wallet_signer.py.
+          # TODO: Remove this line after https://github.com/bitcoin/bitcoin/pull/31543 is merged.
+          export LD_LIBRARY_PATH=/usr/pkg/lib
+          # TODO: Fix and enable the following tests: rpc_signer.py, wallet_signer.py.
           # See:
           # - https://github.com/bitcoin/bitcoin/pull/31541
-          # - https://github.com/bitcoin/bitcoin/pull/31543
-          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 --exclude=rpc_signer.py,tool_wallet.py,wallet_signer.py
+          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 --exclude=rpc_signer.py,wallet_signer.py
 
   netbsd-depends:
     name: 'NetBSD: depends, no BDB, MP'
@@ -159,7 +162,8 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          cmake -B build --toolchain depends/$(./depends/config.guess)/toolchain.cmake -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          # FIXME: The `-Wl,-z,separate-code` flag is incompatible with NetBSD's dynamic linker.
+          cmake -B build --toolchain depends/$(./depends/config.guess)/toolchain.cmake -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON -DAPPEND_LDFLAGS="-Wl,-z,noseparate-code"
 
       - name: Build
         uses: ./ci/nightly/.github/actions/build-with-ccache
@@ -172,8 +176,7 @@ jobs:
           cd ${{ github.workspace }}
           ls -l ./build/src/bitcoind
           file ./build/src/bitcoind
-          # FIXME: The `-Wl,-z,separate-code` flag is incompatible with NetBSD.
-          ldd ./build/src/bitcoind || true
+          ldd ./build/src/bitcoind
           ./build/src/bitcoind -version
 
       - name: Run test suite
@@ -185,8 +188,7 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
-          # TODO: Fix and enable the following tests: rpc_signer.py, tool_wallet.py, wallet_signer.py.
+          # TODO: Fix and enable the following tests: rpc_signer.py, wallet_signer.py.
           # See:
           # - https://github.com/bitcoin/bitcoin/pull/31541
-          # - https://github.com/bitcoin/bitcoin/pull/31543
-          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 --exclude=rpc_signer.py,tool_wallet.py,wallet_signer.py
+          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 --exclude=rpc_signer.py,wallet_signer.py
