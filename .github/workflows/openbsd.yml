@@ -21,7 +21,7 @@ concurrency:
 env:
   CCACHE_COMPILERCHECK: content
   CCACHE_DIR: ${{ github.workspace }}/ccache
-  CCACHE_MAXFILES: 1600
+  CCACHE_MAXSIZE: 300M
   # See https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
   CI_NCPU: 4
 
@@ -42,7 +42,7 @@ jobs:
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
         with:
-          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
+          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
           prepare: pkg_add -v cmake git ccache boost libevent sqlite3 zeromq python py3-zmq
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
@@ -100,7 +100,7 @@ jobs:
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
         with:
-          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
+          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
           prepare: pkg_add bash curl gmake gtar-- cmake git ccache python py3-zmq
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
