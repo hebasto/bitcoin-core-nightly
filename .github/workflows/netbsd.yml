@@ -97,7 +97,7 @@ jobs:
           python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 --exclude=rpc_signer.py,wallet_signer.py
 
   netbsd-depends:
-    name: 'NetBSD: depends, no BDB, MP'
+    name: 'NetBSD: depends, MP'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -156,8 +156,7 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: netbsd
-          # The bdb package fails to build with gcc14.
-          options: "build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++ NO_BDB=1 MULTIPROCESS=1"
+          options: "build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++ bdb_cppflags_netbsd=-D_NETBSD_SOURCE MULTIPROCESS=1"
 
       - name: Generate buildsystem
         run: |
