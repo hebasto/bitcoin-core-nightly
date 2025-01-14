@@ -141,8 +141,8 @@ jobs:
             * $Id$
             */
            
-          +#include "string.h"
-          +#include "strings.h"
+          +#include <string.h>
+          +#include <strings.h>
           +
            #include "db_config.h"
            
