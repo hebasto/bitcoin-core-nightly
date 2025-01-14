@@ -107,7 +107,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 250114-netbsd-bdb
 
       - name: Apply patch
         # This patch works around a libevent bug.
@@ -136,11 +137,12 @@ jobs:
 
           --- a/env/env_config.c
           +++ b/env/env_config.c
-          @@ -6,6 +6,10 @@
+          @@ -6,6 +6,11 @@
             * $Id$
             */
            
           +#ifdef __NetBSD__
+          +#include "string.h"
           +#include "strings.h"
           +#endif
           +
