@@ -156,8 +156,7 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: netbsd
-          # The bdb package fails to build with gcc14.
-          options: "build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++ NO_BDB=1 MULTIPROCESS=1"
+          options: "build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++ bdb_cflags_netbsd=-Wno-error=int-conversion MULTIPROCESS=1"
 
       - name: Generate buildsystem
         run: |
