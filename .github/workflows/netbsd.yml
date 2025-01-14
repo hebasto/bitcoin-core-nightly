@@ -107,7 +107,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 250114-netbsd-visible
 
       - name: Apply patch
         # This patch works around a libevent bug.
@@ -156,8 +157,7 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: netbsd
-          # The bdb package fails to build with gcc14.
-          options: "build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++ NO_BDB=1 MULTIPROCESS=1"
+          options: "build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++ MULTIPROCESS=1"
 
       - name: Generate buildsystem
         run: |
