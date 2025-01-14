@@ -42,6 +42,7 @@ jobs:
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
+          release: '9.4'
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
           prepare: |
             /usr/sbin/pkg_info > packages_before
@@ -97,7 +98,7 @@ jobs:
           python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 --exclude=rpc_signer.py,wallet_signer.py
 
   netbsd-depends:
-    name: 'NetBSD: depends, no BDB, MP'
+    name: 'NetBSD: depends, no BDB'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -136,6 +137,7 @@ jobs:
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
+          release: '9.4'
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXFILES'
           prepare: |
             /usr/sbin/pkg_info > packages_before
@@ -156,7 +158,7 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: netbsd
-          options: "build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++ bdb_cppflags_netbsd=-D_NETBSD_SOURCE MULTIPROCESS=1"
+          options: "build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++ bdb_cppflags_netbsd=-D_NETBSD_SOURCE"
 
       - name: Generate buildsystem
         run: |
