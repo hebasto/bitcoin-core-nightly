@@ -73,8 +73,6 @@ jobs:
         run: |
           set -e
           cd ${{ github.workspace }}
-          # TODO: Remove this line after https://github.com/bitcoin/bitcoin/pull/31543 is merged.
-          export LD_LIBRARY_PATH=/usr/pkg/lib
           ls -l ./build/src/bitcoind
           file ./build/src/bitcoind
           ldd ./build/src/bitcoind
@@ -89,8 +87,6 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
-          # TODO: Remove this line after https://github.com/bitcoin/bitcoin/pull/31543 is merged.
-          export LD_LIBRARY_PATH=/usr/pkg/lib
           # TODO: Fix and enable the following tests: rpc_signer.py, wallet_signer.py.
           # See:
           # - https://github.com/bitcoin/bitcoin/pull/31541
