@@ -1,4 +1,4 @@
-name: Clang SNAPSHOT
+name: Clang-SNAPSHOT
 on:
   pull_request:
     paths:

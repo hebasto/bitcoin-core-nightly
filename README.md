@@ -1,6 +1,6 @@
 # Nightly Bitcoin Core Tests
 
-This repository runs nightly tests of [Bitcoin Core](https://github.com/bitcoin/bitcoin) on various operating systems.
+This repository performs nightly tests of [Bitcoin Core](https://github.com/bitcoin/bitcoin) across various operating systems and compilers.
 
 For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nightly](https://github.com/maflcko/b-c-nightly).
 
@@ -17,3 +17,9 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 | Operating System | Status |
 |------------------|--------|
 | [OmniOS](https://omnios.org/) | [![OmniOS](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/omnios.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/omnios.yml?query=event%3Aschedule) |
+
+## [Clang-SNAPSHOT](https://apt.llvm.org/)
+
+| Operating System | Status |
+|------------------|--------|
+| Ubuntu 24.04 | [![Clang-SNAPSHOT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/clang.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/clang.yml?query=event%3Aschedule) |
