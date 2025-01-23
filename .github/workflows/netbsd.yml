@@ -87,10 +87,7 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
-          # TODO: Fix and enable the following tests: rpc_signer.py, wallet_signer.py.
-          # See:
-          # - https://github.com/bitcoin/bitcoin/pull/31541
-          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 --exclude=rpc_signer.py,wallet_signer.py
+          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
 
   netbsd-depends:
     name: 'NetBSD: depends, MP'
@@ -183,7 +180,4 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
-          # TODO: Fix and enable the following tests: rpc_signer.py, wallet_signer.py.
-          # See:
-          # - https://github.com/bitcoin/bitcoin/pull/31541
-          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 --exclude=rpc_signer.py,wallet_signer.py
+          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
