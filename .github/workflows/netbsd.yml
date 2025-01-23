@@ -186,4 +186,5 @@ jobs:
           # TODO: Fix and enable the following tests: rpc_signer.py, wallet_signer.py.
           # See:
           # - https://github.com/bitcoin/bitcoin/pull/31541
+          export BITCOIND=bitcoin-node
           python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 --exclude=rpc_signer.py,wallet_signer.py
