@@ -34,7 +34,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 250123-cmake-pthread
 
       - name: Install dependencies
         run: |
