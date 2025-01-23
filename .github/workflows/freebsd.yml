@@ -44,7 +44,7 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
-          prepare: pkg install -y cmake-core git pkgconf ccache boost-libs libevent sqlite3 libzmq4 python3 databases/py-sqlite3 net/py-pyzmq
+          prepare: pkg install -y cmake-core git pkgconf ccache boost-libs libevent sqlite3 libzmq4 python311 py311-pyzmq py311-sqlite3
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
@@ -83,7 +83,7 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
+          python3.11 ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
 
   freebsd-depends:
     name: 'FreeBSD: depends, MP'
@@ -102,7 +102,7 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
-          prepare: pkg install -y bash curl gmake cmake-core git pkgconf ccache python3 databases/py-sqlite3 net/py-pyzmq
+          prepare: pkg install -y bash curl gmake cmake-core git pkgconf ccache python311 py311-pyzmq py311-sqlite3
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
@@ -147,4 +147,4 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
+          python3.11 ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
