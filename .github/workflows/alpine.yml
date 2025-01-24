@@ -1,0 +1,68 @@
+name: Alpine
+on:
+  pull_request:
+    paths:
+      - '.github/actions/**'
+      - '.github/workflows/alpine.yml'
+  schedule:
+    - cron: '22 02 * * *'
+  workflow_dispatch:
+    inputs:
+      skip_functional_tests:
+        description: 'Skip functional tests'
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  alpine:
+    name: 'Alpine${{ matrix.configuration.name }}: depends, no GUI, MP'
+    runs-on: ubuntu-latest
+    container: alpine:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration:
+          - name: ''
+          - name: ', debug'
+            depends-options: DEBUG=1
+            config-options: -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=-Wno-error=maybe-uninitialized
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v4
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Install dependencies
+        run: |
+          apk --no-cache --update add bash build-base cmake curl linux-headers make pkgconf python3
+
+      - name: Build depends
+        run: |
+          gmake -C depends -j $(nproc) ${{ matrix.configuration.depends-options }} NO_QT=1 MULTIPROCESS=1 LOG=1
+
+      - name: Generate buildsystem
+        run: >
+          cmake -B build ${{ matrix.configuration.config-options }}\
+            --toolchain depends/$(./depends/config.guess)/toolchain.cmake \
+            -DBUILD_BENCH=ON \
+            -DBUILD_FUZZ_BINARY=ON \
+            -DWERROR=ON
+
+      - name: Build
+        run: cmake --build build -j $(nproc)
+
+      - name: Check 'bitcoind' executable
+        run: |
+          ls -l ./build/src/bitcoind
+          file ./build/src/bitcoind
+          ldd ./build/src/bitcoind
+          ./build/src/bitcoind -version
+
+      - name: Run test suite
+        run: ctest --test-dir build -j $(nproc)
