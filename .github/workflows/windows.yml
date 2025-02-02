@@ -42,6 +42,7 @@ jobs:
         run: >
           cmake -B build \
             --toolchain depends/x86_64-w64-mingw32/toolchain.cmake \
+            -DREDUCE_EXPORTS=ON \
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON \
@@ -78,8 +79,15 @@ jobs:
         with:
           name: x86_64-w64-mingw32-executables-${{ github.run_id }}
 
-      - name: Run bitcoind.exe
-        run: .\src\bitcoind.exe -version
+      - name: Configure Developer Command Prompt for Microsoft Visual C++
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Check 'bitcoind.exe' executable
+        run: |
+          dumpbin.exe /imports .\src\bitcoind.exe | Select-String -Pattern "\S+\.dll" -CaseSensitive:$false
+          .\src\bitcoind.exe -version
 
       - name: Run unit tests
         run: |
