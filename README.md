@@ -35,3 +35,4 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 | Operating System | Toolchain | Status |
 |------------------|-----------|--------|
 | [Windows 11](https://www.microsoft.com/windows/windows-11) | [Mingw-w64](https://www.mingw-w64.org), MSVCRT | [![Windows](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows.yml?query=event%3Aschedule) |
+| [Windows 11](https://www.microsoft.com/windows/windows-11) | [Mingw-w64](https://www.mingw-w64.org), UCRT | [![Windows, UCRT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-ucrt.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-ucrt.yml?query=event%3Aschedule) |
