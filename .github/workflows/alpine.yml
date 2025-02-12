@@ -48,8 +48,8 @@ jobs:
 
       - name: Generate buildsystem
         run: >
-          cmake -B build ${{ matrix.configuration.config-options }}\
-            --toolchain depends/$(./depends/config.guess)/toolchain.cmake \
+          cmake -B build ${{ matrix.configuration.config-options }} \
+            --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON

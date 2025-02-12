@@ -120,9 +120,13 @@ jobs:
           # options: "MULTIPROCESS=1"
 
       - name: Generate buildsystem
-        run: |
-          cd ${{ github.workspace }}
-          cmake -B build --toolchain depends/$(./depends/config.guess)/toolchain.cmake -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+        run: >
+          cd ${{ github.workspace }} &&
+          cmake -B build \
+            --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
+            -DBUILD_BENCH=ON \
+            -DBUILD_FUZZ_BINARY=ON \
+            -DWERROR=ON
 
       - name: Build
         uses: ./ci/nightly/.github/actions/build-with-ccache
