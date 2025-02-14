@@ -6,11 +6,11 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 
 ## Modern BSD Derivatives
 
-| Operating System | Status |
-|------------------|--------|
-| [FreeBSD](https://www.freebsd.org/) | [![FreeBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml?query=event%3Aschedule) |
-| [OpenBSD](https://www.openbsd.org/) | [![OpenBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml?query=event%3Aschedule) |
-| [NetBSD](https://netbsd.org/) | [![NetBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml?query=event%3Aschedule) |
+| Operating System | Status | Build with System Libs | Build with Depends |
+|------------------|--------|------------------------|--------------------|
+| [FreeBSD](https://www.freebsd.org/) | [![FreeBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml?query=event%3Aschedule) | Qt 5 - not installed <br> Berkeley DB 4.8 - N/A <br> Berkeley DB 5.x - not installed <br> USDT - N/A | 1. Release, `MULTIPROCESS=1` |
+| [OpenBSD](https://www.openbsd.org/) | [![OpenBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml?query=event%3Aschedule) | Qt 5 - not installed <br> Berkeley DB 4.8 - N/A <br> Berkeley DB 5.x - N/A <br> USDT - N/A | 1. Release <br> --- <br> See MP-related [issue](https://github.com/capnproto/capnproto/pull/1907) |
+| [NetBSD](https://netbsd.org/) | [![NetBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml?query=event%3Aschedule) | Qt 5 - not installed <br> USDT - N/A | 1. Release, `MULTIPROCESS=1` |
 
 ## [illumos](https://illumos.org/)-Based Systems
 
