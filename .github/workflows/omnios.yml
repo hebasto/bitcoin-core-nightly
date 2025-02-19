@@ -66,9 +66,6 @@ jobs:
           cd ${{ github.workspace }}
           export CMAKE_PREFIX_PATH="/usr/g++"                    # For boost/header-boost package.
           export PKG_CONFIG_PATH="/usr/gnu/lib/amd64/pkgconfig"  # For libevent2 package.
-          # Workaround for a bug in the FindThreads module.
-          # See: https://gitlab.kitware.com/cmake/cmake/-/issues/26063
-          export CXXFLAGS="-pthread"
           cmake -B build -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
       - name: Build
