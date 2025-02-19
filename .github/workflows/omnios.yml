@@ -66,6 +66,9 @@ jobs:
           cd ${{ github.workspace }}
           export CMAKE_PREFIX_PATH="/usr/g++"                    # For boost/header-boost package.
           export PKG_CONFIG_PATH="/usr/gnu/lib/amd64/pkgconfig"  # For libevent2 package.
+          # When compiling a multithreaded application, the `-mt` option must be
+          # specified on the command line.
+          export CXXFLAGS="-mt"
           cmake -B build -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
       - name: Build
