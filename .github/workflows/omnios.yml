@@ -91,9 +91,8 @@ jobs:
         with:
           vm: omnios
           envs: 'LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"'
-          # TODO: https://github.com/bitcoin/bitcoin/pull/31580
           # TODO: Fix the code, then enable system_tests.
-          options: '--exclude-regex "^(net_tests|system_tests)$"'
+          options: '--exclude-regex "^system_tests$"'
 
       - name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
