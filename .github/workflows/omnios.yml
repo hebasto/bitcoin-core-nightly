@@ -63,4 +63,6 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
+          cp depends/config.guess build-aux
+          cp depends/config.sub build-aux
           ./configure
