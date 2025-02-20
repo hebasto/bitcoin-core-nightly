@@ -38,7 +38,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 250220-test-threads
 
       - name: Start OmniOS VM
         uses: vmactions/omnios-vm@v1
@@ -46,9 +47,7 @@ jobs:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
           prepare: |
             pkg list -H -o name,publisher,version > packages_before
-            pkg install cmake git gcc14 pkg-config ccache sqlite-3 python-312
-            pkg set-publisher -g https://sfe.opencsw.org/localhostomnios localhostomnios
-            pkg install boost/header-boost libevent2
+            pkg install autoconf git gcc14 pkg-config
             pkg list -H -o name,publisher,version > packages_after
             diff -w packages_before packages_after | grep '^>'
           run: git config --global --add safe.directory ${{ github.workspace }}
@@ -64,37 +63,4 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          export CMAKE_PREFIX_PATH="/usr/g++"                    # For boost/header-boost package.
-          export PKG_CONFIG_PATH="/usr/gnu/lib/amd64/pkgconfig"  # For libevent2 package.
-          cmake -B build -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
-
-      - name: Build
-        uses: ./ci/nightly/.github/actions/build-with-ccache
-        with:
-          vm: omnios
-
-      - name: Check 'bitcoind' executable
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          export LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"
-          ls -l ./build/src/bitcoind
-          file ./build/src/bitcoind
-          ldd ./build/src/bitcoind
-          ./build/src/bitcoind -version
-
-      - name: Run test suite
-        uses: ./ci/nightly/.github/actions/run-test-suite
-        with:
-          vm: omnios
-          envs: 'LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"'
-          # TODO: https://github.com/bitcoin/bitcoin/pull/31580
-          # TODO: Fix the code, then enable system_tests.
-          options: '--exclude-regex "^(net_tests|system_tests)$"'
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        run: |
-          cd ${{ github.workspace }}
-          export LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"
-          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
+          ./configure
