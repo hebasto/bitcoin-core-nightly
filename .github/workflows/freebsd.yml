@@ -69,10 +69,10 @@ jobs:
         run: |
           set -e
           cd ${{ github.workspace }}
-          ls -l ./build/src/bitcoind
-          file ./build/src/bitcoind
-          ldd ./build/src/bitcoind
-          ./build/src/bitcoind -version
+          ls -l build/bin/bitcoind
+          file build/bin/bitcoind
+          ldd build/bin/bitcoind
+          ./build/bin/bitcoind -version
 
       - name: Run test suite
         uses: ./ci/nightly/.github/actions/run-test-suite
@@ -137,10 +137,10 @@ jobs:
         run: |
           set -e
           cd ${{ github.workspace }}
-          ls -l ./build/src/bitcoind
-          file ./build/src/bitcoind
-          ldd ./build/src/bitcoind
-          ./build/src/bitcoind -version
+          ls -l build/bin/bitcoind
+          file build/bin/bitcoind
+          ldd build/bin/bitcoind
+          ./build/bin/bitcoind -version
 
       - name: Run test suite
         uses: ./ci/nightly/.github/actions/run-test-suite
