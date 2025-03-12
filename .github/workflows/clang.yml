@@ -66,10 +66,10 @@ jobs:
 
       - name: Check 'bitcoind' executable
         run: |
-          ls -l ./build/src/bitcoind
-          file ./build/src/bitcoind
-          ldd ./build/src/bitcoind
-          ./build/src/bitcoind -version
+          ls -l build/bin/bitcoind
+          file build/bin/bitcoind
+          ldd build/bin/bitcoind
+          ./build/bin/bitcoind -version
 
       - name: Run test suite
         run: ctest --test-dir build -j $(nproc)
