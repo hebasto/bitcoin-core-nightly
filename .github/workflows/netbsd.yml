@@ -37,7 +37,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: pr32071/0324
 
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
@@ -61,8 +62,7 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          # FIXME: The `-Wl,-z,separate-code` flag is incompatible with NetBSD's dynamic linker.
-          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON -DAPPEND_LDFLAGS="-Wl,-z,noseparate-code"
+          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
       - name: Build
         uses: ./ci/nightly/.github/actions/build-with-ccache
@@ -100,7 +100,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: pr32071/0324
 
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
@@ -134,9 +135,7 @@ jobs:
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
-            -DWERROR=ON \
-            `# FIXME: The -Wl,-z,separate-code flag is incompatible with NetBSD's dynamic linker.` \
-            -DAPPEND_LDFLAGS="-Wl,-z,noseparate-code"
+            -DWERROR=ON
 
       - name: Build
         uses: ./ci/nightly/.github/actions/build-with-ccache
