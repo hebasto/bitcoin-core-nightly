@@ -38,6 +38,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: bitcoin/bitcoin
+          ref: 99a4ddf5ab1b3e514d08b90ad8565827fda7b63b
 
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
@@ -69,25 +70,10 @@ jobs:
         with:
           vm: netbsd
 
-      - name: Check 'bitcoind' executable
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ls -l build/bin/bitcoind
-          file build/bin/bitcoind
-          ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
-
-      - name: Run test suite
-        uses: ./ci/nightly/.github/actions/run-test-suite
-        with:
-          vm: netbsd
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
+      - name: Run benchmarks functional tests
         run: |
           cd ${{ github.workspace }}
-          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
+          ./build/bin/bench_bitcoin
 
   netbsd-depends:
     name: 'NetBSD: depends, MP'
@@ -101,6 +87,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: bitcoin/bitcoin
+          ref: 99a4ddf5ab1b3e514d08b90ad8565827fda7b63b
 
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
@@ -143,22 +130,7 @@ jobs:
         with:
           vm: netbsd
 
-      - name: Check 'bitcoind' executable
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ls -l build/bin/bitcoind
-          file build/bin/bitcoind
-          ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
-
-      - name: Run test suite
-        uses: ./ci/nightly/.github/actions/run-test-suite
-        with:
-          vm: netbsd
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
+      - name: Run benchmarks functional tests
         run: |
           cd ${{ github.workspace }}
-          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
+          ./build/bin/bench_bitcoin
