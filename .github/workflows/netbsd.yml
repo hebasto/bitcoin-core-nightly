@@ -73,7 +73,7 @@ jobs:
       - name: Run benchmarks functional tests
         run: |
           cd ${{ github.workspace }}
-          ./build/bin/bench_bitcoin
+          ./build/bin/bench_bitcoin -priority-level=high
 
   netbsd-depends:
     name: 'NetBSD: depends, MP'
@@ -133,4 +133,4 @@ jobs:
       - name: Run benchmarks functional tests
         run: |
           cd ${{ github.workspace }}
-          ./build/bin/bench_bitcoin
+          ./build/bin/bench_bitcoin -priority-level=high
