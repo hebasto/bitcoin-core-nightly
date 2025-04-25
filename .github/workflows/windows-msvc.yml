@@ -1,0 +1,76 @@
+name: Windows, MSVC
+on:
+  pull_request:
+    paths:
+      - '.github/actions/**'
+      - '.github/workflows/windows-msvc.yml'
+  schedule:
+    - cron: '22 02 * * *'
+  workflow_dispatch:
+    inputs:
+      skip_functional_tests:
+        description: 'Skip functional tests'
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-native:
+    name: 'Windows, MSVC, Debug'
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v4
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Configure Developer Command Prompt for Microsoft Visual C++
+        # Using microsoft/setup-msbuild is not enough.
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Get tool information
+        run: |
+          cmake -version | Tee-Object -FilePath "cmake_version"
+          Write-Output "---"
+          msbuild -version | Tee-Object -FilePath "msbuild_version"
+          $env:VCToolsVersion | Tee-Object -FilePath "toolset_version"
+          py -3 --version
+          Write-Host "PowerShell version $($PSVersionTable.PSVersion.ToString())"
+
+      - name: Generate buildsystem
+        env:
+          # Increase stack size to accommodate the deep recursion
+          # in the FindChallenges() function used in miniscript_tests.
+          LDFLAGS: '/STACK:2097152'
+        run: |
+          cmake -B build --preset vs2022 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DBUILD_GUI=ON -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DWERROR=ON
+
+      - name: Build
+        working-directory: build
+        run: |
+          cmake --build . -j $env:NUMBER_OF_PROCESSORS --config Debug
+
+      - name: Run test suite
+        working-directory: build
+        env:
+          QT_PLUGIN_PATH: '${{ github.workspace }}\build\vcpkg_installed\x64-windows\debug\Qt6\plugins'
+        run: |
+          ctest -j $env:NUMBER_OF_PROCESSORS --output-on-failure -C Debug
+
+      - name: Run functional tests
+        working-directory: build
+        env:
+          BITCOIND: '${{ github.workspace }}\build\bin\Debug\bitcoind.exe'
+          BITCOINCLI: '${{ github.workspace }}\build\bin\Debug\bitcoin-cli.exe'
+          BITCOINUTIL: '${{ github.workspace }}\build\bin\Debug\bitcoin-util.exe'
+          BITCOINWALLET: '${{ github.workspace }}\build\bin\Debug\bitcoin-wallet.exe'
+          PYTHONUTF8: 1
+        run: |
+          py -3 test\functional\test_runner.py --ci --extended -j $env:NUMBER_OF_PROCESSORS --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=40
