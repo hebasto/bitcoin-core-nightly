@@ -45,6 +45,10 @@ jobs:
           Write-Host "PowerShell version $($PSVersionTable.PSVersion.ToString())"
 
       - name: Generate buildsystem
+        env:
+          # Increase stack size to accommodate the deep recursion
+          # in the FindChallenges() function used in miniscript_tests.
+          LDFLAGS: '/STACK:2097152'
         run: |
           cmake -B build --preset vs2022 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DBUILD_GUI=ON -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DWERROR=ON
 
