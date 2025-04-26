@@ -11,7 +11,7 @@ on:
       skip_functional_tests:
         description: 'Skip functional tests'
         required: true
-        default: false
+        default: true  # Non-optimized "Debug" executables hit the maximum timeout.
         type: boolean
 
 concurrency:
