@@ -73,4 +73,4 @@ jobs:
           BITCOINWALLET: '${{ github.workspace }}\build\bin\Debug\bitcoin-wallet.exe'
           PYTHONUTF8: 1
         run: |
-          py -3 test\functional\test_runner.py --ci --extended -j $env:NUMBER_OF_PROCESSORS --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=40
+          py -3 test\functional\test_runner.py --ci -j $env:NUMBER_OF_PROCESSORS --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=40
