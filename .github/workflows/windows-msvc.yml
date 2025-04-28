@@ -45,12 +45,14 @@ jobs:
           Write-Host "PowerShell version $($PSVersionTable.PSVersion.ToString())"
 
       - name: Generate buildsystem
-        env:
-          # Increase stack size to accommodate the deep recursion
-          # in the FindChallenges() function used in miniscript_tests.
-          LDFLAGS: '/STACK:2097152'
+        # The default configuration-specific flags are:
+        #  - CMAKE_CXX_FLAGS_RELEASE: /O2 /Ob2
+        #  - CMAKE_CXX_FLAGS_RELWITHDEBINFO: /Zi /O2 /Ob1
+        #  - CMAKE_CXX_FLAGS_DEBUG: /Zi /Ob0 /Od /RTC1
+        # We use "Release" flags for the "Debug" configuration to speed up the CI job and avoid timeouts.
+        # The "/Zi" has also been dropped, as debug information is not needed in the CI environment.
         run: |
-          cmake -B build --preset vs2022 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DBUILD_GUI=ON -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DWERROR=ON
+          cmake -B build --preset vs2022 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DBUILD_GUI=ON -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DWERROR=ON -DCMAKE_CXX_FLAGS_DEBUG="/O2 /Ob2 /RTC1"
 
       - name: Build
         working-directory: build
