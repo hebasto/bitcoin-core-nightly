@@ -52,7 +52,7 @@ jobs:
         # We use "Release" flags for the "Debug" configuration to speed up the CI job and avoid timeouts.
         # The "/Zi" has also been dropped, as debug information is not needed in the CI environment.
         run: |
-          cmake -B build --preset vs2022 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DBUILD_GUI=ON -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DWERROR=ON -DCMAKE_CXX_FLAGS_DEBUG="/O2 /Ob2 /RTC1"
+          cmake -B build --preset vs2022 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DBUILD_GUI=ON -DWITH_BDB=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DWERROR=ON -DCMAKE_CXX_FLAGS_DEBUG="/O2 /Ob2"
 
       - name: Build
         working-directory: build
