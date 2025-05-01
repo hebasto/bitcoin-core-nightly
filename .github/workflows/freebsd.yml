@@ -38,7 +38,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: laanwj/bitcoin
+          ref: 2025-04-closefds
 
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
@@ -96,7 +97,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: laanwj/bitcoin
+          ref: 2025-04-closefds
 
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
