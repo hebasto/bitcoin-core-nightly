@@ -63,7 +63,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: hebasto/bitcoin
-          ref: 250502-fuzz-abort
+          ref: 250504-fuzz-abort.0
 
       - name: Configure Developer Command Prompt for Microsoft Visual C++
         # Using microsoft/setup-msbuild is not enough.
