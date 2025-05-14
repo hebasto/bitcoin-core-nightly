@@ -53,3 +53,53 @@ jobs:
           QT_PLUGIN_PATH: '${{ github.workspace }}\build\vcpkg_installed\x64-windows\debug\Qt6\plugins'
         run: |
           ctest -j $env:NUMBER_OF_PROCESSORS --output-on-failure -C Debug
+
+  windows-fuzz:
+    name: 'Windows, MSVC, Debug, fuzz'
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v4
+        with:
+          repository: hebasto/bitcoin
+          ref: 250514-fuzz-abort.0
+
+      - name: Configure Developer Command Prompt for Microsoft Visual C++
+        # Using microsoft/setup-msbuild is not enough.
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Get tool information
+        run: |
+          cmake -version | Tee-Object -FilePath "cmake_version"
+          Write-Output "---"
+          msbuild -version | Tee-Object -FilePath "msbuild_version"
+          $env:VCToolsVersion | Tee-Object -FilePath "toolset_version"
+          py -3 --version
+          Write-Host "PowerShell version $($PSVersionTable.PSVersion.ToString())"
+
+      - name: Generate buildsystem
+        run: |
+          cmake -B build --preset vs2022 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DVCPKG_MANIFEST_NO_DEFAULT_FEATURES=ON -DVCPKG_MANIFEST_FEATURES="wallet" -DBUILD_GUI=OFF -DBUILD_FOR_FUZZING=ON -DWERROR=ON
+
+      - name: Build
+        working-directory: build
+        run: |
+          cmake --build . -j $env:NUMBER_OF_PROCESSORS --config Debug
+
+      - name: Clone corpora
+        run: |
+          git clone --depth=1 https://github.com/bitcoin-core/qa-assets "$env:RUNNER_TEMP\qa-assets"
+          Set-Location "$env:RUNNER_TEMP\qa-assets"
+          Write-Host "Using qa-assets repo from commit ..."
+          git log -1
+
+      - name: Run fuzz tests
+        working-directory: build
+        env:
+          BITCOINFUZZ: '${{ github.workspace }}\build\bin\Debug\fuzz.exe'
+        shell: cmd
+        run: |
+          py -3 test\fuzz\test_runner.py --par %NUMBER_OF_PROCESSORS% --loglevel DEBUG %RUNNER_TEMP%\qa-assets\fuzz_corpora
