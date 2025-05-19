@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   clang:
-    name: 'Clang-SNAPSHOT, ${{ matrix.configuration.stdlib }}: system libs, no BDB, no GUI'
+    name: 'Clang-SNAPSHOT, ${{ matrix.configuration.stdlib }}: system libs, no GUI'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

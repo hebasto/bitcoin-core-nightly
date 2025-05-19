@@ -27,7 +27,7 @@ env:
 
 jobs:
   openbsd-syslibs:
-    name: 'OpenBSD: system libs, no BDB, no GUI'
+    name: 'OpenBSD: system libs, no GUI'
     runs-on: ubuntu-latest
     defaults:
       run:

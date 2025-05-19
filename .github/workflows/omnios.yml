@@ -28,7 +28,7 @@ env:
 
 jobs:
   omnios:
-    name: 'OmniOS: system libs, no BDB, no GUI'
+    name: 'OmniOS: system libs, no GUI'
     runs-on: ubuntu-latest
     defaults:
       run:
