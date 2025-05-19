@@ -66,3 +66,7 @@ jobs:
 
       - name: Run test suite
         run: ctest --test-dir build -j $(nproc)
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: ./build/test/functional/test_runner.py --ci --extended -j $(nproc) --combinedlogslen=99999999 --quiet --tmpdirprefix .
