@@ -28,7 +28,7 @@ env:
 
 jobs:
   freebsd-syslibs:
-    name: 'FreeBSD: system libs, no BDB, no GUI'
+    name: 'FreeBSD: system libs, no GUI'
     runs-on: ubuntu-latest
     defaults:
       run:
