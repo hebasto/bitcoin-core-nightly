@@ -69,4 +69,4 @@ jobs:
 
       - name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
-        run: ./build/test/functional/test_runner.py --ci --extended -j $(nproc) --combinedlogslen=99999999 --quiet --tmpdirprefix .
+        run: ./build/test/functional/test_runner.py --ci --extended -j $(nproc) --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
