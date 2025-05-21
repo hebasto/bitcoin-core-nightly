@@ -37,7 +37,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: fanquake/bitcoin
+          ref: posix_c_source
 
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
