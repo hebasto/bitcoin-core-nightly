@@ -31,7 +31,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: Crypt-iQ/bitcoin
+          ref: log_ratelimiting_05192025
 
       - name: Install dependencies
         run: |
