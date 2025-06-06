@@ -95,7 +95,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: theStack/bitcoin
+          ref: 202506-depends-fix_openbsd_multiprocess_build
 
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
@@ -116,8 +117,7 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: openbsd
-          # TODO: Fix capnp compilation and enable MULTIPROCESS.
-          # options: "MULTIPROCESS=1"
+          options: "MULTIPROCESS=1"
 
       - name: Generate buildsystem
         run: >
