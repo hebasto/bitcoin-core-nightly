@@ -42,6 +42,7 @@ jobs:
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
         with:
+          arch: 'aarch64'
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
           prepare: pkg_add -v cmake git ccache boost libevent sqlite3 zeromq python py3-zmq
           run: git config --global --add safe.directory ${{ github.workspace }}
@@ -84,8 +85,8 @@ jobs:
           cd ${{ github.workspace }}
           ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
 
-  openbsd-depends:
-    name: 'OpenBSD: depends, no MP'
+  openbsd-aarch64-depends:
+    name: 'OpenBSD: aarch64, depends, no MP'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -95,11 +96,13 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 250606-openbsd-cc
 
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
         with:
+          arch: 'aarch64'
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
           prepare: pkg_add bash curl gmake gtar-- cmake git ccache python py3-zmq
           run: git config --global --add safe.directory ${{ github.workspace }}
