@@ -48,11 +48,6 @@ jobs:
             /usr/sbin/pkg_add bash curl gmake cmake perl
             /usr/sbin/pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
-          run: |
-            gcc --version
-            g++ --version
-            cc --version
-            c++ --version
           sync: 'rsync'
           copyback: false
 
