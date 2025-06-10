@@ -43,6 +43,7 @@ jobs:
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
+          arch: 'aarch64'
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
           prepare: pkg install -y cmake-core git pkgconf ccache boost-libs libevent sqlite3 libzmq4 python311 py311-pyzmq py311-sqlite3
           run: git config --global --add safe.directory ${{ github.workspace }}
@@ -101,6 +102,7 @@ jobs:
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
+          arch: 'aarch64'
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
           prepare: pkg install -y bash curl gmake cmake-core git pkgconf ccache python311 py311-pyzmq py311-sqlite3
           run: git config --global --add safe.directory ${{ github.workspace }}
