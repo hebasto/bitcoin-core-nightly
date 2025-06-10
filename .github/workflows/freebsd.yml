@@ -44,7 +44,7 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
-          prepare: pkg install -y bash curl gmake cmake-core
+          prepare: pkg install -y bash curl gmake cmake-core pkgconf python311 py311-pyzmq py311-sqlite3
           sync: 'rsync'
           copyback: false
 
@@ -60,3 +60,38 @@ jobs:
           vm: freebsd
           host: "HOST=i686-unknown-freebsd"
           options: "MULTIPROCESS=1 NO_QT=1"
+
+      - name: Generate buildsystem
+        run: >
+          cd ${{ github.workspace }} &&
+          cmake -B build \
+            --toolchain depends/i686-unknown-freebsd/toolchain.cmake \
+            -DBUILD_BENCH=ON \
+            -DBUILD_FUZZ_BINARY=ON \
+            -DWERROR=ON
+
+      - name: Build
+        uses: ./ci/nightly/.github/actions/build-with-ccache
+        with:
+          vm: freebsd
+
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l build/bin/bitcoind
+          file build/bin/bitcoind
+          ldd build/bin/bitcoind
+          ./build/bin/bitcoind -version
+
+      - name: Run test suite
+        uses: ./ci/nightly/.github/actions/run-test-suite
+        with:
+          vm: freebsd
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          cd ${{ github.workspace }}
+          python3.11 ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
+
