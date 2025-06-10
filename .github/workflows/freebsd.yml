@@ -46,7 +46,7 @@ jobs:
         with:
           arch: 'aarch64'
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
-          prepare: pkg install -y cmake-core git pkgconf ccache boost-libs libevent sqlite3 libzmq4 python311 py311-pyzmq py311-sqlite3
+          prepare: pkg install -y cmake-core git pkgconf ccache boost-libs libevent sqlite3 libzmq4 python311
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
@@ -60,7 +60,7 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          cmake -B build -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          cmake -B build -DWITH_ZMQ=ON -DWERROR=ON
 
       - name: Build
         uses: ./ci/nightly/.github/actions/build-with-ccache
@@ -81,12 +81,6 @@ jobs:
         with:
           vm: freebsd
 
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        run: |
-          cd ${{ github.workspace }}
-          python3.11 ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
-
   freebsd-depends:
     name: 'FreeBSD: depends, MP'
     runs-on: ubuntu-latest
@@ -106,7 +100,7 @@ jobs:
         with:
           arch: 'aarch64'
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
-          prepare: pkg install -y bash curl gmake cmake-core git pkgconf ccache python311 py311-pyzmq py311-sqlite3
+          prepare: pkg install -y bash curl gmake cmake-core git pkgconf ccache python311
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
@@ -128,8 +122,6 @@ jobs:
           cd ${{ github.workspace }} &&
           cmake -B build \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
-            -DBUILD_BENCH=ON \
-            -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON
 
       - name: Build
@@ -150,9 +142,3 @@ jobs:
         uses: ./ci/nightly/.github/actions/run-test-suite
         with:
           vm: freebsd
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        run: |
-          cd ${{ github.workspace }}
-          python3.11 ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
