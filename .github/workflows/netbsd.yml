@@ -45,7 +45,7 @@ jobs:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
           prepare: |
             /usr/sbin/pkg_info > packages_before
-            /usr/sbin/pkg_add bash curl gmake cmake
+            /usr/sbin/pkg_add bash curl gmake cmake perl
             /usr/sbin/pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           run: |
