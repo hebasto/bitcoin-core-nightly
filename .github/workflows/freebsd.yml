@@ -58,4 +58,5 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: freebsd
-          options: "MULTIPROCESS=1"
+          host: "HOST=i686-unknown-freebsd"
+          options: "MULTIPROCESS=1 NO_QT=1"
