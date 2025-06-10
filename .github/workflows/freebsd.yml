@@ -39,7 +39,7 @@ jobs:
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: pkg install -y cmake-core git pkgconf boost-libs libevent sqlite3 libzmq4 python311 py311-pyzmq py311-sqlite3
+          prepare: pkg install -y cmake-core ninja git pkgconf boost-libs libevent sqlite3 libzmq4 python311 py311-pyzmq py311-sqlite3
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
@@ -51,12 +51,14 @@ jobs:
           path: ci/nightly
 
       - name: Generate buildsystem
+        env:
+          CMAKE_GENERATOR: 'Ninja'
         run: |
           cd ${{ github.workspace }}
           cmake -B build -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
       - name: Build
-        run: cmake --build ${{ github.workspace }}/build -- -j ${{ env.CI_NCPU }}
+        run: cmake --build ${{ github.workspace }}/build
 
       - name: Check 'bitcoind' executable
         run: |
@@ -94,7 +96,7 @@ jobs:
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: pkg install -y bash curl gmake cmake-core git pkgconf python311 py311-pyzmq py311-sqlite3
+          prepare: pkg install -y bash curl gmake cmake-core ninja git pkgconf python311 py311-pyzmq py311-sqlite3
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
@@ -112,6 +114,8 @@ jobs:
           options: "MULTIPROCESS=1"
 
       - name: Generate buildsystem
+        env:
+          CMAKE_GENERATOR: 'Ninja'
         run: >
           cd ${{ github.workspace }} &&
           cmake -B build \
@@ -121,7 +125,7 @@ jobs:
             -DWERROR=ON
 
       - name: Build
-        run: cmake --build ${{ github.workspace }}/build -- -j ${{ env.CI_NCPU }}
+        run: cmake --build ${{ github.workspace }}/build
 
       - name: Check 'bitcoind' executable
         run: |
