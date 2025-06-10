@@ -97,7 +97,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: hebasto/bitcoin
-          ref: 250606-openbsd-cc
+          ref: 250610-depends-bsd
 
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
