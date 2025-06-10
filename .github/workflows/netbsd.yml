@@ -45,7 +45,7 @@ jobs:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
           prepare: |
             /usr/sbin/pkg_info > packages_before
-            /usr/sbin/pkg_add bash curl gmake cmake perl
+            /usr/sbin/pkg_add bash curl gmake cmake perl gcc12
             /usr/sbin/pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           sync: 'rsync'
@@ -62,4 +62,5 @@ jobs:
         with:
           vm: netbsd
           # options: "MULTIPROCESS=1 build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++"
-          options: "MULTIPROCESS=1"
+          # options: "MULTIPROCESS=1"
+          options: "MULTIPROCESS=1 build_CC=/usr/pkg/gcc12/bin/gcc build_CXX=/usr/pkg/gcc12/bin/g++ CC=/usr/pkg/gcc12/bin/gcc CXX=/usr/pkg/gcc12/bin/g++"
