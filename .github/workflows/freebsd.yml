@@ -38,7 +38,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 250610-depends-bsd
 
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
@@ -97,7 +98,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 250610-depends-bsd
 
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
