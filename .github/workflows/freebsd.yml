@@ -40,7 +40,7 @@ jobs:
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: pkg install -y bash curl gmake cmake-core python3 bison
+          prepare: pkg install -y bash curl gmake cmake-core python3 bison pkgconf
           sync: 'rsync'
           copyback: false
 
