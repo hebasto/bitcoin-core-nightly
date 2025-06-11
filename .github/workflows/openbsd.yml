@@ -85,7 +85,7 @@ jobs:
           ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8
 
   openbsd-depends:
-    name: 'OpenBSD: depends, no MP'
+    name: 'OpenBSD: depends, MP'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -116,8 +116,7 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: openbsd
-          # TODO: Fix capnp compilation and enable MULTIPROCESS.
-          # options: "MULTIPROCESS=1"
+          options: "MULTIPROCESS=1"
 
       - name: Generate buildsystem
         run: >

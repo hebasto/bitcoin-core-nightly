@@ -9,7 +9,7 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 | Operating System | Status | Build with System Libs | Build with Depends |
 |------------------|--------|------------------------|--------------------|
 | [FreeBSD](https://www.freebsd.org/) | [![FreeBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml?query=event%3Aschedule) | Qt - not installed <br> USDT - N/A | 1. Release, `MULTIPROCESS=1` |
-| [OpenBSD](https://www.openbsd.org/) | [![OpenBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml?query=event%3Aschedule) | Qt - not installed <br> USDT - N/A | 1. Release <br> --- <br> See MP-related [issue](https://github.com/capnproto/capnproto/pull/1907) |
+| [OpenBSD](https://www.openbsd.org/) | [![OpenBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml?query=event%3Aschedule) | Qt - not installed <br> USDT - N/A | 1. Release, `MULTIPROCESS=1` |
 | [NetBSD](https://netbsd.org/) | [![NetBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml?query=event%3Aschedule) | Qt - not installed <br> USDT - N/A | 1. Release, `MULTIPROCESS=1` |
 
 ## [illumos](https://illumos.org/)-Based Systems
