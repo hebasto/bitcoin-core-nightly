@@ -95,7 +95,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: fanquake/bitcoin
+          ref: capnp_1_2_0
 
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
