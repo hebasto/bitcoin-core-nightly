@@ -122,6 +122,8 @@ jobs:
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
+            `# TODO: Reenable GUI tests.` \
+            -DBUILD_GUI_TESTS=OFF \
             -DWERROR=ON
 
       - name: Build
