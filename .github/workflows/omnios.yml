@@ -48,12 +48,22 @@ jobs:
             pkg list -H -o name,publisher,version > packages_before
             pkg install cmake git gcc14 pkg-config ccache sqlite-3 python-312
             pkg set-publisher -g https://sfe.opencsw.org/localhostomnios localhostomnios
-            pkg install boost/header-boost libevent2
+            pkg install libevent2
             pkg list -H -o name,publisher,version > packages_after
             diff -w packages_before packages_after | grep '^>'
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
+
+      - name: Build Boost
+        run: |
+          cd ${{ github.workspace }}
+          curl --location --fail --output boost-1.88.0-cmake.tar.gz https://github.com/boostorg/boost/releases/download/boost-1.88.0/boost-1.88.0-cmake.tar.gz
+          tar xf boost-1.88.0-cmake.tar.gz
+          cd boost-1.88.0
+          patch -p1 < ${{ github.workspace }}/depends/patches/boost/skip_compiled_targets.patch
+          cmake -S . -B build -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/boost" -DBOOST_INCLUDE_LIBRARIES="multi_index;signals2;test" -DBOOST_TEST_HEADERS_ONLY=ON -DBOOST_ENABLE_MPI=OFF -DBOOST_ENABLE_PYTHON=OFF -DBOOST_INSTALL_LAYOUT=system -DBUILD_TESTING=OFF -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
+          cmake --install build
 
       - name: Checkout helper actions
         uses: actions/checkout@v4
@@ -64,7 +74,7 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          export CMAKE_PREFIX_PATH="/usr/g++"                    # For boost/header-boost package.
+          export Boost_ROOT="${{ github.workspace }}/boost"
           export PKG_CONFIG_PATH="/usr/gnu/lib/amd64/pkgconfig"  # For libevent2 package.
           # Workaround for a bug in the FindThreads module.
           # See: https://gitlab.kitware.com/cmake/cmake/-/issues/26063
