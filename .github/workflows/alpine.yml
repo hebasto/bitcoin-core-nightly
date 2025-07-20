@@ -28,6 +28,8 @@ jobs:
       matrix:
         configuration:
           - name: ''
+            # See: https://github.com/bitcoin/bitcoin/pull/31829#discussion_r2217735632.
+            config-options: -DAPPEND_CXXFLAGS="-Wno-error=stringop-overflow"
           - name: ', debug'
             depends-options: DEBUG=1
             config-options: -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=-Wno-error=maybe-uninitialized
