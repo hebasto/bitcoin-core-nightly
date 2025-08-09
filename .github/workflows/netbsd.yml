@@ -40,7 +40,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 250809-fallback-fallocate
 
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
@@ -102,7 +103,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v4
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 250809-fallback-fallocate
 
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
