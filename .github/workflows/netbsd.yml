@@ -37,12 +37,16 @@ jobs:
         with:
           prepare: |
             /usr/sbin/pkg_info > packages_before
-            /usr/sbin/pkg_add cmake gcc2
+            /usr/sbin/pkg_add cmake
             /usr/sbin/pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
-          run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
+
+      - name: Build GCC 2.95
+        run: |
+          cd /usr/pkgsrc/lang/gcc2
+          make install clean
 
       - name: Generate buildsystem
         run: |
