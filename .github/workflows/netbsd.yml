@@ -18,147 +18,38 @@ concurrency:
   group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
   cancel-in-progress: true
 
-env:
-  CCACHE_COMPILERCHECK: content
-  CCACHE_DIR: ${{ github.workspace }}/ccache
-  CCACHE_MAXSIZE: 500M
-  # See https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
-  CI_NCPU: 4
-  # TODO: Fix the excluded test and re-enable it.
-  # See: https://github.com/bitcoin/bitcoin/issues/33128.
-  FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
-
 jobs:
   netbsd-syslibs:
-    name: 'NetBSD: system libs, no GUI'
+    name: 'NetBSD: GCC 2.95'
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: netbsd {0}
 
     steps:
-      - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v4
+      - name: Checkout secp256k1 repo
+        uses: actions/checkout@v5
         with:
-          repository: bitcoin/bitcoin
+          repository: bitcoin-core/secp256k1
 
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
-          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
           prepare: |
             /usr/sbin/pkg_info > packages_before
-            /usr/sbin/pkg_add cmake git-base gcc14 pkg-config ccache boost libevent sqlite3 zeromq python313 py313-zmq
+            /usr/sbin/pkg_add cmake gcc2
             /usr/sbin/pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
-      - name: Checkout helper actions
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: .github/actions
-          path: ci/nightly
-
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc2/bin/gcc"
 
       - name: Build
-        uses: ./ci/nightly/.github/actions/build-with-ccache
-        with:
-          vm: netbsd
-
-      - name: Check 'bitcoind' executable
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ls -l build/bin/bitcoind
-          file build/bin/bitcoind
-          ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
-
-      - name: Run test suite
-        uses: ./ci/nightly/.github/actions/run-test-suite
-        with:
-          vm: netbsd
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
-          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
-
-  netbsd-depends:
-    name: 'NetBSD: depends, MP'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: netbsd {0}
-
-    steps:
-      - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v4
-        with:
-          repository: bitcoin/bitcoin
-
-      - name: Start NetBSD VM
-        uses: vmactions/netbsd-vm@v1
-        with:
-          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
-          prepare: |
-            /usr/sbin/pkg_info > packages_before
-            /usr/sbin/pkg_add bash curl gmake cmake git-base perl gcc14 pkg-config ccache python313 py313-zmq
-            /usr/sbin/pkg_info > packages_after
-            diff -w packages_before packages_after | grep '^>'
-          run: git config --global --add safe.directory ${{ github.workspace }}
-          sync: 'rsync'
-          copyback: false
-
-      - name: Checkout helper actions
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: .github/actions
-          path: ci/nightly
-
-      - name: Build depends
-        uses: ./ci/nightly/.github/actions/build-depends
-        with:
-          vm: netbsd
-          options: "MULTIPROCESS=1 build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++"
-
-      - name: Generate buildsystem
-        run: >
-          cd ${{ github.workspace }} &&
-          cmake -B build \
-            --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
-            -DBUILD_BENCH=ON \
-            -DBUILD_FUZZ_BINARY=ON \
-            -DWERROR=ON
-
-      - name: Build
-        uses: ./ci/nightly/.github/actions/build-with-ccache
-        with:
-          vm: netbsd
-
-      - name: Check 'bitcoind' executable
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ls -l build/bin/bitcoind
-          file build/bin/bitcoind
-          ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
-
-      - name: Run test suite
-        uses: ./ci/nightly/.github/actions/run-test-suite
-        with:
-          vm: netbsd
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        run: |
-          cd ${{ github.workspace }}
-          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
+          cmake --build build
