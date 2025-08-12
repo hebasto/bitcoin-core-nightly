@@ -37,13 +37,23 @@ jobs:
         with:
           prepare: |
             /usr/sbin/pkg_info > packages_before
-            /usr/sbin/pkg_add cmake
+            /usr/sbin/pkg_add cmake tar
             /usr/sbin/pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           sync: 'rsync'
           copyback: false
 
+      - name: Get pkgsrc
+        run: |
+          ftp ftp://ftp.NetBSD.org/pub/pkgsrc/pkgsrc-2025Q2/pkgsrc.tar.gz
+          tar -xzf pkgsrc.tar.gz -C /usr
+
       - name: Build GCC 2.95
+        # ERROR: This package is not available for these platforms: Darwin-*-* *-*-x86_64 DragonFly-*-* NetBSD-[6789]*-* NetBSD-1[0-9]*-*.
+        # ERROR: This package has set PKG_FAIL_REASON:
+        # ERROR: Please unset PKG_PATH before doing pkgsrc work!
+        # ERROR: This package has set PKG_SKIP_REASON:
+        # ERROR: gcc2-2.95.3nb7 is not available for NetBSD-10.1-x86_64
         run: |
           cd /usr/pkgsrc/lang/gcc2
           make install clean
