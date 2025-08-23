@@ -40,7 +40,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v5
         with:
-          repository: bitcoin/bitcoin
+          repository: ryanofsky/bitcoin
+          ref: pr/subtree-3
 
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
@@ -101,7 +102,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v5
         with:
-          repository: bitcoin/bitcoin
+          repository: ryanofsky/bitcoin
+          ref: pr/subtree-3
 
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
