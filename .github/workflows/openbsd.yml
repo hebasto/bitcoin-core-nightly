@@ -38,7 +38,7 @@ jobs:
 
     steps:
       - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: bitcoin/bitcoin
 
@@ -55,7 +55,7 @@ jobs:
           copyback: false
 
       - name: Checkout helper actions
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           sparse-checkout: .github/actions
           path: ci/nightly
@@ -99,7 +99,7 @@ jobs:
 
     steps:
       - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: bitcoin/bitcoin
 
@@ -113,7 +113,7 @@ jobs:
           copyback: false
 
       - name: Checkout helper actions
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           sparse-checkout: .github/actions
           path: ci/nightly
