@@ -39,7 +39,7 @@ jobs:
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: pkg install -y cmake-core ninja git pkgconf boost-libs libevent sqlite3 libzmq4 python3 net/py-pyzmq databases/py-sqlite3
+          prepare: pkg install -y cmake-core ninja git pkgconf boost-libs libevent sqlite3 capnproto libzmq4 python3 net/py-pyzmq databases/py-sqlite3
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
