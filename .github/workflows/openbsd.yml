@@ -46,7 +46,10 @@ jobs:
         uses: vmactions/openbsd-vm@v1
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
-          prepare: pkg_add -v cmake ninja git ccache boost libevent sqlite3 zeromq python py3-zmq
+          prepare: |
+            pkg_add -v cmake ninja git ccache boost libevent sqlite3 zeromq python py3-zmq
+            git clone --depth=1 https://codeberg.org/OpenBSD/ports.git /usr/ports
+            make -C /usr/ports/devel/capnproto/ install
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
