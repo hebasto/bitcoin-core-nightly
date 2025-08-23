@@ -46,7 +46,7 @@ jobs:
         uses: vmactions/openbsd-vm@v1
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
-          prepare: pkg_add -v cmake git ccache boost libevent sqlite3 zeromq python py3-zmq
+          prepare: pkg_add -v cmake ninja git ccache boost libevent sqlite3 zeromq python py3-zmq
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
@@ -60,7 +60,7 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          cmake -B build -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          cmake -B build -DCMAKE_GENERATOR="Ninja" -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
       - name: Build
         uses: ./ci/nightly/.github/actions/build-with-ccache
