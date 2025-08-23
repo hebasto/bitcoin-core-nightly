@@ -48,7 +48,7 @@ jobs:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
           prepare: |
             /usr/sbin/pkg_info > packages_before
-            /usr/sbin/pkg_add cmake git-base gcc14 pkg-config ccache boost libevent sqlite3 zeromq python313 py313-zmq
+            /usr/sbin/pkg_add cmake git-base gcc14 pkg-config ccache boost libevent sqlite3 capnproto zeromq python313 py313-zmq
             /usr/sbin/pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           run: git config --global --add safe.directory ${{ github.workspace }}
@@ -62,9 +62,10 @@ jobs:
           path: ci/nightly
 
       - name: Generate buildsystem
+        # TODO: Reenable IPC.
         run: |
           cd ${{ github.workspace }}
-          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DENABLE_IPC=OFF -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
       - name: Build
         uses: ./ci/nightly/.github/actions/build-with-ccache
