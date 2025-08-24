@@ -82,7 +82,8 @@ jobs:
           # Workaround for a bug in the FindThreads module.
           # See: https://gitlab.kitware.com/cmake/cmake/-/issues/26063
           export CXXFLAGS="-pthread"
-          cmake -B build -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          # TODO: Build Cap'n Proto from source and reenable IPC.
+          cmake -B build -DENABLE_IPC=OFF -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
       - name: Build
         uses: ./ci/nightly/.github/actions/build-with-ccache
