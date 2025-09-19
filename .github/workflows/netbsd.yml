@@ -40,7 +40,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v5
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: pr33435/0920
 
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
@@ -103,7 +104,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v5
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: pr33435/0920
 
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
