@@ -67,6 +67,9 @@ jobs:
     name: 'Windows, test cross-built executables natively'
     runs-on: windows-latest
     needs: windows-cross
+    defaults:
+      run:
+        shell: pwsh -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
 
     env:
       PYTHONUTF8: 1
