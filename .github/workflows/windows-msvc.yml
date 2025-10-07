@@ -16,6 +16,9 @@ jobs:
   windows-native:
     name: 'Windows, MSVC, Debug'
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
 
     steps:
       - name: Checkout Bitcoin Core repo
