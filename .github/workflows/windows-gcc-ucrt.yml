@@ -1,9 +1,9 @@
-name: Windows, UCRT
+name: Windows, GCC, UCRT
 on:
   pull_request:
     paths:
       - '.github/actions/**'
-      - '.github/workflows/windows-ucrt.yml'
+      - '.github/workflows/windows-gcc-ucrt.yml'
   schedule:
     - cron: '22 02 * * *'
   workflow_dispatch:
