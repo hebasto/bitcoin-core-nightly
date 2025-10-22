@@ -56,7 +56,7 @@ jobs:
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON \
-            -DAPPEND_CXXFLAGS='-Wno-deprecated-declarations -Wno-error=inconsistent-dllimport -Wno-error=unused-member-function -Wno-error=unused-private-field'
+            -DAPPEND_CXXFLAGS='-Wno-deprecated-declarations -Wno-error=unused-member-function -Wno-error=unused-private-field'
 
       - name: Build
         run: cmake --build build -j $(nproc)
@@ -163,7 +163,7 @@ jobs:
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON \
-            -DAPPEND_CXXFLAGS='-Wno-deprecated-declarations -Wno-error=inconsistent-dllimport -Wno-error=unused-member-function -Wno-error=unused-private-field'
+            -DAPPEND_CXXFLAGS='-Wno-deprecated-declarations -Wno-error=unused-member-function -Wno-error=unused-private-field'
 
       - name: Build
         run: cmake --build build -j $(nproc)
