@@ -1,0 +1,238 @@
+name: Windows, LLVM
+on:
+  pull_request:
+    paths:
+      - '.github/actions/**'
+      - '.github/workflows/windows-llvm.yml'
+  schedule:
+    - cron: '22 02 * * *'
+  workflow_dispatch:
+    inputs:
+      skip_functional_tests:
+        description: 'Skip functional tests'
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI_LLVM_MINGW_URL: https://github.com/mstorsjo/llvm-mingw/releases/download/20251021/llvm-mingw-20251021-ucrt-ubuntu-22.04-x86_64.tar.xz
+  CI_LLVM_MINGW_HASH: 7b7f3acb6e735a9fabfaa3c8ff551e9937a5f2f298c2cd12796b357f7d1fb6a8
+
+jobs:
+  windows-x86_64-cross:
+    name: 'Windows x86-64, cross-build only, LLVM: no GUI'
+    runs-on: ubuntu-latest
+
+    env:
+      CI_HOST: x86_64-w64-mingw32
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v5
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Install LLVM MinGW toolchain
+        run: |
+          curl -L -o llvm_mingw_toolchain.tar.gz ${{ env.CI_LLVM_MINGW_URL }}
+          echo "${{ env.CI_LLVM_MINGW_HASH }}  llvm_mingw_toolchain.tar.gz" | sha256sum --check
+          mkdir llvm_mingw_toolchain
+          tar -xf llvm_mingw_toolchain.tar.gz -C llvm_mingw_toolchain --strip-components=1
+          echo "${GITHUB_WORKSPACE}/llvm_mingw_toolchain/bin" >> "$GITHUB_PATH"
+
+      - name: Build depends
+        run: |
+          gmake -C depends -j $(nproc) HOST=${{ env.CI_HOST }} CC=${{ env.CI_HOST }}-clang CXX=${{ env.CI_HOST }}-clang++ NO_QT=1 LOG=1
+
+      - name: Generate buildsystem
+        run: >
+          cmake -B build \
+            --toolchain depends/${{ env.CI_HOST }}/toolchain.cmake \
+            -DREDUCE_EXPORTS=ON \
+            -DBUILD_BENCH=ON \
+            -DBUILD_FUZZ_BINARY=ON \
+            -DWERROR=ON \
+            -DAPPEND_CXXFLAGS='-Wno-deprecated-declarations -Wno-error=inconsistent-dllimport -Wno-error=unused-member-function -Wno-error=unused-private-field'
+
+      - name: Build
+        run: cmake --build build -j $(nproc)
+
+      - name: Upload built executables
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CI_HOST }}-executables-${{ github.run_id }}
+          path: |
+            build/bin/*.exe
+            build/src/**/*.exe
+            build/test/config.ini
+
+  windows-x86_64-native-test:
+    name: 'Windows x86-64, test cross-built executables natively'
+    runs-on: windows-latest
+    needs: windows-x86_64-cross
+    defaults:
+      run:
+        shell: pwsh -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
+
+    env:
+      CI_HOST: x86_64-w64-mingw32
+      PYTHONUTF8: 1
+      TEST_RUNNER_TIMEOUT_FACTOR: 40
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v5
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Download built executables
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CI_HOST }}-executables-${{ github.run_id }}
+
+      - name: Configure Developer Command Prompt for Microsoft Visual C++
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Check 'bitcoind.exe' executable
+        run: |
+          dumpbin.exe /imports .\bin\bitcoind.exe | Select-String -Pattern "\S+\.dll" -CaseSensitive:$false
+          .\bin\bitcoind.exe -version
+
+      - name: Run unit tests
+        run: |
+          .\bin\test_bitcoin.exe -l test_suite
+          .\src\secp256k1\bin\exhaustive_tests.exe
+          .\src\secp256k1\bin\noverify_tests.exe
+          .\src\secp256k1\bin\tests.exe
+          .\src\univalue\object.exe
+          .\src\univalue\unitester.exe
+
+      - name: Run benchmarks
+        run: .\bin\bench_bitcoin.exe -sanity-check
+
+      - name: Adjust paths in test\config.ini
+        run: |
+          (Get-Content "test\config.ini") -replace '(?<=^SRCDIR=).*', '${{ github.workspace }}' -replace '(?<=^BUILDDIR=).*', '${{ github.workspace }}' -replace '(?<=^RPCAUTH=).*', '${{ github.workspace }}\share\rpcauth\rpcauth.py' | Set-Content "test\config.ini"
+          Get-Content "test\config.ini"
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        env:
+          # TODO: Fix the excluded test and re-enable it.
+          # See: https://github.com/bitcoin/bitcoin/pull/31410
+          EXCLUDE: '--exclude wallet_multiwallet.py'
+        shell: cmd
+        run: py -3 test\functional\test_runner.py --jobs %NUMBER_OF_PROCESSORS% --ci --quiet --tmpdirprefix=%RUNNER_TEMP% --combinedlogslen=99999999 --timeout-factor=%TEST_RUNNER_TIMEOUT_FACTOR% %EXCLUDE% --extended
+
+  windows-aarch64-cross:
+    name: 'Windows ARM64, cross-build only, LLVM: no GUI'
+    runs-on: ubuntu-latest
+
+    env:
+      CI_HOST: aarch64-w64-mingw32
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v5
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Install LLVM MinGW toolchain
+        run: |
+          curl -L -o llvm_mingw_toolchain.tar.gz ${{ env.CI_LLVM_MINGW_URL }}
+          echo "${{ env.CI_LLVM_MINGW_HASH }}  llvm_mingw_toolchain.tar.gz" | sha256sum --check
+          mkdir llvm_mingw_toolchain
+          tar -xf llvm_mingw_toolchain.tar.gz -C llvm_mingw_toolchain --strip-components=1
+          echo "${GITHUB_WORKSPACE}/llvm_mingw_toolchain/bin" >> "$GITHUB_PATH"
+
+      - name: Build depends
+        run: |
+          gmake -C depends -j $(nproc) HOST=${{ env.CI_HOST }} CC=${{ env.CI_HOST }}-clang CXX=${{ env.CI_HOST }}-clang++ NO_QT=1 NO_ZMQ=1 LOG=1
+
+      - name: Generate buildsystem
+        run: >
+          cmake -B build \
+            --toolchain depends/${{ env.CI_HOST }}/toolchain.cmake \
+            -DREDUCE_EXPORTS=ON \
+            -DBUILD_BENCH=ON \
+            -DBUILD_FUZZ_BINARY=ON \
+            -DWERROR=ON \
+            -DAPPEND_CXXFLAGS='-Wno-deprecated-declarations -Wno-error=inconsistent-dllimport -Wno-error=unused-member-function -Wno-error=unused-private-field'
+
+      - name: Build
+        run: cmake --build build -j $(nproc)
+
+      - name: Upload built executables
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.CI_HOST }}-executables-${{ github.run_id }}
+          path: |
+            build/bin/*.exe
+            build/src/**/*.exe
+            build/test/config.ini
+
+  windows-aarch64-native-test:
+    name: 'Windows ARM64, test cross-built executables natively'
+    runs-on: windows-11-arm
+    needs: windows-aarch64-cross
+    defaults:
+      run:
+        shell: pwsh -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
+
+    env:
+      CI_HOST: aarch64-w64-mingw32
+      PYTHONUTF8: 1
+      TEST_RUNNER_TIMEOUT_FACTOR: 40
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v5
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Download built executables
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.CI_HOST }}-executables-${{ github.run_id }}
+
+      - name: Configure Developer Command Prompt for Microsoft Visual C++
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: arm64
+
+      - name: Check 'bitcoind.exe' executable
+        run: |
+          dumpbin.exe /imports .\bin\bitcoind.exe | Select-String -Pattern "\S+\.dll" -CaseSensitive:$false
+          .\bin\bitcoind.exe -version
+
+      - name: Run unit tests
+        run: |
+          .\bin\test_bitcoin.exe -l test_suite
+          .\src\secp256k1\bin\exhaustive_tests.exe
+          .\src\secp256k1\bin\noverify_tests.exe
+          .\src\secp256k1\bin\tests.exe
+          .\src\univalue\object.exe
+          .\src\univalue\unitester.exe
+
+      - name: Run benchmarks
+        run: .\bin\bench_bitcoin.exe -sanity-check
+
+      - name: Adjust paths in test\config.ini
+        run: |
+          (Get-Content "test\config.ini") -replace '(?<=^SRCDIR=).*', '${{ github.workspace }}' -replace '(?<=^BUILDDIR=).*', '${{ github.workspace }}' -replace '(?<=^RPCAUTH=).*', '${{ github.workspace }}\share\rpcauth\rpcauth.py' | Set-Content "test\config.ini"
+          Get-Content "test\config.ini"
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        env:
+          # TODO: Fix the excluded test and re-enable it.
+          # See: https://github.com/bitcoin/bitcoin/pull/31410
+          EXCLUDE: '--exclude wallet_multiwallet.py'
+        shell: cmd
+        run: py -3 test\functional\test_runner.py --jobs %NUMBER_OF_PROCESSORS% --ci --quiet --tmpdirprefix=%RUNNER_TEMP% --combinedlogslen=99999999 --timeout-factor=%TEST_RUNNER_TIMEOUT_FACTOR% %EXCLUDE% --extended
