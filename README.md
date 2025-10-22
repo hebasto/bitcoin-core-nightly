@@ -30,10 +30,10 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 |------------------|--------|
 | [Alpine Linux](https://alpinelinux.org) | [![Alpine](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/alpine.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/alpine.yml?query=event%3Aschedule) |
 
-## Windows
+## [Windows](https://www.microsoft.com/windows/windows-11)
 
-| Operating System | Toolchain | Status | Notes |
-|------------------|-----------|--------|-------|
-| [Windows 11](https://www.microsoft.com/windows/windows-11) | GCC, [Mingw-w64](https://www.mingw-w64.org), MSVCRT | [![Windows, GCC, MSVCRT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc-msvcrt.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc-msvcrt.yml?query=event%3Aschedule) | |
-| [Windows 11](https://www.microsoft.com/windows/windows-11) | GCC, [Mingw-w64](https://www.mingw-w64.org), UCRT | [![Windows, GCC, UCRT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc-ucrt.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc-ucrt.yml?query=event%3Aschedule) | |
-| [Windows 11](https://www.microsoft.com/windows/windows-11) | [MSVC](https://learn.microsoft.com/en-us/cpp/) | [![Windows, MSVC](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-msvc.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-msvc.yml?query=event%3Aschedule) | "Debug" configuration<br>No functional tests |
+| Toolchain | Status | Notes |
+|-----------|--------|-------|
+| GCC, [Mingw-w64](https://www.mingw-w64.org), MSVCRT | [![Windows, GCC, MSVCRT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc-msvcrt.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc-msvcrt.yml?query=event%3Aschedule) | |
+| GCC, [Mingw-w64](https://www.mingw-w64.org), UCRT | [![Windows, GCC, UCRT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc-ucrt.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc-ucrt.yml?query=event%3Aschedule) | |
+| [MSVC](https://learn.microsoft.com/en-us/cpp/) | [![Windows, MSVC](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-msvc.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-msvc.yml?query=event%3Aschedule) | "Debug" configuration<br>No functional tests |
