@@ -34,7 +34,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v5
         with:
-          repository: bitcoin/bitcoin
+          repository: fanquake/bitcoin
+          ref: drop_some_platforms
 
       - name: Install LLVM MinGW toolchain
         run: |
@@ -87,7 +88,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v5
         with:
-          repository: bitcoin/bitcoin
+          repository: fanquake/bitcoin
+          ref: drop_some_platforms
 
       - name: Download built executables
         uses: actions/download-artifact@v4
