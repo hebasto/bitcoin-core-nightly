@@ -28,7 +28,11 @@ runs:
       run: ccache --zero-stats
 
     - shell: ${{ inputs.vm }} {0}
-      run: cmake --build ${{ inputs.build-dir }} -- -j ${{ env.CI_NCPU }}
+      env:
+        CCACHE_BASEDIR: ${{ github.workspace }}
+      run: |
+        printenv | grep CCACHE | sort
+        cmake --build ${{ inputs.build-dir }} -- -j ${{ env.CI_NCPU }}
 
     - shell: ${{ inputs.vm }} {0}
       run: |
