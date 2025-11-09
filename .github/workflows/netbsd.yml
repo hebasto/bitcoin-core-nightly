@@ -67,8 +67,13 @@ jobs:
         # TODO: Reenable IPC.
         # See: https://github.com/bitcoin-core/libmultiprocess/pull/196.
         run: |
+          set -e
           cd ${{ github.workspace }}
-          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DENABLE_IPC=OFF -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          cmake -B build \
+            -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" \
+            -DENABLE_IPC=OFF -DWITH_ZMQ=ON \
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          df -h
 
       - &BUILD
         name: Build
@@ -131,13 +136,13 @@ jobs:
           options: "MULTIPROCESS=1 build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++"
 
       - name: Generate buildsystem
-        run: >
-          cd ${{ github.workspace }} &&
+        run: |
+          set -e
+          cd ${{ github.workspace }}
           cmake -B build \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
-            -DBUILD_BENCH=ON \
-            -DBUILD_FUZZ_BINARY=ON \
-            -DWERROR=ON
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          df -h
 
       - *BUILD
       - *CHECK_BITCOIND
