@@ -31,7 +31,10 @@ runs:
       run: cmake --build ${{ inputs.build-dir }} -- -j ${{ env.CI_NCPU }}
 
     - shell: ${{ inputs.vm }} {0}
-      run: ccache --show-stats --verbose >/dev/null 2>&1 && ccache --show-stats --verbose || { ccache --version; ccache --show-stats; }
+      run: |
+        ccache --version
+        ccache --show-stats --verbose >/dev/null 2>&1 && ccache --show-stats --verbose || ccache --show-stats
+        ccache --show-compression >/dev/null 2>&1 && ccache --show-compression || true
 
     - shell: bash -e {0}
       run: rsync --archive --stats ${{ inputs.vm }}:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
