@@ -37,7 +37,8 @@ jobs:
         shell: netbsd {0}
 
     steps:
-      - name: Checkout Bitcoin Core repo
+      - &CHECKOUT_BITCOIN_CORE
+        name: Checkout Bitcoin Core repo
         uses: actions/checkout@v5
         with:
           repository: bitcoin/bitcoin
@@ -55,7 +56,8 @@ jobs:
           sync: 'rsync'
           copyback: false
 
-      - name: Checkout helper actions
+      - &CHECKOUT_HELPER_ACTIONS
+        name: Checkout helper actions
         uses: actions/checkout@v5
         with:
           sparse-checkout: .github/actions
@@ -63,16 +65,24 @@ jobs:
 
       - name: Generate buildsystem
         # TODO: Reenable IPC.
+        # See: https://github.com/bitcoin-core/libmultiprocess/pull/196.
         run: |
+          set -e
           cd ${{ github.workspace }}
-          cmake -B build -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" -DENABLE_IPC=OFF -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          cmake -B build \
+            -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" \
+            -DENABLE_IPC=OFF -DWITH_ZMQ=ON \
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          df -h
 
-      - name: Build
+      - &BUILD
+        name: Build
         uses: ./ci/nightly/.github/actions/build-with-ccache
         with:
           vm: netbsd
 
-      - name: Check 'bitcoind' executable
+      - &CHECK_BITCOIND
+        name: Check 'bitcoind' executable
         run: |
           set -e
           cd ${{ github.workspace }}
@@ -81,12 +91,14 @@ jobs:
           ldd build/bin/bitcoind
           ./build/bin/bitcoind -version
 
-      - name: Run test suite
+      - &RUN_TEST_SUITE
+        name: Run test suite
         uses: ./ci/nightly/.github/actions/run-test-suite
         with:
           vm: netbsd
 
-      - name: Run functional tests
+      - &RUN_FUNCTIONAL_TESTS
+        name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
@@ -100,10 +112,7 @@ jobs:
         shell: netbsd {0}
 
     steps:
-      - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v5
-        with:
-          repository: bitcoin/bitcoin
+      - *CHECKOUT_BITCOIN_CORE
 
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
@@ -118,11 +127,7 @@ jobs:
           sync: 'rsync'
           copyback: false
 
-      - name: Checkout helper actions
-        uses: actions/checkout@v5
-        with:
-          sparse-checkout: .github/actions
-          path: ci/nightly
+      - *CHECKOUT_HELPER_ACTIONS
 
       - name: Build depends
         uses: ./ci/nightly/.github/actions/build-depends
@@ -131,35 +136,15 @@ jobs:
           options: "MULTIPROCESS=1 build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++"
 
       - name: Generate buildsystem
-        run: >
-          cd ${{ github.workspace }} &&
-          cmake -B build \
-            --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
-            -DBUILD_BENCH=ON \
-            -DBUILD_FUZZ_BINARY=ON \
-            -DWERROR=ON
-
-      - name: Build
-        uses: ./ci/nightly/.github/actions/build-with-ccache
-        with:
-          vm: netbsd
-
-      - name: Check 'bitcoind' executable
         run: |
           set -e
           cd ${{ github.workspace }}
-          ls -l build/bin/bitcoind
-          file build/bin/bitcoind
-          ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
+          cmake -B build \
+            --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          df -h
 
-      - name: Run test suite
-        uses: ./ci/nightly/.github/actions/run-test-suite
-        with:
-          vm: netbsd
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        run: |
-          cd ${{ github.workspace }}
-          python3.13 build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
+      - *BUILD
+      - *CHECK_BITCOIND
+      - *RUN_TEST_SUITE
+      - *RUN_FUNCTIONAL_TESTS
