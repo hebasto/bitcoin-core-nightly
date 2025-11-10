@@ -89,6 +89,11 @@ jobs:
         run: |
           set -e
           ulimit -a
+          echo "+++++++++++++++++++++++++++"
+          ulimit -n
+          ulimit -n 1024
+          ulimit -n
+          echo "+++++++++++++++++++++++++++"
           cd ${{ github.workspace }}
           while true; do
             ./build/test/functional/interface_rest.py --timeout-factor=8 || exit 1
