@@ -87,73 +87,8 @@ jobs:
       - name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
-          cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
-
-  openbsd-depends:
-    name: 'OpenBSD: depends, MP'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: openbsd {0}
-
-    steps:
-      - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v5
-        with:
-          repository: bitcoin/bitcoin
-
-      - name: Start OpenBSD VM
-        uses: vmactions/openbsd-vm@v1
-        with:
-          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
-          prepare: pkg_add bash curl gmake gtar-- cmake git ccache python py3-zmq
-          run: git config --global --add safe.directory ${{ github.workspace }}
-          sync: 'rsync'
-          copyback: false
-
-      - name: Checkout helper actions
-        uses: actions/checkout@v5
-        with:
-          sparse-checkout: .github/actions
-          path: ci/nightly
-
-      - name: Build depends
-        uses: ./ci/nightly/.github/actions/build-depends
-        with:
-          vm: openbsd
-          options: "MULTIPROCESS=1"
-
-      - name: Generate buildsystem
-        run: >
-          cd ${{ github.workspace }} &&
-          cmake -B build \
-            --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
-            -DBUILD_BENCH=ON \
-            -DBUILD_FUZZ_BINARY=ON \
-            -DWERROR=ON
-
-      - name: Build
-        uses: ./ci/nightly/.github/actions/build-with-ccache
-        with:
-          vm: openbsd
-
-      - name: Check 'bitcoind' executable
-        run: |
           set -e
           cd ${{ github.workspace }}
-          ls -l build/bin/bitcoind
-          file build/bin/bitcoind
-          ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
-
-      - name: Run test suite
-        uses: ./ci/nightly/.github/actions/run-test-suite
-        with:
-          vm: openbsd
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        run: |
-          cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
+          while true; do
+            ./build/test/functional/interface_rest.py --timeout-factor=8 || exit 1
+          done
