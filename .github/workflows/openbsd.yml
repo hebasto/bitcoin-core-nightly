@@ -88,6 +88,7 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
+          ulimit -n 1024
           ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
 
   openbsd-depends:
@@ -156,4 +157,5 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
+          ulimit -n 1024
           ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
