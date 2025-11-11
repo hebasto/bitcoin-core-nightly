@@ -31,7 +31,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v5
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 251111-doc-ucrt
 
       - name: Install dependencies
         run: |
@@ -39,7 +40,7 @@ jobs:
 
       - name: Build depends
         run: |
-          gmake -C depends -j $(nproc) HOST=${{ env.CI_HOST }} mingw32_CC=/usr/bin/${{ env.CI_HOST }}-gcc mingw32_CXX=/usr/bin/${{ env.CI_HOST }}-g++ NO_QT=1 LOG=1
+          gmake -C depends -j $(nproc) HOST=${{ env.CI_HOST }} NO_QT=1 LOG=1
 
       - name: Generate buildsystem
         run: >
@@ -79,7 +80,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v5
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 251111-doc-ucrt
 
       - name: Download built executables
         uses: actions/download-artifact@v4
