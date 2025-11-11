@@ -22,6 +22,7 @@ runs:
       run: |
         if test -d ${{ env.CCACHE_DIR }}; then
           rsync --archive --stats ${{ env.CCACHE_DIR }}/ ${{ inputs.vm }}:${{ env.CCACHE_DIR }}
+          rm -rf ${{ env.CCACHE_DIR }}
         fi
 
     - shell: ${{ inputs.vm }} {0}
@@ -40,7 +41,9 @@ runs:
         du -sh ${{ env.CCACHE_DIR }}
 
     - shell: bash -e {0}
-      run: rsync --archive --stats ${{ inputs.vm }}:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
+      run: |
+        rsync --archive --stats ${{ inputs.vm }}:${{ env.CCACHE_DIR }}/ ${{ env.CCACHE_DIR }}
+        du -sh ${{ env.CCACHE_DIR }}
 
     - shell: ${{ inputs.vm }} {0}
       run: rm -rf ${{ env.CCACHE_DIR }}
