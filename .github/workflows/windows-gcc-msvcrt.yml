@@ -22,6 +22,10 @@ jobs:
   windows-cross:
     name: 'Windows, cross-build only, MSVCRT: no GUI'
     runs-on: ubuntu-latest
+    # The package https://packages.debian.org/trixie/g++-mingw-w64-ucrt64 (v14.2.0)
+    # includes the fix for the false positive `-Wdangling-reference`.
+    # See: https://github.com/bitcoin/bitcoin/commit/fae1d99651e29341e486a10e6340335c71a2144e.
+    container: debian:trixie
 
     steps:
       - name: Checkout Bitcoin Core repo
@@ -30,9 +34,11 @@ jobs:
           repository: bitcoin/bitcoin
 
       - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get update
-          sudo apt-get install g++-mingw-w64-x86-64-posix
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates cmake curl g++-mingw-w64-x86-64-posix make patch
 
       - name: Build depends
         run: |
