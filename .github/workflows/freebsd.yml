@@ -19,8 +19,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # See https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+  # See: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
+  CMAKE_GENERATOR: 'Ninja'
 
 jobs:
   freebsd-syslibs:
@@ -31,8 +32,9 @@ jobs:
         shell: freebsd {0}
 
     steps:
-      - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v5
+      - &CHECKOUT_BITCOIN_CORE
+        name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v6
         with:
           repository: bitcoin/bitcoin
 
@@ -44,23 +46,26 @@ jobs:
           sync: 'rsync'
           copyback: false
 
-      - name: Checkout helper actions
+      - &CHECKOUT_HELPER_ACTIONS
+        name: Checkout helper actions
         uses: actions/checkout@v5
         with:
           sparse-checkout: .github/actions
           path: ci/nightly
 
       - name: Generate buildsystem
-        env:
-          CMAKE_GENERATOR: 'Ninja'
         run: |
           cd ${{ github.workspace }}
           cmake -B build -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
-      - name: Build
-        run: cmake --build ${{ github.workspace }}/build
+      - &BUILD
+        name: Build
+        run: |
+          cd ${{ github.workspace }}
+          cmake --build build
 
-      - name: Check 'bitcoind' executable
+      - &CHECK_BITCOIND
+        name: Check 'bitcoind' executable
         run: |
           set -e
           cd ${{ github.workspace }}
@@ -69,12 +74,14 @@ jobs:
           ldd build/bin/bitcoind
           ./build/bin/bitcoind -version
 
-      - name: Run test suite
+      - &RUN_TEST_SUITE
+        name: Run test suite
         uses: ./ci/nightly/.github/actions/run-test-suite
         with:
           vm: freebsd
 
-      - name: Run functional tests
+      - &RUN_FUNCTIONAL_TESTS
+        name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
@@ -88,10 +95,7 @@ jobs:
         shell: freebsd {0}
 
     steps:
-      - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v5
-        with:
-          repository: bitcoin/bitcoin
+      - *CHECKOUT_BITCOIN_CORE
 
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
@@ -101,11 +105,7 @@ jobs:
           sync: 'rsync'
           copyback: false
 
-      - name: Checkout helper actions
-        uses: actions/checkout@v5
-        with:
-          sparse-checkout: .github/actions
-          path: ci/nightly
+      - *CHECKOUT_HELPER_ACTIONS
 
       - name: Build depends
         uses: ./ci/nightly/.github/actions/build-depends
@@ -116,35 +116,15 @@ jobs:
       - name: Generate buildsystem
         env:
           CMAKE_GENERATOR: 'Ninja'
-        run: >
-          cd ${{ github.workspace }} &&
+        run: |
+          cd ${{ github.workspace }}
           cmake -B build \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
-            -DBUILD_BENCH=ON \
-            -DBUILD_FUZZ_BINARY=ON \
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON \
             `# TODO: Reenable GUI tests.` \
-            -DBUILD_GUI_TESTS=OFF \
-            -DWERROR=ON
+            -DBUILD_GUI_TESTS=OFF
 
-      - name: Build
-        run: cmake --build ${{ github.workspace }}/build
-
-      - name: Check 'bitcoind' executable
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ls -l build/bin/bitcoind
-          file build/bin/bitcoind
-          ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
-
-      - name: Run test suite
-        uses: ./ci/nightly/.github/actions/run-test-suite
-        with:
-          vm: freebsd
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        run: |
-          cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
+      - *BUILD
+      - *CHECK_BITCOIND
+      - *RUN_TEST_SUITE
+      - *RUN_FUNCTIONAL_TESTS
