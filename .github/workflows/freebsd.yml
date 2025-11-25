@@ -117,6 +117,30 @@ jobs:
         with:
           repository: bitcoin/bitcoin
 
+      - name: Clear storage space
+        shell: bash
+        run: |
+          set -o errexit -o pipefail -o xtrace
+          df --human-readable ./
+
+          echo "Removing large directories..."
+          DIRS_TO_REMOVE=(
+            "/usr/share/dotnet/"
+            "/usr/local/.ghcup/"
+            "/usr/local/share/powershell"
+            "/usr/local/share/chromium"
+            "/usr/local/lib/android"
+            "/usr/local/lib/node_modules"
+          )
+          for dir in "${DIRS_TO_REMOVE[@]}"; do
+            if [ -d "$dir" ]; then
+              echo "Removing $dir"
+              time sudo rm --recursive --force "$dir"
+            fi
+          done
+
+          df --human-readable ./
+
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
