@@ -21,7 +21,6 @@ concurrency:
 env:
   # See: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
-  CMAKE_GENERATOR: 'Ninja'
 
 jobs:
   freebsd-syslibs:
@@ -81,7 +80,10 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          cmake -B build -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          cmake -B build \
+            -DCMAKE_GENERATOR="Ninja" \
+            -DWITH_ZMQ=ON \
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
 
       - &BUILD
         name: Build
@@ -145,6 +147,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           cmake -B build \
+            -DCMAKE_GENERATOR="Ninja" \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON \
             `# TODO: Reenable GUI tests.` \
