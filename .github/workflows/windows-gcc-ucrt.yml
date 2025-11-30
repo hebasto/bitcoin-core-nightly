@@ -39,7 +39,7 @@ jobs:
 
       - name: Build depends
         run: |
-          gmake -C depends -j $(nproc) HOST=${{ env.CI_HOST }} mingw32_CC=/usr/bin/${{ env.CI_HOST }}-gcc mingw32_CXX=/usr/bin/${{ env.CI_HOST }}-g++ NO_QT=1 LOG=1
+          gmake -C depends -j $(nproc) HOST=${{ env.CI_HOST }} NO_QT=1 LOG=1
 
       - name: Generate buildsystem
         run: >
