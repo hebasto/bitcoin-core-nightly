@@ -52,7 +52,5 @@ jobs:
 
       - name: Run test suite
         working-directory: build
-        env:
-          QT_PLUGIN_PATH: '${{ github.workspace }}\build\vcpkg_installed\x64-windows\debug\Qt6\plugins'
         run: |
           ctest -j $env:NUMBER_OF_PROCESSORS --output-on-failure -C Debug
