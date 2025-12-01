@@ -43,7 +43,7 @@ jobs:
 
       - name: Generate buildsystem
         run: |
-          cmake -B build --preset vs2022 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DBUILD_BENCH=ON -DWERROR=ON
+          cmake -B build --preset vs2022 -DBUILD_BENCH=ON -DWERROR=ON
 
       - name: Build
         working-directory: build
