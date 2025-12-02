@@ -24,9 +24,10 @@ env:
   CCACHE_MAXSIZE: 300M
   # See: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
-  # TODO: Fix the excluded test and re-enable it.
-  # See: https://github.com/bitcoin/bitcoin/issues/33128.
-  FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
+  # TODO: Fix the excluded tests and re-enable them:
+  #  - feature_reindex_init.py, see: https://github.com/bitcoin/bitcoin/issues/33128
+  #  - interface_rest.py, intermittent hangs since 2025-10-23
+  FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py,interface_rest.py'
 
 jobs:
   openbsd-syslibs:
