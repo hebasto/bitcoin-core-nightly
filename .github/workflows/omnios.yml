@@ -46,6 +46,7 @@ jobs:
       - name: Start OmniOS VM
         uses: vmactions/omnios-vm@v1
         with:
+          release: 'r151054'
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
           prepare: |
             pkg list -H -o name,publisher,version > packages_before
