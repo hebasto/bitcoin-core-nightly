@@ -50,7 +50,7 @@ jobs:
             -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON \
             `# TODO: Drop -Wno-error=deprecated-declarations once https://github.com/bitcoin/bitcoin/issues/32361 is fixed.` \
-            -DAPPEND_CXXFLAGS='-Wno-error=maybe-uninitialized -Wno-error=array-bounds -Wno-error=deprecated-declarations'
+            -DAPPEND_CXXFLAGS='-Wno-error=array-bounds -Wno-error=deprecated-declarations'
 
       - name: Build
         run: cmake --build build -j $(nproc)
