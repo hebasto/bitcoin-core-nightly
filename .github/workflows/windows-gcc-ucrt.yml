@@ -35,7 +35,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          dnf install -y cmake make patch ucrt64-gcc-c++ which gawk tcl
+          dnf install -y cmake make patch ucrt64-gcc-c++ which gawk gcc tcl
 
       - name: Build depends
         run: |
