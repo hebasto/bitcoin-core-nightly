@@ -20,17 +20,17 @@ concurrency:
 
 jobs:
   alpine:
-    name: 'Alpine${{ matrix.configuration.name }}: depends, no GUI, MP'
+    name: 'Alpine${{ matrix.name }}: depends, no GUI'
     runs-on: ubuntu-latest
     container: alpine:latest
     strategy:
       fail-fast: false
       matrix:
-        configuration:
-          - name: ''
-            # See: https://github.com/bitcoin/bitcoin/pull/31829#discussion_r2217735632.
-            config-options: -DAPPEND_CXXFLAGS="-Wno-error=stringop-overflow"
-          - name: ', debug'
+        build-type: [release, debug]
+        include:
+          - build-type: release
+          - build-type: debug
+            name: ', debug'
             depends-options: DEBUG=1
             config-options: -DCMAKE_BUILD_TYPE=Debug
 
@@ -46,11 +46,11 @@ jobs:
 
       - name: Build depends
         run: |
-          gmake -C depends -j $(nproc) ${{ matrix.configuration.depends-options }} NO_QT=1 MULTIPROCESS=1 LOG=1
+          gmake -C depends -j $(nproc) ${{ matrix.depends-options }} NO_QT=1 LOG=1
 
       - name: Generate buildsystem
         run: >
-          cmake -B build ${{ matrix.configuration.config-options }} \
+          cmake -B build ${{ matrix.config-options }} \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
