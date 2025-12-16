@@ -50,18 +50,13 @@ jobs:
       - name: Clang version
         run: clang-${LLVM_VERSION} -v
 
-      - name: Generate buildsystem
-        run: >
-          cmake -B build \
-            -DCMAKE_C_COMPILER="clang-${LLVM_VERSION}" \
-            -DCMAKE_CXX_COMPILER="clang++-${LLVM_VERSION};-stdlib=${{ matrix.configuration.stdlib }}" \
-            -DBUILD_BENCH=ON \
-            -DBUILD_FUZZ_BINARY=ON \
-            -DWITH_ZMQ=ON \
-            -DWITH_USDT=ON \
-            -DWERROR=ON \
-            `# TODO: Investigate false positive warnings` \
-            -DAPPEND_CXXFLAGS='-Wno-error=unused-result'
-
-      - name: Build
-        run: cmake --build build -j 1 -t bitcoin_crypto --verbose
+      - name: Compile src/crypto/sha256.cpp
+        run: |
+          clang-${LLVM_VERSION} -stdlib=${{ matrix.configuration.stdlib }} \
+            -DENABLE_AVX2 -DENABLE_SSE41 -DENABLE_X86_SHANI \
+            -I/home/runner/work/bitcoin-core-nightly/bitcoin-core-nightly/build/src -I/home/runner/work/bitcoin-core-nightly/bitcoin-core-nightly/src \
+            -O2 -g -std=c++20 -fPIC \
+            -fdebug-prefix-map=/home/runner/work/bitcoin-core-nightly/bitcoin-core-nightly/src=. -fmacro-prefix-map=/home/runner/work/bitcoin-core-nightly/bitcoin-core-nightly/src=. \
+            -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -Wstack-protector -fstack-protector-all -fcf-protection=full -fstack-clash-protection \
+            -o /home/runner/work/bitcoin-core-nightly/bitcoin-core-nightly/src/crypto/sha256.cpp.o \
+            -c /home/runner/work/bitcoin-core-nightly/bitcoin-core-nightly/src/crypto/sha256.cpp
