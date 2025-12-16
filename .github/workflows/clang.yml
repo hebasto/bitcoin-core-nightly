@@ -20,15 +20,18 @@ concurrency:
 
 jobs:
   clang:
-    name: 'Clang-SNAPSHOT, ${{ matrix.configuration.stdlib }}: system libs, no GUI'
+    name: 'Clang-SNAPSHOT, ${{ matrix.stdlib }}: system libs, no GUI'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        configuration:
+        stdlib: [libstdc++, libc++]
+        include:
           - stdlib: libstdc++
           - stdlib: libc++
             dependencies: libc++-${LLVM_VERSION}-dev libc++abi-${LLVM_VERSION}-dev
+            # TODO: Investigate false positive warnings`
+            extra-flags: -DAPPEND_CXXFLAGS="-Wno-error=unused-result"
 
     steps:
       - name: Checkout Bitcoin Core repo
@@ -45,7 +48,7 @@ jobs:
           sudo apt-get update
           LLVM_VERSION=$(apt-cache search --names-only '^clang-[0-9]+$' | sort -V | tail -1 | cut -f1 -d" " | cut -f2 -d"-" )
           echo "LLVM_VERSION=${LLVM_VERSION}" >> "$GITHUB_ENV"
-          sudo apt-get install --no-install-recommends clang-${LLVM_VERSION} ${{ matrix.configuration.dependencies }} libboost-dev libevent-dev libsqlite3-dev libcapnp-dev capnproto libzmq3-dev systemtap-sdt-dev
+          sudo apt-get install --no-install-recommends clang-${LLVM_VERSION} ${{ matrix.dependencies }} libboost-dev libevent-dev libsqlite3-dev libcapnp-dev capnproto libzmq3-dev systemtap-sdt-dev
 
       - name: Clang version
         run: clang-${LLVM_VERSION} -v
@@ -54,7 +57,8 @@ jobs:
         run: >
           cmake -B build \
             -DCMAKE_C_COMPILER="clang-${LLVM_VERSION}" \
-            -DCMAKE_CXX_COMPILER="clang++-${LLVM_VERSION};-stdlib=${{ matrix.configuration.stdlib }}" \
+            -DCMAKE_CXX_COMPILER="clang++-${LLVM_VERSION};-stdlib=${{ matrix.stdlib }}" \
+            ${{ matrix.extra-flags }} \
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
             -DWITH_ZMQ=ON \
