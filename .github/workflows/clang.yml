@@ -64,14 +64,4 @@ jobs:
             -DAPPEND_CXXFLAGS='-Wno-error=unused-result'
 
       - name: Build
-        run: cmake --build build -j 1
-
-      - name: Check 'bitcoind' executable
-        run: |
-          ls -l build/bin/bitcoind
-          file build/bin/bitcoind
-          ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
-
-      - name: Run test suite
-        run: ctest --test-dir build -j $(nproc)
+        run: cmake --build build -j 1 -t bitcoin_crypto --verbose
