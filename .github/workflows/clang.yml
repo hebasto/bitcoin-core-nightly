@@ -62,7 +62,7 @@ jobs:
             -DWERROR=ON
 
       - name: Build
-        run: cmake --build build -j $(nproc)
+        run: cmake --build build -j 1
 
       - name: Check 'bitcoind' executable
         run: |
