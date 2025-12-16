@@ -46,11 +46,10 @@ jobs:
       - name: Start OmniOS VM
         uses: vmactions/omnios-vm@v1
         with:
-          release: 'r151054'
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
           prepare: |
             pkg list -H -o name,publisher,version > packages_before
-            pkg install cmake git gcc14 pkg-config ccache sqlite-3 python-312
+            pkg install cmake git gcc14 pkg-config ccache sqlite-3 python-313
             pkg set-publisher -g https://sfe.opencsw.org/localhostomnios localhostomnios
             pkg install libevent2
             pkg list -H -o name,publisher,version > packages_after
@@ -62,10 +61,9 @@ jobs:
       - name: Build Boost
         run: |
           cd ${{ github.workspace }}
-          curl --location --fail --output boost-1.88.0-cmake.tar.gz https://github.com/boostorg/boost/releases/download/boost-1.88.0/boost-1.88.0-cmake.tar.gz
-          tar xf boost-1.88.0-cmake.tar.gz
-          cd boost-1.88.0
-          patch -p1 < ${{ github.workspace }}/depends/patches/boost/skip_compiled_targets.patch
+          curl --location --fail --output boost-1.90.0-cmake.tar.gz https://github.com/boostorg/boost/releases/download/boost-1.90.0/boost-1.90.0-cmake.tar.gz
+          tar xf boost-1.90.0-cmake.tar.gz
+          cd boost-1.90.0
           cmake -S . -B build -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/boost" -DBOOST_INCLUDE_LIBRARIES="multi_index;signals2;test" -DBOOST_TEST_HEADERS_ONLY=ON -DBOOST_ENABLE_MPI=OFF -DBOOST_ENABLE_PYTHON=OFF -DBOOST_INSTALL_LAYOUT=system -DBUILD_TESTING=OFF -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
           cmake --install build
 
