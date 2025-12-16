@@ -61,7 +61,7 @@ jobs:
             -DWITH_USDT=ON \
             -DWERROR=ON \
             `# TODO: Investigate false positive warnings` \
-            -DAPPEND_CXXFLAGS='-DDISABLE_OPTIMIZED_SHA256 -Wno-error=unused-result'
+            -DAPPEND_CXXFLAGS='-Wno-error=unused-result'
 
       - name: Build
         run: cmake --build build -j 1
