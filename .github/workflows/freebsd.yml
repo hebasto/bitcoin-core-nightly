@@ -118,7 +118,6 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: freebsd
-          options: "MULTIPROCESS=1"
 
       - name: Generate buildsystem
         env:
