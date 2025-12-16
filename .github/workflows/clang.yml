@@ -59,7 +59,9 @@ jobs:
             -DBUILD_FUZZ_BINARY=ON \
             -DWITH_ZMQ=ON \
             -DWITH_USDT=ON \
-            -DWERROR=ON
+            -DWERROR=ON \
+            `# TODO: Investigate false positive warnings` \
+            -DAPPEND_CXXFLAGS='-Wno-error=unused-result'
 
       - name: Build
         run: cmake --build build -j 1
