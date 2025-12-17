@@ -12,7 +12,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/cache/restore@v4
+    - uses: actions/cache/restore@v5
       with:
         path: ${{ env.CCACHE_DIR }}
         key: ${{ github.job }}-ccache-${{ github.run_id }}
@@ -45,7 +45,7 @@ runs:
     - shell: ${{ inputs.vm }} {0}
       run: rm -rf ${{ env.CCACHE_DIR }}
 
-    - uses: actions/cache/save@v4
+    - uses: actions/cache/save@v5
       with:
         path: ${{ env.CCACHE_DIR }}
         key: ${{ github.job }}-ccache-${{ github.run_id }}

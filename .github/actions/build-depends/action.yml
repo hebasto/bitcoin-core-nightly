@@ -20,7 +20,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/cache/restore@v4
+    - uses: actions/cache/restore@v5
       id: restore-cache
       with:
         path: ${{ inputs.cache-dir }}
@@ -38,7 +38,7 @@ runs:
       run: rsync --archive --stats ${{ inputs.vm }}:${{ inputs.cache-dir }}/ ${{ inputs.cache-dir }}
 
     - if: steps.restore-cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: ${{ inputs.cache-dir }}
         key: ${{ steps.restore-cache.outputs.cache-primary-key }}

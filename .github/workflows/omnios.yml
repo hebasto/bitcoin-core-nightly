@@ -39,7 +39,7 @@ jobs:
 
     steps:
       - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: bitcoin/bitcoin
 
@@ -68,7 +68,7 @@ jobs:
           cmake --install build
 
       - name: Checkout helper actions
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           sparse-checkout: .github/actions
           path: ci/nightly
