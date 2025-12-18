@@ -30,8 +30,6 @@ jobs:
           - stdlib: libstdc++
           - stdlib: libc++
             dependencies: libc++-${LLVM_VERSION}-dev libc++abi-${LLVM_VERSION}-dev
-            # TODO: Investigate false positive warnings`
-            extra-flags: -DAPPEND_CXXFLAGS="-Wno-error=unused-result"
 
     steps:
       - name: Checkout Bitcoin Core repo
@@ -58,7 +56,6 @@ jobs:
           cmake -B build \
             -DCMAKE_C_COMPILER="clang-${LLVM_VERSION}" \
             -DCMAKE_CXX_COMPILER="clang++-${LLVM_VERSION};-stdlib=${{ matrix.stdlib }}" \
-            ${{ matrix.extra-flags }} \
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
             -DWITH_ZMQ=ON \
