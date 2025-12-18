@@ -35,7 +35,8 @@ jobs:
         name: Checkout Bitcoin Core repo
         uses: actions/checkout@v6
         with:
-          repository: bitcoin/bitcoin
+          repository: vasild/bitcoin
+          ref: fix_nlmsg_ok_compilation_fbsd15
 
       - &CLEAR_STORAGE_SPACE
         name: Clear unnecessary files on bloated GHA VM
