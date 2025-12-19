@@ -1,0 +1,100 @@
+name: OpenIndiana
+on:
+  pull_request:
+    paths:
+      - '.github/actions/**'
+      - '.github/workflows/openindiana.yml'
+  schedule:
+    - cron: '22 02 * * *'
+  workflow_dispatch:
+    inputs:
+      skip_functional_tests:
+        description: 'Skip functional tests'
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CCACHE_COMPILERCHECK: content
+  CCACHE_DIR: ${{ github.workspace }}/ccache
+  CCACHE_MAXSIZE: 600M
+  CCACHE_COMPRESS: 1
+  # See https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+  CI_NCPU: 4
+
+jobs:
+  openindiana:
+    name: 'OpenIndiana: system libs, no GUI'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: openindiana {0}
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v6
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Start OpenIndiana VM
+        uses: vmactions/openindiana-vm@v0
+        with:
+          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
+          prepare: |
+            pkg install developer/versioning/git
+            pkg install developer/build/cmake
+            pkg install developer/build/pkgconf
+            pkg install developer/gcc-14
+            pkg install developer/ccache
+            pkg install system/library/boost
+            pkg install library/libevent2
+            pkg install library/c++/zeromq
+            pkg install database/sqlite-3
+          run: git config --global --add safe.directory ${{ github.workspace }}
+          sync: 'rsync'
+          copyback: false
+
+      - name: Checkout helper actions
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/actions
+          path: ci/nightly
+
+      - name: Generate buildsystem
+        run: |
+          cd ${{ github.workspace }}
+          # Workaround for a bug in the FindThreads module.
+          # See: https://gitlab.kitware.com/cmake/cmake/-/issues/26063
+          export CXXFLAGS="-pthread"
+          cmake -B build --preset dev-mode \
+            -DBUILD_GUI=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
+            `# TODO: Build Cap'n Proto from source and reenable IPC.` \
+            -DENABLE_IPC=OFF \
+            -DWITH_USDT=OFF \
+            -DWERROR=ON
+
+      - name: Build
+        uses: ./ci/nightly/.github/actions/build-with-ccache
+        with:
+          vm: openindiana
+
+      - name: Check 'bitcoind' executable
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          ls -l build/bin/bitcoind
+          file build/bin/bitcoind
+          ldd build/bin/bitcoind
+          ./build/bin/bitcoind -version
+
+      - name: Run test suite
+        uses: ./ci/nightly/.github/actions/run-test-suite
+        with:
+          vm: openindiana
+          # TODO: Fix the code, then enable system_tests.
+          options: '--exclude-regex "^system_tests$"'
