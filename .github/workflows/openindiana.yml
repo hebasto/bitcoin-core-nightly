@@ -45,18 +45,69 @@ jobs:
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
           prepare: |
-            pkg install developer/versioning/git
-            pkg install developer/build/cmake
-            pkg install developer/build/pkgconf
-            pkg install developer/gcc-14
-            pkg install developer/ccache
-            pkg install system/library/boost
-            pkg install library/libevent2
-            pkg install library/c++/zeromq
-            pkg install database/sqlite-3
+            pkg list > packages_before
+            pkg install developer/versioning/git || true
+            pkg list > packages_after
+            diff -w packages_before packages_after | grep '^>' || true
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
+
+      - name: Install cmake
+        run: |
+          pkg list > packages_before
+          pkg install developer/build/cmake || true
+          pkg list > packages_after
+          diff -w packages_before packages_after | grep '^>' || true
+
+      - name: Install pkgconf
+        run: |
+          pkg list > packages_before
+          pkg install developer/build/pkgconf || true
+          pkg list > packages_after
+          diff -w packages_before packages_after | grep '^>' || true
+
+      - name: Install gcc-14
+        run: |
+          pkg list > packages_before
+          pkg install developer/gcc-14 || true
+          pkg list > packages_after
+          diff -w packages_before packages_after | grep '^>' || true
+
+      - name: Install ccache
+        run: |
+          pkg list > packages_before
+          pkg install developer/ccache || true
+          pkg list > packages_after
+          diff -w packages_before packages_after | grep '^>' || true
+
+      - name: Install boost
+        run: |
+          pkg list > packages_before
+          pkg install system/library/boost || true
+          pkg list > packages_after
+          diff -w packages_before packages_after | grep '^>' || true
+
+      - name: Install libevent2
+        run: |
+          pkg list > packages_before
+          pkg install library/libevent2 || true
+          pkg list > packages_after
+          diff -w packages_before packages_after | grep '^>' || true
+
+      - name: Install zeromq
+        run: |
+          pkg list > packages_before
+          pkg install library/c++/zeromq || true
+          pkg list > packages_after
+          diff -w packages_before packages_after | grep '^>' || true
+
+      - name: Install sqlite-3
+        run: |
+          pkg list > packages_before
+          pkg install database/sqlite-3 || true
+          pkg list > packages_after
+          diff -w packages_before packages_after | grep '^>' || true
 
       - name: Checkout helper actions
         uses: actions/checkout@v6
