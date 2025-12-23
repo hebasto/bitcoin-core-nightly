@@ -44,19 +44,34 @@ jobs:
         uses: vmactions/openindiana-vm@v0
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
-          prepare: |
-            pkg install developer/versioning/git
-            pkg install developer/build/cmake
-            pkg install developer/build/pkgconf
-            pkg install developer/gcc-14
-            pkg install developer/ccache
-            pkg install system/library/boost
-            pkg install library/libevent2
-            pkg install library/c++/zeromq
-            pkg install database/sqlite-3
+          prepare: pkg install developer/versioning/git
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
+
+      - name: Install cmake
+        run: pkg install developer/build/cmake
+
+      - name: Install pkgconf
+        run: pkg install developer/build/pkgconf
+
+      - name: Install gcc-14
+        run: pkg install developer/gcc-14
+
+      - name: Install ccache
+        run: pkg install developer/ccache
+
+      - name: Install boost
+        run: pkg install system/library/boost
+
+      - name: Install libevent2
+        run: pkg install library/libevent2
+
+      - name: Install zeromq
+        run: pkg install library/c++/zeromq
+
+      - name: Install sqlite-3
+        run: pkg install database/sqlite-3
 
       - name: Checkout helper actions
         uses: actions/checkout@v6
