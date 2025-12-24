@@ -23,8 +23,11 @@ env:
   CCACHE_DIR: ${{ github.workspace }}/ccache
   CCACHE_MAXSIZE: 600M
   CCACHE_COMPRESS: 1
-  # See https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+  # See: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
+  # TODO: Fix the excluded test and re-enable it.
+  # See: https://github.com/bitcoin/bitcoin/issues/33128.
+  FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
 
 jobs:
   openindiana:
@@ -61,6 +64,9 @@ jobs:
             pkg install developer/gcc-14
             pkg install developer/ccache
             pkg install library/c++/zeromq
+            # Functional tests dependencies. `library/python/pyzmq` is unavailable
+            # for the minimum required Python version or newer.
+            pkg install runtime/python-314
             pkg list > packages_after
             diff -w packages_before packages_after | grep '^>' || true
           run: git config --global --add safe.directory ${{ github.workspace }}
@@ -123,3 +129,9 @@ jobs:
           vm: openindiana
           # TODO: Fix the code, then enable system_tests.
           options: '--exclude-regex "^system_tests$"'
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          cd ${{ github.workspace }}
+          python3.14 ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
