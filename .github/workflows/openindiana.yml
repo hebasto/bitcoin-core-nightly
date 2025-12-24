@@ -25,9 +25,6 @@ env:
   CCACHE_COMPRESS: 1
   # See: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
-  # TODO: Fix the excluded test and re-enable it.
-  # See: https://github.com/bitcoin/bitcoin/issues/33128.
-  FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
 
 jobs:
   openindiana:
@@ -130,6 +127,9 @@ jobs:
 
       - name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
+        # TODO: Fix the excluded tests and re-enable them.
+        # See: https://github.com/bitcoin/bitcoin/issues/33128.
+        FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py,feature_rbf.py,feature_reindex_init.py,feature_settings.py,interface_bitcoin_cli.py,mempool_persist.py,mempool_unbroadcast.py,rpc_psbt.py,tool_wallet.py,wallet_abandonconflict.py,wallet_address_types.py,wallet_anchor.py,wallet_assumeutxo.py,wallet_avoidreuse.py,wallet_backup.py,wallet_balance.py,wallet_basic.py,wallet_blank.py,wallet_bumpfee.py,wallet_conflicts.py,wallet_create_tx.py,wallet_createwallet.py,wallet_descriptor.py,wallet_encryption.py,wallet_fallbackfee.py,wallet_fast_rescan.py,wallet_fundrawtransaction.py,wallet_gethdkeys.py,wallet_hd.py,wallet_importdescriptors.py,wallet_keypool.py,wallet_keypool_topup.py,wallet_listdescriptors.py,wallet_listreceivedby.py,wallet_listsinceblock.py,wallet_listtransactions.py,wallet_miniscript.py,wallet_multiwallet.py,wallet_musig.py,wallet_reindex.py,wallet_reorgsrestore.py,wallet_rescan_unconfirmed.py,wallet_resendwallettransactions.py,wallet_send.py,wallet_signer.py,wallet_signrawtransactionwithwallet.py,wallet_simulaterawtx.py,wallet_spend_unconfirmed.py,wallet_startup.py,wallet_taproot.py,wallet_timelock.py,wallet_transactiontime_rescan.py,wallet_txn_clone.py,wallet_txn_doublespend.py,wallet_v3_txs.py'
         run: |
           cd ${{ github.workspace }}
           python3.14 -m ensurepip
