@@ -44,70 +44,44 @@ jobs:
         uses: vmactions/openindiana-vm@v0
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
+          # The `pkg install` command often encounters networking issues in the CI
+          # environment. To mitigate these, the following steps have been taken:
+          # 1. Each package is installed individually.
+          # 2. `library/libevent2` and `database/sqlite-3` are already preinstalled
+          #    on the VM image, so they are skipped.
+          # 3. Installing `system/library/boost` is skipped, as it often takes
+          #    more than 60 minutes and causes a job timeout.
+          #    See the "Build Boost" step below.
           prepare: |
+            set -e
             pkg list > packages_before
-            pkg install developer/versioning/git || true
+            pkg install developer/versioning/git
+            pkg install developer/build/cmake
+            pkg install developer/build/pkgconf
+            pkg install developer/gcc-14
+            pkg install developer/ccache
+            pkg install library/c++/zeromq
             pkg list > packages_after
             diff -w packages_before packages_after | grep '^>' || true
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
-      - name: Install cmake
+      - name: Build Boost
         run: |
-          pkg list > packages_before
-          pkg install developer/build/cmake || true
-          pkg list > packages_after
-          diff -w packages_before packages_after | grep '^>' || true
-
-      - name: Install pkgconf
-        run: |
-          pkg list > packages_before
-          pkg install developer/build/pkgconf || true
-          pkg list > packages_after
-          diff -w packages_before packages_after | grep '^>' || true
-
-      - name: Install gcc-14
-        run: |
-          pkg list > packages_before
-          pkg install developer/gcc-14 || true
-          pkg list > packages_after
-          diff -w packages_before packages_after | grep '^>' || true
-
-      - name: Install ccache
-        run: |
-          pkg list > packages_before
-          pkg install developer/ccache || true
-          pkg list > packages_after
-          diff -w packages_before packages_after | grep '^>' || true
-
-      - name: Install boost
-        run: |
-          pkg list > packages_before
-          pkg install system/library/boost || true
-          pkg list > packages_after
-          diff -w packages_before packages_after | grep '^>' || true
-
-      - name: Install libevent2
-        run: |
-          pkg list > packages_before
-          pkg install library/libevent2 || true
-          pkg list > packages_after
-          diff -w packages_before packages_after | grep '^>' || true
-
-      - name: Install zeromq
-        run: |
-          pkg list > packages_before
-          pkg install library/c++/zeromq || true
-          pkg list > packages_after
-          diff -w packages_before packages_after | grep '^>' || true
-
-      - name: Install sqlite-3
-        run: |
-          pkg list > packages_before
-          pkg install database/sqlite-3 || true
-          pkg list > packages_after
-          diff -w packages_before packages_after | grep '^>' || true
+          set -e
+          wget --progress=dot:mega https://github.com/boostorg/boost/releases/download/boost-1.90.0/boost-1.90.0-cmake.tar.xz
+          tar xf boost-1.90.0-cmake.tar.xz
+          cmake -S boost-1.90.0 -B build-boost \
+            -DBOOST_INCLUDE_LIBRARIES="multi_index;signals2;test" \
+            -DBOOST_TEST_HEADERS_ONLY=ON \
+            -DBOOST_ENABLE_MPI=OFF \
+            -DBOOST_ENABLE_PYTHON=OFF \
+            -DBOOST_INSTALL_LAYOUT=system \
+            -DBUILD_TESTING=OFF \
+            -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
+          cmake --build build-boost
+          cmake --install build-boost
 
       - name: Checkout helper actions
         uses: actions/checkout@v6
