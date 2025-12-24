@@ -123,3 +123,5 @@ jobs:
           vm: openindiana
           # TODO: Fix the code, then enable system_tests.
           options: '--exclude-regex "^system_tests$"'
+
+      - run: python3.14 ./build/test/functional/wallet_send.py
