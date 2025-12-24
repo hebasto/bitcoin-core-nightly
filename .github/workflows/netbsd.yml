@@ -60,7 +60,7 @@ jobs:
             env -u PKG_PATH make -C /usr/pkgsrc/devel/capnproto/ CPPFLAGS='-DKJ_NO_EXCEPTIONS=0' install
             # Workaround for the following linker warning:
             # /usr/bin/ld: warning: libstdc++.so.9, needed by /usr/pkg/lib/libzmq.so, may conflict with libstdc++.so.7
-            env -u PKG_PATH make -C /usr/pkgsrc/net/zeromq/ CC='/usr/pkg/gcc14/bin/gcc' CXX='/usr/pkg/gcc14/bin/g++' install
+            env -u PKG_PATH make -C /usr/pkgsrc/net/zeromq/ CC='/usr/pkg/gcc14/bin/gcc' CXX='/usr/pkg/gcc14/bin/g++' CXXFLAGS='-fPIE' install
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
