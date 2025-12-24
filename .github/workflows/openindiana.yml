@@ -25,9 +25,6 @@ env:
   CCACHE_COMPRESS: 1
   # See: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
-  # TODO: Fix the excluded test and re-enable it.
-  # See: https://github.com/bitcoin/bitcoin/issues/33128.
-  FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
 
 jobs:
   openindiana:
@@ -136,4 +133,59 @@ jobs:
           python3.14 -m pip install setuptools wheel
           python3.14 -m pip install pycapnp
           python3.14 -m pip install pyzmq
-          python3.14 ./build/test/functional/test_runner.py --ci --extended -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
+          FUNCTIONAL_TESTS_EXCLUDE=""
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,feature_rbf.py"
+          # See: https://github.com/bitcoin/bitcoin/issues/33128.
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,feature_reindex_init.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,feature_settings.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,interface_bitcoin_cli.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,mempool_persist.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,mempool_unbroadcast.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,rpc_psbt.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_abandonconflict.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_address_types.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_anchor.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_assumeutxo.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_avoidreuse.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_backup.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_balance.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_basic.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_blank.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_bumpfee.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_conflicts.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_create_tx.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_createwallet.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_descriptor.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_encryption.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_fallbackfee.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_fast_rescan.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_fundrawtransaction.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_gethdkeys.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_hd.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_importdescriptors.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_keypool.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_keypool_topup.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_listdescriptors.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_listreceivedby.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_listsinceblock.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_listtransactions.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_miniscript.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_multiwallet.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_musig.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_reindex.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_reorgsrestore.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_rescan_unconfirmed.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_resendwallettransactions.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_send.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_signer.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_signrawtransactionwithwallet.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_simulaterawtx.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_spend_unconfirmed.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_startup.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_taproot.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_timelock.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_transactiontime_rescan.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_txn_clone.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_txn_doublespend.py"
+          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,wallet_v3_txs.py"
+          python3.14 ./build/test/functional/test_runner.py --ci --extended -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 --exclude $FUNCTIONAL_TESTS_EXCLUDE
