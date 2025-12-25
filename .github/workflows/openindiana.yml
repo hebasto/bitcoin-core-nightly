@@ -130,11 +130,11 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           python3.14 -m ensurepip
+          python3.14 -m pip install --upgrade pip
           python3.14 -m pip install setuptools wheel
-          python3.14 -m pip install pycapnp
+          # python3.14 -m pip install pycapnp
           python3.14 -m pip install pyzmq
-          FUNCTIONAL_TESTS_EXCLUDE=""
-          FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,feature_rbf.py"
+          FUNCTIONAL_TESTS_EXCLUDE="feature_rbf.py"
           # See: https://github.com/bitcoin/bitcoin/issues/33128.
           FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,feature_reindex_init.py"
           FUNCTIONAL_TESTS_EXCLUDE="$FUNCTIONAL_TESTS_EXCLUDE,feature_settings.py"
