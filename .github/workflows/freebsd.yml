@@ -62,7 +62,10 @@ jobs:
           cmake -B build \
             -DCMAKE_GENERATOR="Ninja" \
             -DWITH_ZMQ=ON \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
+            `# A workaround for https://github.com/bitcoin/bitcoin/pull/34093.` \
+            -DAPPEND_CXXFLAGS='-Wno-error=sign-compare' \
+            -DWERROR=ON
 
       - &BUILD
         name: Build
@@ -127,9 +130,12 @@ jobs:
           cmake -B build \
             -DCMAKE_GENERATOR="Ninja" \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON \
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             `# TODO: Reenable GUI tests.` \
-            -DBUILD_GUI_TESTS=OFF
+            -DBUILD_GUI_TESTS=OFF \
+            `# A workaround for https://github.com/bitcoin/bitcoin/pull/34093.` \
+            -DAPPEND_CXXFLAGS='-Wno-error=sign-compare' \
+            -DWERROR=ON
 
       - *BUILD
       - *CHECK_BITCOIND
