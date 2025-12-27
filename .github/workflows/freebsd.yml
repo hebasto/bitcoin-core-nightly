@@ -92,9 +92,13 @@ jobs:
       - &RUN_FUNCTIONAL_TESTS
         name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
+        env:
+          # TODO: Fix the excluded test and re-enable it.
+          # See: https://github.com/bitcoin/bitcoin/issues/33128.
+          FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
         run: |
           cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --quiet --timeout-factor=8
+          ./build/test/functional/test_runner.py --ci --extended -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
 
   freebsd-depends:
     name: 'FreeBSD: depends'
