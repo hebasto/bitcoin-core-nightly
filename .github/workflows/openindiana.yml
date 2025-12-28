@@ -100,11 +100,7 @@ jobs:
 
       - name: Build
         run: |
-          set -e
           cd ${{ github.workspace }}
-          cmake --build build -t bitcoin_crypto bitcoin_util bitcoin_consensus bitcoin_common bitcoin_node
-          # Limit parallelism to avoid OOM.
-          cmake --build build -j 1 -t bitcoin_wallet bench_bitcoin fuzz
           cmake --build build
 
       - name: Check 'bitcoind' executable
