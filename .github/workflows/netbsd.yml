@@ -48,15 +48,17 @@ jobs:
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
           prepare: |
-            /usr/sbin/pkg_info > packages_before
-            /usr/sbin/pkg_add cmake git-base gcc14 pkgconf ccache boost libevent sqlite3 zeromq python313 py313-zmq
-            /usr/sbin/pkg_info > packages_after
+            pkg_add digest libtool-base mktools cwrappers
+            pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
+            ftp https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
+            tar -xf pkgsrc.tar.xz -C /usr/
+            env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2/ replace
+            pkg_info > packages_before
+            pkg_add cmake git-base gcc14 pkgconf ccache boost libevent sqlite3 zeromq python313 py313-zmq
+            pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
             # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
             # capnproto build dependencies.
-            /usr/sbin/pkg_add digest libtool-base mktools pkgconf cwrappers
-            /usr/sbin/pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
-            git clone --depth=1 https://github.com/NetBSD/pkgsrc.git /usr/pkgsrc
             env -u PKG_PATH make -C /usr/pkgsrc/devel/capnproto/ CPPFLAGS='-DKJ_NO_EXCEPTIONS=0' install
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
@@ -124,9 +126,14 @@ jobs:
         with:
           envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
           prepare: |
-            /usr/sbin/pkg_info > packages_before
-            /usr/sbin/pkg_add bash curl gmake cmake git-base perl gcc14 pkg-config ccache python313 py313-zmq
-            /usr/sbin/pkg_info > packages_after
+            pkg_add digest libtool-base mktools cwrappers
+            pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
+            ftp https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
+            tar -xf pkgsrc.tar.xz -C /usr/
+            env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2/ replace
+            pkg_info > packages_before
+            pkg_add curl gmake cmake git-base perl gcc14 pkgconf ccache python313 py313-zmq
+            pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
