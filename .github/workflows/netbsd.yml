@@ -54,7 +54,7 @@ jobs:
             tar -xf pkgsrc.tar.xz -C /usr/
             env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2/ replace
             pkg_info > packages_before
-            pkg_add cmake git-base gcc14 pkgconf ccache boost libevent sqlite3 zeromq python313 py313-zmq
+            pkg_add cmake ninja-build git-base gcc14 pkgconf ccache boost libevent sqlite3 zeromq python313 py313-zmq
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
             # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
@@ -75,10 +75,11 @@ jobs:
         run: |
           set -e
           cd ${{ github.workspace }}
-          cmake -B build \
+          cmake -B build -G "Ninja" \
             -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" \
             -DWITH_ZMQ=ON \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
+            -DWERROR=ON
           df -h
 
       - &BUILD
@@ -132,7 +133,7 @@ jobs:
             tar -xf pkgsrc.tar.xz -C /usr/
             env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2/ replace
             pkg_info > packages_before
-            pkg_add curl gmake cmake git-base perl gcc14 pkgconf ccache python313 py313-zmq
+            pkg_add curl gmake cmake ninja-build git-base perl gcc14 pkgconf ccache python313 py313-zmq
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           run: git config --global --add safe.directory ${{ github.workspace }}
@@ -151,9 +152,10 @@ jobs:
         run: |
           set -e
           cd ${{ github.workspace }}
-          cmake -B build \
+          cmake -B build -G "Ninja" \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
+            -DWERROR=ON
           df -h
 
       - *BUILD

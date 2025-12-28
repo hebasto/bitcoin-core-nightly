@@ -59,8 +59,7 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          cmake -B build \
-            -DCMAKE_GENERATOR="Ninja" \
+          cmake -B build -G "Ninja" \
             -DWITH_ZMQ=ON \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             `# A workaround for https://github.com/bitcoin/bitcoin/pull/34093.` \
@@ -129,12 +128,9 @@ jobs:
           options: "NO_QT=1"
 
       - name: Generate buildsystem
-        env:
-          CMAKE_GENERATOR: 'Ninja'
         run: |
           cd ${{ github.workspace }}
-          cmake -B build \
-            -DCMAKE_GENERATOR="Ninja" \
+          cmake -B build -G "Ninja" \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             `# TODO: Reenable GUI tests.` \

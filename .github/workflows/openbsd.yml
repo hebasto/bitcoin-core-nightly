@@ -70,10 +70,10 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          cmake -B build \
-            -DCMAKE_GENERATOR="Ninja" \
+          cmake -B build -G "Ninja" \
             -DWITH_ZMQ=ON \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
+            -DWERROR=ON
 
       - &BUILD
         name: Build
@@ -135,10 +135,10 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          cmake -B build \
-            -DCMAKE_GENERATOR="Ninja" \
+          cmake -B build -G "Ninja" \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
+            -DWERROR=ON
 
       - *BUILD
       - *CHECK_BITCOIND

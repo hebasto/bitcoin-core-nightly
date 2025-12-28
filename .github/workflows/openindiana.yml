@@ -57,6 +57,7 @@ jobs:
             pkg list > packages_before
             pkg install developer/versioning/git
             pkg install developer/build/cmake
+            pkg install developer/build/ninja
             pkg install developer/build/pkgconf
             pkg install developer/gcc-14
             pkg install developer/ccache
@@ -92,9 +93,9 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           # Workaround for a bug in the FindThreads module.
-          # See: https://gitlab.kitware.com/cmake/cmake/-/issues/26063
+          # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           export CXXFLAGS="-pthread"
-          cmake -B build --preset dev-mode \
+          cmake -B build -G "Ninja" --preset dev-mode \
             -DBUILD_GUI=OFF \
             -DBUILD_SHARED_LIBS=OFF \
             `# TODO: Build Cap'n Proto from source and reenable IPC.` \
