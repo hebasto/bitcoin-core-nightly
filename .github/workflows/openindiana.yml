@@ -19,11 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CCACHE_COMPILERCHECK: content
-  CCACHE_DIR: ${{ github.workspace }}/ccache
-  CCACHE_MAXSIZE: 600M
-  CCACHE_COMPRESS: 1
-  # See https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+  # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
 
 jobs:
@@ -43,7 +39,6 @@ jobs:
       - name: Start OpenIndiana VM
         uses: vmactions/openindiana-vm@v0
         with:
-          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
           # The `pkg install` command often encounters networking issues in the CI
           # environment. To mitigate these, the following steps have been taken:
           # 1. Each package is installed individually.
@@ -60,7 +55,6 @@ jobs:
             pkg install developer/build/ninja
             pkg install developer/build/pkgconf
             pkg install developer/gcc-14
-            pkg install developer/ccache
             pkg install library/c++/zeromq
             pkg list > packages_after
             diff -w packages_before packages_after | grep '^>' || true
@@ -104,9 +98,9 @@ jobs:
             -DWERROR=ON
 
       - name: Build
-        uses: ./ci/nightly/.github/actions/build-with-ccache
-        with:
-          vm: openindiana
+        run: |
+          cd ${{ github.workspace }}
+          cmake --build build
 
       - name: Check 'bitcoind' executable
         run: |

@@ -19,13 +19,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CCACHE_COMPILERCHECK: content
-  CCACHE_DIR: ${{ github.workspace }}/ccache
-  CCACHE_MAXSIZE: 600M
-  # See https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+  # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
   # TODO: Fix the excluded test and re-enable it.
-  # See: https://github.com/bitcoin/bitcoin/issues/33128.
+  # See https://github.com/bitcoin/bitcoin/issues/33128.
   FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
 
 jobs:
@@ -46,7 +43,6 @@ jobs:
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
-          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
           prepare: |
             pkg_add digest libtool-base mktools cwrappers
             pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
@@ -54,7 +50,7 @@ jobs:
             tar -xf pkgsrc.tar.xz -C /usr/
             env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2/ replace
             pkg_info > packages_before
-            pkg_add cmake ninja-build git-base gcc14 pkgconf ccache boost libevent sqlite3 zeromq python313 py313-zmq
+            pkg_add cmake ninja-build git-base gcc14 pkgconf boost libevent sqlite3 zeromq python313 py313-zmq
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
             # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
@@ -84,9 +80,9 @@ jobs:
 
       - &BUILD
         name: Build
-        uses: ./ci/nightly/.github/actions/build-with-ccache
-        with:
-          vm: netbsd
+        run: |
+          cd ${{ github.workspace }}
+          cmake --build build
 
       - &CHECK_BITCOIND
         name: Check 'bitcoind' executable
@@ -125,7 +121,6 @@ jobs:
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
-          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
           prepare: |
             pkg_add digest libtool-base mktools cwrappers
             pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
@@ -133,7 +128,7 @@ jobs:
             tar -xf pkgsrc.tar.xz -C /usr/
             env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2/ replace
             pkg_info > packages_before
-            pkg_add curl gmake cmake ninja-build git-base perl gcc14 pkgconf ccache python313 py313-zmq
+            pkg_add curl gmake cmake ninja-build git-base perl gcc14 pkgconf python313 py313-zmq
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           run: git config --global --add safe.directory ${{ github.workspace }}

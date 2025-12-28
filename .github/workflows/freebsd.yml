@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # See: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
+  # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
 
 jobs:
@@ -93,7 +93,7 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         env:
           # TODO: Fix the excluded test and re-enable it.
-          # See: https://github.com/bitcoin/bitcoin/issues/33128.
+          # See https://github.com/bitcoin/bitcoin/issues/33128.
           FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
         run: |
           cd ${{ github.workspace }}

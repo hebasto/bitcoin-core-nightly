@@ -19,10 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CCACHE_COMPILERCHECK: content
-  CCACHE_DIR: ${{ github.workspace }}/ccache
-  CCACHE_MAXSIZE: 300M
-  # See: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
+  # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
   # TODO: Fix the excluded tests and re-enable them:
   #  - feature_reindex_init.py, see: https://github.com/bitcoin/bitcoin/issues/33128
@@ -51,9 +48,8 @@ jobs:
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
         with:
-          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
           prepare: |
-            pkg_add -v cmake ninja git ccache boost libevent sqlite3 zeromq python py3-zmq
+            pkg_add -v cmake ninja git boost libevent sqlite3 zeromq python py3-zmq
             git clone --depth=1 https://codeberg.org/OpenBSD/ports.git /usr/ports
             make -C /usr/ports/devel/capnproto/ install
           run: git config --global --add safe.directory ${{ github.workspace }}
@@ -77,9 +73,9 @@ jobs:
 
       - &BUILD
         name: Build
-        uses: ./ci/nightly/.github/actions/build-with-ccache
-        with:
-          vm: openbsd
+        run: |
+          cd ${{ github.workspace }}
+          cmake --build build
 
       - &CHECK_BITCOIND
         name: Check 'bitcoind' executable
@@ -119,8 +115,7 @@ jobs:
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
         with:
-          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE'
-          prepare: pkg_add bash curl gmake gtar-- cmake ninja git ccache python py3-zmq
+          prepare: pkg_add bash curl gmake gtar-- cmake ninja git python py3-zmq
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
