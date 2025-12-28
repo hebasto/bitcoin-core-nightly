@@ -21,9 +21,6 @@ concurrency:
 env:
   # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
-  # TODO: Fix the excluded test and re-enable it.
-  # See https://github.com/bitcoin/bitcoin/issues/33128.
-  FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
 
 jobs:
   netbsd-syslibs:
@@ -104,9 +101,13 @@ jobs:
       - &RUN_FUNCTIONAL_TESTS
         name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
+        env:
+          # TODO: Fix the excluded tests and re-enable them.
+          # See https://github.com/bitcoin/bitcoin/issues/33128.
+          FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_pruning.py,feature_reindex_init.py'
         run: |
           cd ${{ github.workspace }}
-          python3.13 build/test/functional/test_runner.py --ci -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
+          python3.13 build/test/functional/test_runner.py --ci --extended -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
 
   netbsd-depends:
     name: 'NetBSD: depends'
