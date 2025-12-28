@@ -90,7 +90,8 @@ jobs:
       - name: Build
         run: |
           cd ${{ github.workspace }}
-          cmake --build build
+          # Limit parallelism to avoid OOM.
+          cmake --build build -j 2
 
       - name: Check 'bitcoind' executable
         run: |
