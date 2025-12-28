@@ -19,14 +19,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CCACHE_COMPILERCHECK: content
-  CCACHE_DIR: ${{ github.workspace }}/ccache
-  CCACHE_MAXSIZE: 600M
-  CCACHE_COMPRESS: 1
-  # See https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
+  # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
   # TODO: Fix the excluded test and re-enable it.
-  # See: https://github.com/bitcoin/bitcoin/issues/33128.
+  # See https://github.com/bitcoin/bitcoin/issues/33128.
   FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
 
 jobs:
@@ -46,10 +42,9 @@ jobs:
       - name: Start OmniOS VM
         uses: vmactions/omnios-vm@v1
         with:
-          envs: 'CCACHE_COMPILERCHECK CCACHE_DIR CCACHE_MAXSIZE CCACHE_COMPRESS'
           prepare: |
             pkg list -H -o name,publisher,version > packages_before
-            pkg install cmake git gcc14 pkg-config ccache sqlite-3 python-313
+            pkg install cmake ninja git gcc14 pkg-config sqlite-3 python-313
             pkg set-publisher -g https://sfe.opencsw.org/localhostomnios localhostomnios
             pkg install libevent2
             pkg list -H -o name,publisher,version > packages_after
@@ -84,15 +79,19 @@ jobs:
           cd ${{ github.workspace }}
           export PKG_CONFIG_PATH="/usr/gnu/lib/amd64/pkgconfig"  # For libevent2 package.
           # Workaround for a bug in the FindThreads module.
-          # See: https://gitlab.kitware.com/cmake/cmake/-/issues/26063
+          # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           export CXXFLAGS="-pthread"
-          # TODO: Build Cap'n Proto from source and reenable IPC.
-          cmake -B build -DENABLE_IPC=OFF -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          cmake -B build -G "Ninja" \
+            `# TODO: Build Cap'n Proto from source and reenable IPC.` \
+            -DENABLE_IPC=OFF \
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
+            -DWERROR=ON
 
       - name: Build
-        uses: ./ci/nightly/.github/actions/build-with-ccache
-        with:
-          vm: omnios
+        run: |
+          cd ${{ github.workspace }}
+          # Limit parallelism to avoid OOM.
+          cmake --build build -j 2
 
       - name: Check 'bitcoind' executable
         run: |
