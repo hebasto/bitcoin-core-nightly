@@ -70,7 +70,7 @@ jobs:
       - name: Build Boost
         run: |
           set -e
-          wget --progress=dot:mega https://github.com/boostorg/boost/releases/download/boost-1.90.0/boost-1.90.0-cmake.tar.xz
+          curl --location --fail --output boost-1.90.0-cmake.tar.xz https://github.com/boostorg/boost/releases/download/boost-1.90.0/boost-1.90.0-cmake.tar.xz
           tar xf boost-1.90.0-cmake.tar.xz
           cmake -S boost-1.90.0 -B build-boost \
             -DBOOST_INCLUDE_LIBRARIES="multi_index;signals2;test" \
@@ -80,7 +80,6 @@ jobs:
             -DBOOST_INSTALL_LAYOUT=system \
             -DBUILD_TESTING=OFF \
             -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
-          cmake --build build-boost
           cmake --install build-boost
 
       - name: Checkout helper actions

@@ -60,12 +60,18 @@ jobs:
 
       - name: Build Boost
         run: |
-          cd ${{ github.workspace }}
-          curl --location --fail --output boost-1.90.0-cmake.tar.gz https://github.com/boostorg/boost/releases/download/boost-1.90.0/boost-1.90.0-cmake.tar.gz
-          tar xf boost-1.90.0-cmake.tar.gz
-          cd boost-1.90.0
-          cmake -S . -B build -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/boost" -DBOOST_INCLUDE_LIBRARIES="multi_index;signals2;test" -DBOOST_TEST_HEADERS_ONLY=ON -DBOOST_ENABLE_MPI=OFF -DBOOST_ENABLE_PYTHON=OFF -DBOOST_INSTALL_LAYOUT=system -DBUILD_TESTING=OFF -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
-          cmake --install build
+          set -e
+          curl --location --fail --output boost-1.90.0-cmake.tar.xz https://github.com/boostorg/boost/releases/download/boost-1.90.0/boost-1.90.0-cmake.tar.xz
+          tar xf boost-1.90.0-cmake.tar.xz
+          cmake -S boost-1.90.0 -B build-boost \
+            -DBOOST_INCLUDE_LIBRARIES="multi_index;signals2;test" \
+            -DBOOST_TEST_HEADERS_ONLY=ON \
+            -DBOOST_ENABLE_MPI=OFF \
+            -DBOOST_ENABLE_PYTHON=OFF \
+            -DBOOST_INSTALL_LAYOUT=system \
+            -DBUILD_TESTING=OFF \
+            -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
+          cmake --install build-boost
 
       - name: Checkout helper actions
         uses: actions/checkout@v6
@@ -76,7 +82,6 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          export Boost_ROOT="${{ github.workspace }}/boost"
           export PKG_CONFIG_PATH="/usr/gnu/lib/amd64/pkgconfig"  # For libevent2 package.
           # Workaround for a bug in the FindThreads module.
           # See: https://gitlab.kitware.com/cmake/cmake/-/issues/26063
