@@ -41,19 +41,10 @@ jobs:
         uses: vmactions/netbsd-vm@v1
         with:
           prepare: |
-            pkg_add digest libtool-base mktools cwrappers
-            pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
-            ftp https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
-            tar -xf pkgsrc.tar.xz -C /usr/
-            env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2/ replace
             pkg_info > packages_before
-            pkg_add cmake ninja-build git-base gcc14 pkgconf boost libevent sqlite3 zeromq python313 py313-zmq
+            pkg_add cmake ninja-build gcc14 pkgconf boost libevent python313
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
-            # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
-            # capnproto build dependencies.
-            env -u PKG_PATH make -C /usr/pkgsrc/devel/capnproto/ CPPFLAGS='-DKJ_NO_EXCEPTIONS=0' install
-          run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
@@ -70,6 +61,8 @@ jobs:
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
             -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" \
+            -DENABLE_WALLET=OFF \
+            -DENABLE_IPC=OFF \
             -DWERROR=ON
           df -h
 
@@ -127,16 +120,10 @@ jobs:
         uses: vmactions/netbsd-vm@v1
         with:
           prepare: |
-            pkg_add digest libtool-base mktools cwrappers
-            pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
-            ftp https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
-            tar -xf pkgsrc.tar.xz -C /usr/
-            env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2/ replace
             pkg_info > packages_before
-            pkg_add curl gmake cmake ninja-build git-base perl gcc14 pkgconf python313 py313-zmq
+            pkg_add curl gmake cmake ninja-build perl gcc14 pkgconf python313
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
-          run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
@@ -154,6 +141,7 @@ jobs:
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
+            -DENABLE_IPC=OFF \
             -DWERROR=ON
           df -h
 
