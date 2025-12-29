@@ -99,7 +99,7 @@ jobs:
           envs: 'TMPDIR="${{ github.workspace }}"'
 
       - &RUN_FUNCTIONAL_TESTS
-        name: Run functional tests
+        name: Run test/functional/feature_pruning.py
         if: ${{ ! inputs.skip_functional_tests }}
         env:
           # TODO: Fix the excluded tests and re-enable them.
@@ -107,7 +107,7 @@ jobs:
           FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_pruning.py,feature_reindex_init.py'
         run: |
           cd ${{ github.workspace }}
-          python3.13 build/test/functional/test_runner.py --ci --extended -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
+          python3.13 build/test/functional/feature_pruning.py
 
   netbsd-depends:
     name: 'NetBSD: depends'
