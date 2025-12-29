@@ -70,8 +70,6 @@ jobs:
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
             -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" \
-            -DWITH_ZMQ=ON \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON
           df -h
 
@@ -148,7 +146,7 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: netbsd
-          options: "build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++"
+          options: "NO_WALLET=1 NO_ZMQ=1 build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++"
 
       - name: Generate buildsystem
         run: |
@@ -156,7 +154,6 @@ jobs:
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON
           df -h
 
