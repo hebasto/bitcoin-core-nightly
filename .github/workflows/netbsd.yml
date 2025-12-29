@@ -45,6 +45,9 @@ jobs:
             pkg_add cmake ninja-build gcc14 pkgconf boost libevent python313
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
+          run: |
+            mkdir "${{ github.workspace }}/${{ github.run_id }}"
+            export TMPDIR="${{ github.workspace }}/${{ github.run_id }}"
           sync: 'rsync'
           copyback: false
 
@@ -88,7 +91,6 @@ jobs:
         uses: ./ci/nightly/.github/actions/run-test-suite
         with:
           vm: netbsd
-          envs: 'TMPDIR="${{ github.workspace }}"'
 
       - &RUN_FUNCTIONAL_TESTS
         name: Run test/functional/feature_pruning.py
