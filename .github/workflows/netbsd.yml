@@ -47,7 +47,6 @@ jobs:
             pkg_add cmake ninja-build gcc14 pkgconf boost libevent sqlite3 python313
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
-          run: mkdir "$TMPDIR"
           sync: 'rsync'
           copyback: false
 
@@ -106,7 +105,6 @@ jobs:
             pkg_add curl gmake cmake ninja-build perl gcc14 pkgconf python313
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
-          run: mkdir "$TMPDIR"
           sync: 'rsync'
           copyback: false
 
