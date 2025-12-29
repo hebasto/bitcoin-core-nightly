@@ -42,6 +42,7 @@ jobs:
       - name: Start OmniOS VM
         uses: vmactions/omnios-vm@v1
         with:
+          mem: 12288
           prepare: |
             pkg list -H -o name,publisher,version > packages_before
             pkg install cmake ninja git gcc14 pkg-config sqlite-3 python-313
@@ -90,8 +91,7 @@ jobs:
       - name: Build
         run: |
           cd ${{ github.workspace }}
-          # Limit parallelism to avoid OOM.
-          cmake --build build -j 2
+          cmake --build build
 
       - name: Check 'bitcoind' executable
         run: |
