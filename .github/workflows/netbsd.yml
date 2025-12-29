@@ -107,7 +107,13 @@ jobs:
           FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_pruning.py,feature_reindex_init.py'
         run: |
           cd ${{ github.workspace }}
+          echo "+++++++++++++++++++++++++++++++++++++++++++++"
+          df -h .
+          echo "+++++++++++++++++++++++++++++++++++++++++++++"
           python3.13 build/test/functional/feature_pruning.py
+          echo "+++++++++++++++++++++++++++++++++++++++++++++"
+          df -h .
+          echo "+++++++++++++++++++++++++++++++++++++++++++++"
 
   netbsd-depends:
     name: 'NetBSD: depends'
