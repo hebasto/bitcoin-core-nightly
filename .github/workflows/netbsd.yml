@@ -61,6 +61,7 @@ jobs:
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
             -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" \
+            -DBUILD_TESTS=OFF \
             -DENABLE_WALLET=OFF \
             -DENABLE_IPC=OFF \
             -DWERROR=ON
@@ -141,6 +142,7 @@ jobs:
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
+            -DBUILD_TESTS=OFF \
             -DENABLE_IPC=OFF \
             -DWERROR=ON
           df -h
