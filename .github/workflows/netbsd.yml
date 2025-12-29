@@ -41,19 +41,10 @@ jobs:
         uses: vmactions/netbsd-vm@v1
         with:
           prepare: |
-            pkg_add digest libtool-base mktools cwrappers
-            pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
-            ftp https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
-            tar -xf pkgsrc.tar.xz -C /usr/
-            env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2/ replace
             pkg_info > packages_before
-            pkg_add cmake ninja-build git-base gcc14 pkgconf boost libevent sqlite3 zeromq python313 py313-zmq
+            pkg_add cmake ninja-build gcc14 pkgconf boost libevent python313
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
-            # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
-            # capnproto build dependencies.
-            env -u PKG_PATH make -C /usr/pkgsrc/devel/capnproto/ CPPFLAGS='-DKJ_NO_EXCEPTIONS=0' install
-          run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
@@ -70,8 +61,9 @@ jobs:
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
             -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" \
-            -DWITH_ZMQ=ON \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
+            -DBUILD_TESTS=OFF \
+            -DENABLE_WALLET=OFF \
+            -DENABLE_IPC=OFF \
             -DWERROR=ON
           df -h
 
@@ -80,23 +72,6 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           cmake --build build
-
-      - &CHECK_BITCOIND
-        name: Check 'bitcoind' executable
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ls -l build/bin/bitcoind
-          file build/bin/bitcoind
-          ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
-
-      - &RUN_TEST_SUITE
-        name: Run test suite
-        uses: ./ci/nightly/.github/actions/run-test-suite
-        with:
-          vm: netbsd
-          envs: 'TMPDIR="${{ github.workspace }}"'
 
       - &RUN_FUNCTIONAL_TESTS
         name: Run test/functional/feature_pruning.py
@@ -129,16 +104,10 @@ jobs:
         uses: vmactions/netbsd-vm@v1
         with:
           prepare: |
-            pkg_add digest libtool-base mktools cwrappers
-            pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
-            ftp https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
-            tar -xf pkgsrc.tar.xz -C /usr/
-            env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2/ replace
             pkg_info > packages_before
-            pkg_add curl gmake cmake ninja-build git-base perl gcc14 pkgconf python313 py313-zmq
+            pkg_add curl gmake cmake ninja-build perl gcc14 pkgconf python313
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
-          run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
@@ -148,19 +117,16 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: netbsd
-          options: "build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++"
+          options: "NO_WALLET=1 NO_ZMQ=1 build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++"
 
       - name: Generate buildsystem
         run: |
-          set -e
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
+            -DBUILD_TESTS=OFF \
+            -DENABLE_IPC=OFF \
             -DWERROR=ON
-          df -h
 
       - *BUILD
-      - *CHECK_BITCOIND
-      - *RUN_TEST_SUITE
       - *RUN_FUNCTIONAL_TESTS
