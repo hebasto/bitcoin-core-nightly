@@ -46,8 +46,8 @@ jobs:
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           run: |
-            mkdir "${{ github.workspace }}/${{ github.run_id }}"
-            export TMPDIR="${{ github.workspace }}/${{ github.run_id }}"
+            mkdir "${{ github.workspace }}/ci_tmp"
+            export TMPDIR="${{ github.workspace }}/ci_tmp"
           sync: 'rsync'
           copyback: false
 
@@ -93,7 +93,7 @@ jobs:
           vm: netbsd
 
       - &RUN_FUNCTIONAL_TESTS
-        name: Run test/functional/feature_pruning.py
+        name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         env:
           # TODO: Fix the excluded tests and re-enable them.
@@ -101,13 +101,7 @@ jobs:
           FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_pruning.py,feature_reindex_init.py'
         run: |
           cd ${{ github.workspace }}
-          echo "+++++++++++++++++++++++++++++++++++++++++++++"
-          df -h .
-          echo "+++++++++++++++++++++++++++++++++++++++++++++"
-          python3.13 build/test/functional/feature_pruning.py
-          echo "+++++++++++++++++++++++++++++++++++++++++++++"
-          df -h .
-          echo "+++++++++++++++++++++++++++++++++++++++++++++"
+          python3.13 build/test/functional/test_runner.py --ci --extended -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
 
   netbsd-depends:
     name: 'NetBSD: depends'
@@ -127,6 +121,9 @@ jobs:
             pkg_add curl gmake cmake ninja-build perl gcc14 pkgconf python313
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
+          run: |
+            mkdir "${{ github.workspace }}/ci_tmp"
+            export TMPDIR="${{ github.workspace }}/ci_tmp"
           sync: 'rsync'
           copyback: false
 
@@ -140,14 +137,12 @@ jobs:
 
       - name: Generate buildsystem
         run: |
-          set -e
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
             -DBUILD_TESTS=OFF \
             -DENABLE_IPC=OFF \
             -DWERROR=ON
-          df -h
 
       - *BUILD
       - *CHECK_BITCOIND
