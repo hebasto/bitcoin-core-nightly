@@ -77,12 +77,13 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          export PKG_CONFIG_PATH="/usr/gnu/lib/amd64/pkgconfig"  # For libevent2 package.
           # Workaround for a bug in the FindThreads module.
           # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           export CXXFLAGS="-pthread"
           cmake -B build -G "Ninja" \
-            `# TODO: Build Cap'n Proto from source and reenable IPC.` \
+            `# Required for finding the libevent2 package.` \
+            -DCMAKE_PREFIX_PATH=/usr/gnu/lib/amd64/pkgconfig \
+            `# TODO: Build Cap'n Proto from source and re-enable IPC.` \
             -DENABLE_IPC=OFF \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON
