@@ -79,16 +79,10 @@ jobs:
         env:
           # TODO: Fix the excluded tests and re-enable them.
           # See https://github.com/bitcoin/bitcoin/issues/33128.
-          FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_pruning.py,feature_reindex_init.py'
+          FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
         run: |
           cd ${{ github.workspace }}
-          echo "+++++++++++++++++++++++++++++++++++++++++++++"
-          df -h .
-          echo "+++++++++++++++++++++++++++++++++++++++++++++"
-          python3.13 build/test/functional/feature_pruning.py
-          echo "+++++++++++++++++++++++++++++++++++++++++++++"
-          df -h .
-          echo "+++++++++++++++++++++++++++++++++++++++++++++"
+          python3.13 ./build/test/functional/feature_pruning.py --tmpdir $(pwd)/tmp
 
   netbsd-depends:
     name: 'NetBSD: depends'
