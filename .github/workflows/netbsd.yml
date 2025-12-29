@@ -19,6 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  TMPDIR: ${{ github.workspace }}/ci_tmp
   # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
 
@@ -40,11 +41,13 @@ jobs:
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
+          envs: 'TMPDIR'
           prepare: |
             pkg_info > packages_before
             pkg_add cmake ninja-build gcc14 pkgconf boost libevent sqlite3 python313
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
+          run: mkdir "$TMPDIR"
           sync: 'rsync'
           copyback: false
 
@@ -82,7 +85,7 @@ jobs:
           FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
         run: |
           cd ${{ github.workspace }}
-          python3.13 ./build/test/functional/feature_pruning.py --tmpdir $(pwd)/tmp
+          python3.13 ./build/test/functional/test_runner.py --ci --extended -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
 
   netbsd-depends:
     name: 'NetBSD: depends'
@@ -97,11 +100,13 @@ jobs:
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
+          envs: 'TMPDIR'
           prepare: |
             pkg_info > packages_before
             pkg_add curl gmake cmake ninja-build perl gcc14 pkgconf python313
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
+          run: mkdir "$TMPDIR"
           sync: 'rsync'
           copyback: false
 
