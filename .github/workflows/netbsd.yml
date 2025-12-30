@@ -77,14 +77,12 @@ jobs:
 
       - name: Generate buildsystem
         run: |
-          set -e
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
             -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" \
             -DWITH_ZMQ=ON \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON
-          df -h
 
       - &BUILD
         name: Build
@@ -166,13 +164,11 @@ jobs:
 
       - name: Generate buildsystem
         run: |
-          set -e
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
             --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON
-          df -h
 
       - *BUILD
       - *CHECK_BITCOIND
