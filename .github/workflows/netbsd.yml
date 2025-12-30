@@ -41,19 +41,29 @@ jobs:
         uses: vmactions/netbsd-vm@v1
         with:
           prepare: |
-            pkg_add digest libtool-base mktools cwrappers
             pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
-            ftp https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
-            tar -xf pkgsrc.tar.xz -C /usr/
-            env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2/ replace
+            cd /usr
+            cvs -danoncvs@anoncvs.NetBSD.org:/cvsroot checkout -P \
+                pkgsrc/devel/pcre2 \
+                pkgsrc/devel/capnproto \
+                pkgsrc/archivers/bzip2 \
+                pkgsrc/devel/libtool-base \
+                pkgsrc/devel/pkgconf \
+                pkgsrc/devel/zlib \
+                pkgsrc/lang/gcc15 \
+                pkgsrc/mk \
+                pkgsrc/pkgtools \
+                pkgsrc/security/openssl \
+                pkgsrc/sysutils/install-sh/files
+          run: |
+            pkg_add digest libtool-base mktools cwrappers
+            env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2 replace
             pkg_info > packages_before
             pkg_add cmake ninja-build git-base gcc14 pkgconf boost libevent sqlite3 zeromq python313 py313-zmq
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
             # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
-            # capnproto build dependencies.
-            env -u PKG_PATH make -C /usr/pkgsrc/devel/capnproto/ CPPFLAGS='-DKJ_NO_EXCEPTIONS=0' install
-          run: git config --global --add safe.directory ${{ github.workspace }}
+            env -u PKG_PATH make -C /usr/pkgsrc/devel/capnproto CPPFLAGS='-DKJ_NO_EXCEPTIONS=0' install
           sync: 'rsync'
           copyback: false
 
@@ -102,9 +112,9 @@ jobs:
         name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         env:
-          # TODO: Fix the excluded tests and re-enable them.
+          # TODO: Fix the excluded test and re-enable it.
           # See https://github.com/bitcoin/bitcoin/issues/33128.
-          FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_pruning.py,feature_reindex_init.py'
+          FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
         run: |
           cd ${{ github.workspace }}
           python3.13 build/test/functional/test_runner.py --ci --extended -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
@@ -123,16 +133,24 @@ jobs:
         uses: vmactions/netbsd-vm@v1
         with:
           prepare: |
-            pkg_add digest libtool-base mktools cwrappers
             pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
-            ftp https://cdn.netbsd.org/pub/pkgsrc/stable/pkgsrc.tar.xz
-            tar -xf pkgsrc.tar.xz -C /usr/
-            env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2/ replace
+            cd /usr
+            cvs -danoncvs@anoncvs.NetBSD.org:/cvsroot checkout -P \
+                pkgsrc/devel/pcre2 \
+                pkgsrc/archivers/bzip2 \
+                pkgsrc/devel/libtool-base \
+                pkgsrc/devel/zlib \
+                pkgsrc/lang/gcc15 \
+                pkgsrc/mk \
+                pkgsrc/pkgtools \
+                pkgsrc/sysutils/install-sh/files
+          run: |
+            pkg_add digest libtool-base mktools cwrappers
+            env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2 replace
             pkg_info > packages_before
             pkg_add curl gmake cmake ninja-build git-base perl gcc14 pkgconf python313 py313-zmq
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
-          run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
