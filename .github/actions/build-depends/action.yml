@@ -28,14 +28,14 @@ runs:
 
     - if: steps.restore-cache.outputs.cache-hit == 'true'
       shell: bash -e {0}
-      run: rsync --archive --stats ${{ inputs.cache-dir }}/ ${{ inputs.vm }}:${{ inputs.cache-dir }}
+      run: rsync -rlptD --stats ${{ inputs.cache-dir }}/ ${{ inputs.vm }}:${{ inputs.cache-dir }}
 
     - shell: ${{ inputs.vm }} {0}
       run: gmake -C ${{ github.workspace }}/depends -j ${{ env.CI_NCPU }} ${{ inputs.host }} BASE_CACHE=${{ inputs.cache-dir }} ${{ inputs.options }} LOG=1
 
     - if: steps.restore-cache.outputs.cache-hit != 'true'
       shell: bash -e {0}
-      run: rsync --archive --stats ${{ inputs.vm }}:${{ inputs.cache-dir }}/ ${{ inputs.cache-dir }}
+      run: rsync -rlptD --stats ${{ inputs.vm }}:${{ inputs.cache-dir }}/ ${{ inputs.cache-dir }}
 
     - if: steps.restore-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v5
