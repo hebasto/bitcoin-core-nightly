@@ -41,13 +41,6 @@ jobs:
           prepare: pkg install -y curl cmake-core ninja pkgconf boost-libs libevent sqlite3 capnproto libzmq4 python3 net/py-pyzmq databases/py-sqlite3
           sync: no
 
-      - &CHECKOUT_HELPER_ACTIONS
-        name: Checkout helper actions
-        uses: actions/checkout@v6
-        with:
-          sparse-checkout: .github/actions
-          path: ci/nightly
-
       - &FETCH_SOURCE
         name: Fetch source tarball
         run: |
@@ -120,10 +113,8 @@ jobs:
 
       - *FETCH_SOURCE
 
-      - *CHECKOUT_HELPER_ACTIONS
-
       - name: Build depends
-        uses: ./ci/nightly/.github/actions/build-depends
+        uses: hebasto/bitcoin-core-nightly/.github/actions/build-depends@main
         with:
           vm: freebsd
           # TODO: Fix a linking error.
