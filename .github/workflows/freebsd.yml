@@ -31,12 +31,6 @@ jobs:
         shell: freebsd {0}
 
     steps:
-      - &CHECKOUT_BITCOIN_CORE
-        name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v6
-        with:
-          repository: bitcoin/bitcoin
-
       - &CLEAR_STORAGE_SPACE
         name: Clear unnecessary files on bloated GHA VM
         uses: bitcoin/bitcoin/.github/actions/clear-files@master
@@ -44,10 +38,8 @@ jobs:
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: pkg install -y curl cmake-core ninja git pkgconf boost-libs libevent sqlite3 capnproto libzmq4 python3 net/py-pyzmq databases/py-sqlite3
-          run: git config --global --add safe.directory ${{ github.workspace }}
-          sync: 'rsync'
-          copyback: false
+          prepare: pkg install -y curl cmake-core ninja pkgconf boost-libs libevent sqlite3 capnproto libzmq4 python3 net/py-pyzmq databases/py-sqlite3
+          sync: no
 
       - &CHECKOUT_HELPER_ACTIONS
         name: Checkout helper actions
@@ -55,6 +47,14 @@ jobs:
         with:
           sparse-checkout: .github/actions
           path: ci/nightly
+
+      - &FETCH_SOURCE
+        name: Fetch source tarball
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          curl --location --fail --output source.tar.gz https://github.com/bitcoin/bitcoin/archive/refs/heads/master.tar.gz
+          tar xf source.tar.gz --no-same-owner --strip-components=1
 
       - name: Generate buildsystem
         run: |
@@ -110,16 +110,15 @@ jobs:
         shell: freebsd {0}
 
     steps:
-      - *CHECKOUT_BITCOIN_CORE
       - *CLEAR_STORAGE_SPACE
 
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: pkg install -y bash curl gmake cmake-core ninja git pkgconf bison python3 net/py-pyzmq databases/py-sqlite3
-          run: git config --global --add safe.directory ${{ github.workspace }}
-          sync: 'rsync'
-          copyback: false
+          prepare: pkg install -y bash curl gmake cmake-core ninja pkgconf bison python3 net/py-pyzmq databases/py-sqlite3
+          sync: no
+
+      - *FETCH_SOURCE
 
       - *CHECKOUT_HELPER_ACTIONS
 
