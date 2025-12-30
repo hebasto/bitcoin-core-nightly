@@ -54,7 +54,7 @@ jobs:
           set -e
           cd ${{ github.workspace }}
           curl --location --fail --output master.tar.gz https://github.com/bitcoin/bitcoin/archive/refs/heads/master.tar.gz
-          tar xf master.tar.gz
+          tar xf master.tar.gz --no-same-owner
 
       - name: Generate buildsystem
         run: |
