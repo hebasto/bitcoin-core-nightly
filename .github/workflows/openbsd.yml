@@ -48,10 +48,7 @@ jobs:
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
         with:
-          prepare: |
-            pkg_add -v cmake ninja git boost libevent sqlite3 zeromq python py3-zmq
-            git clone --depth=1 https://codeberg.org/OpenBSD/ports.git /usr/ports
-            make -C /usr/ports/devel/capnproto/ install
+          prepare: pkg_add -v cmake ninja git boost libevent sqlite3 capnproto zeromq python py3-zmq
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
