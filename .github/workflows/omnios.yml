@@ -44,6 +44,7 @@ jobs:
         with:
           mem: 12288
           prepare: |
+            set -e
             pkg list -H -o name,publisher,version > packages_before
             pkg install cmake ninja git gcc14 pkg-config sqlite-3 python-313
             pkg set-publisher -g https://sfe.opencsw.org/localhostomnios localhostomnios
