@@ -2,7 +2,6 @@ name: Windows, GCC, MSVCRT
 on:
   pull_request:
     paths:
-      - '.github/actions/**'
       - '.github/workflows/windows-gcc-msvcrt.yml'
   schedule:
     - cron: '22 02 * * *'
