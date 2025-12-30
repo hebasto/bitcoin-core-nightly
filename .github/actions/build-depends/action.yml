@@ -12,6 +12,10 @@ inputs:
     description: "The built packages cache directory."
     required: false
     default: "${{ github.workspace }}/depends/built"
+  cache-tag:
+    description: "The tag for GHA cache entry."
+    required: false
+    default: "${{ github.job }}"
   options:
     description: "Additional depends build options."
     required: false
@@ -24,7 +28,7 @@ runs:
       id: restore-cache
       with:
         path: ${{ inputs.cache-dir }}
-        key: ${{ github.job }}-depends-${{ hashFiles('depends/**') }}
+        key: ${{ inputs.cache-tag }}-depends-${{ hashFiles('depends/**') }}
 
     - if: steps.restore-cache.outputs.cache-hit == 'true'
       shell: bash -e {0}
