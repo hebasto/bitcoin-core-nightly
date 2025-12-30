@@ -6,11 +6,11 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 
 ## Modern BSD Derivatives
 
-| Operating System | Status | Build with System Libs | Build with Depends |
-|------------------|--------|------------------------|--------------------|
-| [FreeBSD](https://www.freebsd.org/) | [![FreeBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml?query=event%3Aschedule) | Qt - not installed <br> USDT - N/A | Release |
-| [OpenBSD](https://www.openbsd.org/) | [![OpenBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml?query=event%3Aschedule) | Qt - not installed <br> USDT - N/A | Release |
-| [NetBSD](https://netbsd.org/) | [![NetBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml?query=event%3Aschedule) | Qt - not installed <br> USDT - N/A | Release |
+| Operating System | Releases | Status | Build with System Libs | Build with Depends |
+|------------------|:--------:|--------|------------------------|--------------------|
+| [FreeBSD](https://www.freebsd.org/) | 15.0 | [![FreeBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml?query=event%3Aschedule) | Qt - not installed <br> USDT - N/A | Release |
+| [OpenBSD](https://www.openbsd.org/) | 7.8 | [![OpenBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml?query=event%3Aschedule) | Qt - not installed <br> USDT - N/A | Release |
+| [NetBSD](https://netbsd.org/) | 9.4, 10.1 | [![NetBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml?query=event%3Aschedule) | Qt - not installed <br> USDT - N/A | Release |
 
 ## [illumos](https://illumos.org/)-Based Systems
 
