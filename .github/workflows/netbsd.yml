@@ -40,6 +40,7 @@ jobs:
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
+          mem: 12288
           prepare: |
             pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
             cd /usr
@@ -132,6 +133,7 @@ jobs:
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
+          mem: 12288
           prepare: |
             pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
             cd /usr
