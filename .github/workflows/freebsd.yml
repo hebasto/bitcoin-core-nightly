@@ -38,9 +38,8 @@ jobs:
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: pkg install -y cmake-core ninja pkgconf boost-libs libevent sqlite3 capnproto libzmq4 python3 net/py-pyzmq databases/py-sqlite3
-          sync: 'rsync'
-          copyback: false
+          prepare: pkg install -y curl cmake-core ninja pkgconf boost-libs libevent sqlite3 capnproto libzmq4 python3 net/py-pyzmq databases/py-sqlite3
+          sync: no
 
       - &CHECKOUT_HELPER_ACTIONS
         name: Checkout helper actions
