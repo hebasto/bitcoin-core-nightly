@@ -46,7 +46,7 @@ jobs:
         uses: bitcoin/bitcoin/.github/actions/clear-files@master
 
       - name: Start OpenBSD VM
-        uses: vmactions/openbsd-vm@v1
+        uses: vmactions/openbsd-vm@v1.2.0
         with:
           prepare: pkg_add -v cmake ninja git boost libevent sqlite3 capnproto zeromq python py3-zmq
           run: git config --global --add safe.directory ${{ github.workspace }}
@@ -110,7 +110,7 @@ jobs:
       - *CLEAR_STORAGE_SPACE
 
       - name: Start OpenBSD VM
-        uses: vmactions/openbsd-vm@v1
+        uses: vmactions/openbsd-vm@v1.2.0
         with:
           prepare: pkg_add bash curl gmake gtar-- cmake ninja git python py3-zmq
           run: git config --global --add safe.directory ${{ github.workspace }}
