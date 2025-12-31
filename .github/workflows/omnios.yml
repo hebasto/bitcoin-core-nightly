@@ -21,6 +21,9 @@ concurrency:
 env:
   # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
+  # Using the gcc14 and libevent2 packages requires adjusting
+  # search directories for the runtime linker
+  LD_LIBRARY_PATH: '/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64'
   # TODO: Fix the excluded test and re-enable it.
   # See https://github.com/bitcoin/bitcoin/issues/33128.
   FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
@@ -43,6 +46,7 @@ jobs:
         uses: vmactions/omnios-vm@v1
         with:
           mem: 12288
+          envs: 'LD_LIBRARY_PATH'
           prepare: |
             set -e
             pkg list -H -o name,publisher,version > packages_before
@@ -98,7 +102,6 @@ jobs:
         run: |
           set -e
           cd ${{ github.workspace }}
-          export LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"
           ls -l build/bin/bitcoind
           file build/bin/bitcoind
           ldd build/bin/bitcoind
@@ -108,7 +111,6 @@ jobs:
         uses: ./ci/nightly/.github/actions/run-test-suite
         with:
           vm: omnios
-          envs: 'LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"'
           # TODO: Fix the code, then enable system_tests.
           options: '--exclude-regex "^system_tests$"'
 
@@ -116,5 +118,4 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
-          export LD_LIBRARY_PATH="/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64"
           ./build/test/functional/test_runner.py --ci --extended -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
