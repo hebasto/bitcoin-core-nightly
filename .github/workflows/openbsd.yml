@@ -2,7 +2,7 @@ name: OpenBSD
 on:
   pull_request:
     paths:
-      - '.github/actions/**'
+      - '.github/actions/build-depends/action.yml'
       - '.github/workflows/openbsd.yml'
   schedule:
     - cron: '22 02 * * *'
@@ -53,13 +53,6 @@ jobs:
           sync: 'rsync'
           copyback: false
 
-      - &CHECKOUT_HELPER_ACTIONS
-        name: Checkout helper actions
-        uses: actions/checkout@v6
-        with:
-          sparse-checkout: .github/actions
-          path: ci/nightly
-
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
@@ -86,9 +79,13 @@ jobs:
 
       - &RUN_TEST_SUITE
         name: Run test suite
-        uses: ./ci/nightly/.github/actions/run-test-suite
-        with:
-          vm: openbsd
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          export DIR_UNIT_TEST_DATA="${{ github.workspace }}/qa-assets/unit_test_data"
+          mkdir -p ${DIR_UNIT_TEST_DATA}
+          curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - &RUN_FUNCTIONAL_TESTS
         name: Run functional tests
@@ -117,7 +114,11 @@ jobs:
           sync: 'rsync'
           copyback: false
 
-      - *CHECKOUT_HELPER_ACTIONS
+      - name: Checkout helper actions
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/actions/build-depends
+          path: ci/nightly
 
       - name: Build depends
         uses: ./ci/nightly/.github/actions/build-depends
