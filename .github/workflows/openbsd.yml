@@ -28,11 +28,21 @@ env:
 
 jobs:
   openbsd-syslibs:
-    name: 'OpenBSD: system libs, no GUI'
+    name: 'OpenBSD ${{ matrix.release }}: system libs, no GUI'
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: openbsd {0}
+    strategy: &RELEASE_MATRIX
+      fail-fast: false
+      matrix:
+        # Test all supported releases.
+        # From https://www.openbsd.org/faq/faq5.html:
+        # > Only the two most recent OpenBSD releases receive
+        # > security and reliability fixes for the base system.
+        # However, Bitcoin Core requires OpenBSD 7.8 or newer.
+        # See https://github.com/bitcoin/bitcoin/pull/34182.
+        release: [7.8]
 
     steps:
       - &CHECKOUT_BITCOIN_CORE
@@ -48,6 +58,7 @@ jobs:
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
         with:
+          release: ${{ matrix.release }}
           prepare: pkg_add -v cmake ninja git boost libevent sqlite3 capnproto zeromq python py3-zmq
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
@@ -99,11 +110,12 @@ jobs:
           ./build/test/functional/test_runner.py --ci --extended -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
 
   openbsd-depends:
-    name: 'OpenBSD: depends'
+    name: 'OpenBSD ${{ matrix.release }}: depends'
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: openbsd {0}
+    strategy: *RELEASE_MATRIX
 
     steps:
       - *CHECKOUT_BITCOIN_CORE
@@ -112,6 +124,7 @@ jobs:
       - name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
         with:
+          release: ${{ matrix.release }}
           prepare: pkg_add bash curl gmake gtar-- cmake ninja git python py3-zmq
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
@@ -123,6 +136,7 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: openbsd
+          cache-tag: openbsd-${{ matrix.release }}
 
       - name: Generate buildsystem
         run: |
