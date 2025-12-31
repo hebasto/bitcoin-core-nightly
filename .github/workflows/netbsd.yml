@@ -24,11 +24,21 @@ env:
 
 jobs:
   netbsd-syslibs:
-    name: 'NetBSD: system libs, no GUI'
+    name: 'NetBSD ${{ matrix.release }}: system libs, no GUI'
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: netbsd {0}
+    strategy: &RELEASE_MATRIX
+      fail-fast: false
+      matrix:
+        # Test all supported releases.
+        # See https://www.netbsd.org/releases/.
+        include:
+          - release: 9.4
+            capnproto-cppflags: '-DKJ_USE_KQUEUE=0'
+            zeromq-cppflags: '-DZMQ_NETBSD_KEVENT_UDATA_INTPTR_T=1'
+          - release: 10.1
 
     steps:
       - &CHECKOUT_BITCOIN_CORE
@@ -40,6 +50,7 @@ jobs:
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
+          release: ${{ matrix.release }}
           mem: 12288
           prepare: |
             pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
@@ -58,13 +69,13 @@ jobs:
                 pkgsrc/sysutils/install-sh/files
           run: |
             pkg_add digest libtool-base mktools cwrappers
-            env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2 replace
+            ( unset PKG_PATH; make -C /usr/pkgsrc/devel/pcre2 replace )
             pkg_info > packages_before
             pkg_add cmake ninja-build git-base gcc14 pkgconf boost libevent sqlite3 zeromq python313 py313-zmq
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
             # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
-            env -u PKG_PATH make -C /usr/pkgsrc/devel/capnproto CPPFLAGS='-DKJ_NO_EXCEPTIONS=0' install
+            ( unset PKG_PATH; make -C /usr/pkgsrc/devel/capnproto CPPFLAGS="-DKJ_NO_EXCEPTIONS=0 ${{ matrix.capnproto-cppflags }}" install )
           sync: 'rsync'
           copyback: false
 
@@ -119,11 +130,12 @@ jobs:
           python3.13 build/test/functional/test_runner.py --ci --extended -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
 
   netbsd-depends:
-    name: 'NetBSD: depends'
+    name: 'NetBSD ${{ matrix.release }}: depends'
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: netbsd {0}
+    strategy: *RELEASE_MATRIX
 
     steps:
       - *CHECKOUT_BITCOIN_CORE
@@ -131,6 +143,7 @@ jobs:
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
+          release: ${{ matrix.release }}
           mem: 12288
           prepare: |
             pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
@@ -148,7 +161,7 @@ jobs:
             pkg_add digest libtool-base mktools cwrappers
             env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2 replace
             pkg_info > packages_before
-            pkg_add curl gmake cmake ninja-build git-base perl gcc14 pkgconf python313 py313-zmq
+            pkg_add curl mozilla-rootcerts-openssl gmake cmake ninja-build git-base perl gcc14 pkgconf python313 py313-zmq
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           sync: 'rsync'
@@ -160,7 +173,15 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: netbsd
-          options: "build_CC=/usr/pkg/gcc14/bin/gcc build_CXX=/usr/pkg/gcc14/bin/g++ CC=/usr/pkg/gcc14/bin/gcc CXX=/usr/pkg/gcc14/bin/g++"
+          options: >
+            build_CC=/usr/pkg/gcc14/bin/gcc
+            build_CXX=/usr/pkg/gcc14/bin/g++
+            CC=/usr/pkg/gcc14/bin/gcc
+            CXX=/usr/pkg/gcc14/bin/g++
+            native_capnp_cppflags_netbsd=${{ matrix.capnproto-cppflags }}
+            capnp_cppflags_netbsd=${{ matrix.capnproto-cppflags }}
+            zeromq_cppflags_netbsd=${{ matrix.zeromq-cppflags }}
+          cache-tag: netbsd-${{ matrix.release }}
 
       - name: Generate buildsystem
         run: |

@@ -12,6 +12,10 @@ inputs:
     description: "The built packages cache directory."
     required: false
     default: "${{ github.workspace }}/depends/built"
+  cache-tag:
+    description: "The tag for GHA cache entry."
+    required: false
+    default: "${{ github.job }}"
   options:
     description: "Additional depends build options."
     required: false
@@ -24,14 +28,14 @@ runs:
       id: restore-cache
       with:
         path: ${{ inputs.cache-dir }}
-        key: ${{ github.job }}-depends-${{ hashFiles('depends/**') }}
+        key: ${{ inputs.cache-tag }}-depends-${{ hashFiles('depends/**') }}
 
     - if: steps.restore-cache.outputs.cache-hit == 'true'
       shell: bash -e {0}
       run: rsync --archive --stats ${{ inputs.cache-dir }}/ ${{ inputs.vm }}:${{ inputs.cache-dir }}
 
     - shell: ${{ inputs.vm }} {0}
-      run: gmake -C ${{ github.workspace }}/depends -j ${{ env.CI_NCPU }} ${{ inputs.host }} BASE_CACHE=${{ inputs.cache-dir }} ${{ inputs.options }} LOG=1
+      run: gmake -C ${{ github.workspace }}/depends -j ${{ env.CI_NCPU }} BASE_CACHE=${{ inputs.cache-dir }} LOG=1 ${{ inputs.host }} ${{ inputs.options }}
 
     - if: steps.restore-cache.outputs.cache-hit != 'true'
       shell: bash -e {0}
