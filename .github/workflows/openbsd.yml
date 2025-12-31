@@ -59,7 +59,7 @@ jobs:
         uses: vmactions/openbsd-vm@v1
         with:
           release: ${{ matrix.release }}
-          prepare: pkg_add -v cmake ninja git boost libevent sqlite3 capnproto zeromq python py3-zmq
+          prepare: pkg_add -v cmake ninja git boost libevent sqlite3 capnproto zeromq python%3 py3-zmq
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
@@ -122,7 +122,7 @@ jobs:
         uses: vmactions/openbsd-vm@v1
         with:
           release: ${{ matrix.release }}
-          prepare: pkg_add bash curl gmake gtar-- cmake ninja git python py3-zmq
+          prepare: pkg_add -v bash curl gmake gtar-- cmake ninja git python%3 py3-zmq
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
