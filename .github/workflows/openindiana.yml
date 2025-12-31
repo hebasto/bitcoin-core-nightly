@@ -2,7 +2,6 @@ name: OpenIndiana
 on:
   pull_request:
     paths:
-      - '.github/actions/**'
       - '.github/workflows/openindiana.yml'
   schedule:
     - cron: '22 02 * * *'
@@ -78,12 +77,6 @@ jobs:
             -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
           cmake --install build-boost
 
-      - name: Checkout helper actions
-        uses: actions/checkout@v6
-        with:
-          sparse-checkout: .github/actions
-          path: ci/nightly
-
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
@@ -113,8 +106,13 @@ jobs:
           ./build/bin/bitcoind -version
 
       - name: Run test suite
-        uses: ./ci/nightly/.github/actions/run-test-suite
-        with:
-          vm: openindiana
-          # TODO: Fix the code, then enable system_tests.
-          options: '--exclude-regex "^system_tests$"'
+        run: |
+          set -e
+          cd ${{ github.workspace }}
+          export DIR_UNIT_TEST_DATA="${{ github.workspace }}/qa-assets/unit_test_data"
+          mkdir -p ${DIR_UNIT_TEST_DATA}
+          curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure \
+            `# TODO: Fix the code, then re-enable system_tests.` \
+            `# See https://github.com/bitcoin/bitcoin/issues/32574.` \
+            --exclude-regex "^system_tests$"
