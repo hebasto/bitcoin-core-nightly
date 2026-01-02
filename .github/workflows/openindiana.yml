@@ -36,7 +36,7 @@ jobs:
           repository: bitcoin/bitcoin
 
       - name: Start OpenIndiana VM
-        uses: vmactions/openindiana-vm@v0
+        uses: vmactions/openindiana-vm@v1
         with:
           mem: 18432
           # The `pkg install` command often encounters networking issues in the CI
