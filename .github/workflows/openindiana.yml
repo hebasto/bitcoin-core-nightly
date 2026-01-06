@@ -42,8 +42,8 @@ jobs:
           # The `pkg install` command often encounters networking issues in the CI
           # environment. To mitigate these, the following steps have been taken:
           # 1. Each package is installed individually.
-          # 2. `library/libevent2` is already preinstalled on the VM image, so
-          #    it is skipped.
+          # 2. `library/libevent2` and `runtime/python-314` are already preinstalled
+          #    on the VM image, so they are skipped.
           # 3. Installing `system/library/boost` is skipped, as it often takes
           #    more than 60 minutes and causes a job timeout.
           #    See the "Build Boost" step below.
@@ -129,3 +129,23 @@ jobs:
             `# TODO: Fix the code, then re-enable system_tests.` \
             `# See https://github.com/bitcoin/bitcoin/issues/32574.` \
             --exclude-regex "^system_tests$"
+
+      - name: Install Python packages for functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          set -e
+          export PIP_ROOT_USER_ACTION=ignore
+          python3.14 -m ensurepip
+          python3.14 -m pip install setuptools wheel
+          python3.14 -m pip install pyzmq
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        env:
+          # TODO: Fix the excluded tests and re-enable them:
+          #  - feature_reindex_init, see: https://github.com/bitcoin/bitcoin/issues/33128.
+          #  - interface_bitcoin_cli, needs further unvestigation.
+          FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init,interface_bitcoin_cli'
+        run: |
+          cd ${{ github.workspace }}
+          python3.14 ./build/test/functional/test_runner.py --ci --extended -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
