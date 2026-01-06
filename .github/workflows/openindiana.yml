@@ -42,8 +42,8 @@ jobs:
           # The `pkg install` command often encounters networking issues in the CI
           # environment. To mitigate these, the following steps have been taken:
           # 1. Each package is installed individually.
-          # 2. `library/libevent2` and `database/sqlite-3` are already preinstalled
-          #    on the VM image, so they are skipped.
+          # 2. `library/libevent2` is already preinstalled on the VM image, so
+          #    it is skipped.
           # 3. Installing `system/library/boost` is skipped, as it often takes
           #    more than 60 minutes and causes a job timeout.
           #    See the "Build Boost" step below.
@@ -77,6 +77,18 @@ jobs:
             -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
           cmake --install build-boost
 
+      # The preinstalled `database/sqlite-3` package is broken.
+      # For details, see https://github.com/bitcoin/bitcoin/issues/34163.
+      - name: Build SQLite
+        run: |
+          set -e
+          curl --location --fail --output sqlite-autoconf-3460100.tar.gz https://sqlite.org/2024/sqlite-autoconf-3460100.tar.gz
+          tar xf sqlite-autoconf-3460100.tar.gz
+          cd sqlite-autoconf-3460100
+          ./configure
+          make -j ${{ env.CI_NCPU }}
+          make install
+
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
@@ -84,6 +96,7 @@ jobs:
           # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           export CXXFLAGS="-pthread"
           cmake -B build -G "Ninja" --preset dev-mode \
+            -DCMAKE_PREFIX_PATH=/usr/local \
             -DBUILD_GUI=OFF \
             -DBUILD_SHARED_LIBS=OFF \
             `# TODO: Build Cap'n Proto from source and reenable IPC.` \
