@@ -47,6 +47,10 @@ jobs:
         with:
           repository: bitcoin/bitcoin
 
+      - &CLEAR_STORAGE_SPACE
+        name: Clear unnecessary files on bloated GHA VM
+        uses: bitcoin/bitcoin/.github/actions/clear-files@master
+
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
@@ -135,6 +139,7 @@ jobs:
 
     steps:
       - *CHECKOUT_BITCOIN_CORE
+      - *CLEAR_STORAGE_SPACE
 
       - name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
