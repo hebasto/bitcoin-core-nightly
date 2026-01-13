@@ -82,7 +82,7 @@ jobs:
           ls -l build/bin/bitcoind
           file build/bin/bitcoind
           ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
+          build/bin/bitcoind -version
 
       - &RUN_TEST_SUITE
         name: Run test suite
@@ -100,7 +100,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           ulimit -n 1024
-          ./build/test/functional/test_runner.py --ci -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
+          build/test/functional/test_runner.py --ci -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix . \
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
@@ -146,7 +146,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
-            --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
+            --toolchain depends/$(depends/config.sub $(depends/config.guess))/toolchain.cmake \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON
 
