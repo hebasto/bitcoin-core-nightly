@@ -73,7 +73,7 @@ jobs:
           ls -l build/bin/bitcoind
           file build/bin/bitcoind
           ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
+          build/bin/bitcoind -version
 
       - &RUN_TEST_SUITE
         name: Run test suite
@@ -90,7 +90,7 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
+          build/test/functional/test_runner.py --ci -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
@@ -132,7 +132,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
-            --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
+            --toolchain depends/$(depends/config.sub $(depends/config.guess))/toolchain.cmake \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             `# TODO: Reenable GUI tests.` \
             -DBUILD_GUI_TESTS=OFF \
