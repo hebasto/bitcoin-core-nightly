@@ -21,10 +21,6 @@ concurrency:
 env:
   # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
-  # TODO: Fix the excluded tests and re-enable them:
-  #  - feature_reindex_init.py, see: https://github.com/bitcoin/bitcoin/issues/33128
-  #  - interface_rest.py, intermittent hangs since 2025-10-23
-  FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py,interface_rest.py'
 
 jobs:
   openbsd-syslibs:
@@ -104,7 +100,14 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           ulimit -n 1024
-          ./build/test/functional/test_runner.py --ci --extended -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
+          ./build/test/functional/test_runner.py --ci -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
+            --tmpdirprefix . \
+            --extended \
+            `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
+            --exclude feature_reindex_init \
+            `# interface_rest intermittently hangs since 2025-10-23.` \
+            --exclude interface_rest \
+            --timeout-factor=8
 
   openbsd-depends:
     name: 'OpenBSD ${{ matrix.release }}: depends'
