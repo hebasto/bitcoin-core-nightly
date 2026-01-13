@@ -116,7 +116,7 @@ jobs:
           ls -l build/bin/bitcoind
           file build/bin/bitcoind
           ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
+          build/bin/bitcoind -version
 
       - name: Run test suite
         run: |
@@ -143,7 +143,7 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
-          python3.14 ./build/test/functional/test_runner.py --ci -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
+          python3.14 build/test/functional/test_runner.py --ci -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix . \
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
