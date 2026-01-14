@@ -93,20 +93,20 @@ jobs:
 
       - name: Check 'bitcoind.exe' executable
         run: |
-          dumpbin.exe /imports .\bin\bitcoind.exe | Select-String -Pattern "\S+\.dll" -CaseSensitive:$false
-          .\bin\bitcoind.exe -version
+          dumpbin.exe /imports bin\bitcoind.exe | Select-String -Pattern "\S+\.dll" -CaseSensitive:$false
+          bin\bitcoind.exe -version
 
       - name: Run unit tests
         run: |
-          .\bin\test_bitcoin.exe -l test_suite
-          .\src\secp256k1\bin\exhaustive_tests.exe
-          .\src\secp256k1\bin\noverify_tests.exe
-          .\src\secp256k1\bin\tests.exe
-          .\src\univalue\object.exe
-          .\src\univalue\unitester.exe
+          bin\test_bitcoin.exe -l test_suite
+          src\secp256k1\bin\exhaustive_tests.exe
+          src\secp256k1\bin\noverify_tests.exe
+          src\secp256k1\bin\tests.exe
+          src\univalue\object.exe
+          src\univalue\unitester.exe
 
       - name: Run benchmarks
-        run: .\bin\bench_bitcoin.exe -sanity-check
+        run: bin\bench_bitcoin.exe -sanity-check
 
       - name: Adjust paths in test\config.ini
         run: |
