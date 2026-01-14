@@ -50,7 +50,7 @@ jobs:
       - name: Generate buildsystem
         run: >
           cmake -B build ${{ matrix.config-options }} \
-            --toolchain depends/$(./depends/config.sub $(./depends/config.guess))/toolchain.cmake \
+            --toolchain depends/$(depends/config.sub $(depends/config.guess))/toolchain.cmake \
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON
@@ -63,7 +63,7 @@ jobs:
           ls -l build/bin/bitcoind
           file build/bin/bitcoind
           ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
+          build/bin/bitcoind -version
 
       - name: Run test suite
         run: ctest --test-dir build -j $(nproc)
@@ -71,7 +71,7 @@ jobs:
       - name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
-          ./build/test/functional/test_runner.py -j $(($(nproc) * 2)) --combinedlogslen=99999999 \
+          build/test/functional/test_runner.py -j $(($(nproc) * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix . \
             --extended \
             --timeout-factor=8
