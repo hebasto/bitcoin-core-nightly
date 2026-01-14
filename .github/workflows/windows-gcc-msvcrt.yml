@@ -107,7 +107,7 @@ jobs:
         env:
           PYTHONUTF8: 1
         run: |
-          py -3 test/functional/test_runner.py --ci -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
+          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix "$RUNNER_TEMP" \
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/31409.` \
