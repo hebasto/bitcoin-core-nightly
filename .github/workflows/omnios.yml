@@ -23,9 +23,6 @@ env:
   # Using the gcc14 and libevent2 packages requires adjusting
   # search directories for the runtime linker
   LD_LIBRARY_PATH: '/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64'
-  # TODO: Fix the excluded test and re-enable it.
-  # See https://github.com/bitcoin/bitcoin/issues/33128.
-  FUNCTIONAL_TESTS_EXCLUDE: '--exclude feature_reindex_init.py'
 
 jobs:
   omnios:
@@ -98,7 +95,7 @@ jobs:
           ls -l build/bin/bitcoind
           file build/bin/bitcoind
           ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
+          build/bin/bitcoind -version
 
       - name: Run test suite
         run: |
@@ -116,4 +113,9 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
-          ./build/test/functional/test_runner.py --ci --extended -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 --tmpdirprefix . --timeout-factor=8 ${{ env.FUNCTIONAL_TESTS_EXCLUDE }}
+          build/test/functional/test_runner.py --ci -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
+            --tmpdirprefix . \
+            --extended \
+            `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
+            --exclude feature_reindex_init \
+            --timeout-factor=8
