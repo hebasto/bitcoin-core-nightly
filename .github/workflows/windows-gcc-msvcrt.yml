@@ -107,6 +107,7 @@ jobs:
         env:
           PYTHONUTF8: 1
         run: |
+          py -3 -m pip install pyzmq
           py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix "$RUNNER_TEMP" \
             --extended \
