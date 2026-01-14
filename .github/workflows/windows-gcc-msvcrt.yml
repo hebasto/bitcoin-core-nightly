@@ -67,10 +67,6 @@ jobs:
       run:
         shell: pwsh -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
 
-    env:
-      PYTHONUTF8: 1
-      TEST_RUNNER_TIMEOUT_FACTOR: 40
-
     steps:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v6
@@ -110,8 +106,13 @@ jobs:
           Get-Content "test\config.ini"
 
       - name: Run functional tests
+        shell: bash
         env:
-          # TODO: Fix the excluded test and re-enable it.
-          EXCLUDE: '--exclude wallet_multiwallet.py'
-        shell: cmd
-        run: py -3 test\functional\test_runner.py --jobs %NUMBER_OF_PROCESSORS% --ci --tmpdirprefix=%RUNNER_TEMP% --combinedlogslen=99999999 --timeout-factor=%TEST_RUNNER_TIMEOUT_FACTOR% %EXCLUDE% --extended
+          PYTHONUTF8: 1
+        run: |
+          py -3 test/functional/test_runner.py --ci -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
+            --tmpdirprefix "$RUNNER_TEMP" \
+            --extended \
+            `# See https://github.com/bitcoin/bitcoin/issues/31409.` \
+            --exclude wallet_multiwallet \
+            --timeout-factor=40
