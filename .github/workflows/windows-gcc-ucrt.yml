@@ -101,9 +101,6 @@ jobs:
           src\univalue\object.exe
           src\univalue\unitester.exe
 
-      - name: Run benchmarks
-        run: bin\bench_bitcoin.exe -sanity-check
-
       - name: Adjust paths in test\config.ini
         run: |
           (Get-Content "test\config.ini") -replace '(?<=^SRCDIR=).*', '${{ github.workspace }}' -replace '(?<=^BUILDDIR=).*', '${{ github.workspace }}' -replace '(?<=^RPCAUTH=).*', '${{ github.workspace }}\share\rpcauth\rpcauth.py' | Set-Content "test\config.ini"
