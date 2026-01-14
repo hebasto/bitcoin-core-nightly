@@ -20,14 +20,12 @@ concurrency:
 env:
   CI_LLVM_MINGW_URL: https://github.com/mstorsjo/llvm-mingw/releases/download/20251216/llvm-mingw-20251216-ucrt-ubuntu-22.04-x86_64.tar.xz
   CI_LLVM_MINGW_HASH: db561734a05eb4a0695d5e901aadd6c1cda74bba4c9e102b677f81c6fd59849a
+  CI_HOST: aarch64-w64-mingw32
 
 jobs:
   windows-aarch64-cross:
     name: 'Windows ARM64, cross-build only, LLVM: no GUI'
     runs-on: ubuntu-latest
-
-    env:
-      CI_HOST: aarch64-w64-mingw32
 
     steps:
       - name: Checkout Bitcoin Core repo
@@ -77,11 +75,6 @@ jobs:
       run:
         shell: pwsh -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
 
-    env:
-      CI_HOST: aarch64-w64-mingw32
-      PYTHONUTF8: 1
-      TEST_RUNNER_TIMEOUT_FACTOR: 40
-
     steps:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v6
@@ -100,20 +93,20 @@ jobs:
 
       - name: Check 'bitcoind.exe' executable
         run: |
-          dumpbin.exe /imports .\bin\bitcoind.exe | Select-String -Pattern "\S+\.dll" -CaseSensitive:$false
-          .\bin\bitcoind.exe -version
+          dumpbin.exe /imports bin\bitcoind.exe | Select-String -Pattern "\S+\.dll" -CaseSensitive:$false
+          bin\bitcoind.exe -version
 
       - name: Run unit tests
         run: |
-          .\bin\test_bitcoin.exe -l test_suite
-          .\src\secp256k1\bin\exhaustive_tests.exe
-          .\src\secp256k1\bin\noverify_tests.exe
-          .\src\secp256k1\bin\tests.exe
-          .\src\univalue\object.exe
-          .\src\univalue\unitester.exe
+          bin\test_bitcoin.exe -l test_suite
+          src\secp256k1\bin\exhaustive_tests.exe
+          src\secp256k1\bin\noverify_tests.exe
+          src\secp256k1\bin\tests.exe
+          src\univalue\object.exe
+          src\univalue\unitester.exe
 
       - name: Run benchmarks
-        run: .\bin\bench_bitcoin.exe -sanity-check
+        run: bin\bench_bitcoin.exe -sanity-check
 
       - name: Adjust paths in test\config.ini
         run: |
@@ -121,10 +114,13 @@ jobs:
           Get-Content "test\config.ini"
 
       - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
+        shell: bash
         env:
-          # TODO: Fix the excluded test and re-enable it.
-          # See: https://github.com/bitcoin/bitcoin/pull/31410
-          EXCLUDE: '--exclude wallet_multiwallet.py'
-        shell: cmd
-        run: py -3 test\functional\test_runner.py --jobs %NUMBER_OF_PROCESSORS% --ci --tmpdirprefix=%RUNNER_TEMP% --combinedlogslen=99999999 --timeout-factor=%TEST_RUNNER_TIMEOUT_FACTOR% %EXCLUDE% --extended
+          PYTHONUTF8: 1
+        run: |
+          py -3 test/functional/test_runner.py --ci -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
+            --tmpdirprefix "$RUNNER_TEMP" \
+            --extended \
+            `# See https://github.com/bitcoin/bitcoin/issues/31409.` \
+            --exclude wallet_multiwallet \
+            --timeout-factor=40
