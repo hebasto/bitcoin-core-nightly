@@ -48,6 +48,13 @@ jobs:
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
+          
+      - &PRINT_IP_PORTRANGE
+        name: Print IP_PORTRANGE_DEFAULT
+        run: |
+          set -e
+          awk '/IP_PORTRANGE_DEFAULT/ { print }' /usr/include/netinet/in.h
+          cat /usr/include/netinet/in.h
 
       - name: Generate buildsystem
         run: |
@@ -59,12 +66,6 @@ jobs:
             -DAPPEND_CXXFLAGS='-Wno-error=sign-compare' \
             -DWERROR=ON
             
-      - &PRINT_IP_PORTRANGE
-        name: Print IP_PORTRANGE_DEFAULT
-        run: |
-          set -e
-          awk '/IP_PORTRANGE_DEFAULT/ { print }' /usr/include/netinet/in.h
-
       - &BUILD
         name: Build
         run: |
