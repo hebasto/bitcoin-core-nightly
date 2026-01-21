@@ -35,7 +35,8 @@ jobs:
         name: Checkout Bitcoin Core repo
         uses: actions/checkout@v6
         with:
-          repository: bitcoin/bitcoin
+          repository: w0xlt/bitcoin
+          ref: freebsd_high_port_range-again
 
       - &CLEAR_STORAGE_SPACE
         name: Clear unnecessary files on bloated GHA VM
