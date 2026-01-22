@@ -1,0 +1,61 @@
+name: Windows, clang-cl
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/windows-clang-cl.yml'
+  schedule:
+    - cron: '22 02 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-native:
+    name: 'Windows, clang-cl'
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v6
+        with:
+          repository: bitcoin/bitcoin
+          ref: refs/pull/31507/merge
+
+      - name: Configure Developer Command Prompt for Microsoft Visual C++
+        # Using microsoft/setup-msbuild is not enough.
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Get tool information
+        run: |
+          cmake -version
+          Write-Host "---"
+          clang-cl --version
+          Write-Host "---"
+          Write-Host "VCToolsVersion: $env:VCToolsVersion"
+          Write-Host "---"
+          py -3 --version
+          Write-Host "---"
+          Write-Host "PowerShell version $($PSVersionTable.PSVersion.ToString())"
+
+      - name: Generate buildsystem
+        env:
+          CXXFLAGS: '-Wno-return-type -Wno-error=unused-private-field -Wno-error=conditional-uninitialized'
+        run: |
+          cmake -B build --preset vs2022 -T ClangCL -DBUILD_UTIL_CHAINSTATE=ON -DBUILD_BENCH=ON -DWERROR=ON
+
+      - name: Build
+        working-directory: build
+        run: |
+          cmake --build . -j $env:NUMBER_OF_PROCESSORS --config Release
+
+      - name: Run test suite
+        working-directory: build
+        run: |
+          ctest -j $env:NUMBER_OF_PROCESSORS --output-on-failure -C Release
