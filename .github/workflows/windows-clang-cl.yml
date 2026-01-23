@@ -44,6 +44,10 @@ jobs:
           Write-Host "---"
           Write-Host "PowerShell version $($PSVersionTable.PSVersion.ToString())"
 
+      - name: Set vcpkg build type
+        run: |
+          Add-Content -Path "$env:VCPKG_ROOT\triplets\x64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
+
       - name: Generate buildsystem
         env:
           CXXFLAGS: '-Wno-return-type -Wno-error=unused-private-field -Wno-error=conditional-uninitialized'
