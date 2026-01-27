@@ -3,8 +3,6 @@ on:
   pull_request:
     paths:
       - '.github/workflows/windows-gcc-ucrt.yml'
-  schedule:
-    - cron: '22 02 * * *'
   workflow_dispatch:
     inputs:
       skip_functional_tests:
@@ -12,6 +10,9 @@ on:
         required: true
         default: false
         type: boolean
+  workflow_run:
+    workflows: ["Windows, MSVC"]
+    types: [requested]
 
 concurrency:
   group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
