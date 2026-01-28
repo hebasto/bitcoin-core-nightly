@@ -18,8 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CI_LLVM_MINGW_URL: https://github.com/mstorsjo/llvm-mingw/releases/download/20251216/llvm-mingw-20251216-ucrt-ubuntu-22.04-x86_64.tar.xz
-  CI_LLVM_MINGW_HASH: db561734a05eb4a0695d5e901aadd6c1cda74bba4c9e102b677f81c6fd59849a
+  CI_LLVM_MINGW_URL: https://github.com/mstorsjo/llvm-mingw/releases/download/20260127/llvm-mingw-20260127-ucrt-ubuntu-22.04-x86_64.tar.xz
+  CI_LLVM_MINGW_HASH: dda43d9e67d4717b145b33833916f97f231762f8d98f7a74b8c297e373e4f6a7
   CI_HOST: aarch64-w64-mingw32
 
 jobs:
