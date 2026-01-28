@@ -29,7 +29,7 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 
 | Operating System | Status |
 |------------------|--------|
-| [Alpine Linux](https://alpinelinux.org) | [![Alpine](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/alpine.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/alpine.yml?query=event%3Aschedule) |
+| [Alpine Linux](https://alpinelinux.org) | [![Alpine](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/alpine.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/alpine.yml?query=event%3Aworkflow_run) |
 
 ## [Windows](https://www.microsoft.com/windows/windows-11)
 
