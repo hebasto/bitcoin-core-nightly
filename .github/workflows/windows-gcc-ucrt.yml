@@ -50,8 +50,12 @@ jobs:
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
             -DWERROR=ON \
-            `# TODO: Drop -Wno-error=deprecated-declarations once https://github.com/bitcoin/bitcoin/issues/32361 is fixed.` \
-            -DAPPEND_CXXFLAGS='-Wno-error=array-bounds -Wno-error=deprecated-declarations'
+            -DAPPEND_CXXFLAGS='-Wno-error=array-bounds \
+              `# TODO: Drop -Wno-error=deprecated-declarations once https://github.com/bitcoin/bitcoin/issues/32361 is fixed.` \
+              -Wno-error=deprecated-declarations \
+              `# Temporary workaround. See https://github.com/bitcoin-core/secp256k1/pull/1813.` \
+              -Wno-error=trailing-whitespace \
+            '
 
       - name: Build
         run: cmake --build build -j $(nproc)
