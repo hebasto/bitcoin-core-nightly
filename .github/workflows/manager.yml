@@ -1,5 +1,8 @@
 name: Manager
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/manager.yml'
   schedule:
     - cron: '22 02 * * *'
   workflow_dispatch:
