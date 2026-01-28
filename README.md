@@ -23,7 +23,7 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 
 | Operating System | Status |
 |------------------|--------|
-| Ubuntu 24.04 | [![Clang-SNAPSHOT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/clang.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/clang.yml?query=event%3Aschedule) |
+| Ubuntu 24.04 | [![Clang-SNAPSHOT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/clang.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/clang.yml?query=event%3Aworkflow_run) |
 
 ## [musl](https://musl.libc.org/)-Based Systems
 
