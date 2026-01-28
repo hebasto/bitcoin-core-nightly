@@ -5,7 +5,7 @@ on:
       - '.github/workflows/windows-clang-cl.yml'
   workflow_dispatch:
   workflow_run:
-    workflows: ["Windows, MSVC"]
+    workflows: ["Manager"]
     types: [requested]
 
 concurrency:

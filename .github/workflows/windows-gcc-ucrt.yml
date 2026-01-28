@@ -11,7 +11,7 @@ on:
         default: false
         type: boolean
   workflow_run:
-    workflows: ["Windows, MSVC"]
+    workflows: ["Manager"]
     types: [requested]
 
 concurrency:
