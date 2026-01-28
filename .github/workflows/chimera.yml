@@ -1,0 +1,36 @@
+name: Chimera
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/chimera.yml'
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Manager"]
+    types: [requested]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  chimera:
+    name: 'Chimera (musl) LTO'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v6
+        with:
+          repository: bitcoin/bitcoin
+          ref: refs/pull/34421/merge
+
+      - name: Configure Docker
+        uses: ./.github/actions/configure-docker
+        with:
+          cache-provider: gha
+
+      - name: CI script
+        env:
+          FILE_ENV: ./ci/test/00_setup_env_native_chimera_lto.sh
+        run: ./ci/test_run_all.sh
