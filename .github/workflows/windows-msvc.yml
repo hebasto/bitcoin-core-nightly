@@ -3,9 +3,11 @@ on:
   pull_request:
     paths:
       - '.github/workflows/windows-msvc.yml'
-  schedule:
-    - cron: '22 02 * * *'
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Manager"]
+    types: [requested]
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
