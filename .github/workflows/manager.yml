@@ -7,7 +7,7 @@ on:
     - cron: '22 02 * * *'
   workflow_dispatch:
 jobs:
-  mananger:
+  manager:
     runs-on: ubuntu-slim
     steps:
-      - run: true
+      - run: /usr/bin/true
