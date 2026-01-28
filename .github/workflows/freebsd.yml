@@ -26,11 +26,19 @@ env:
 
 jobs:
   freebsd-syslibs:
-    name: 'FreeBSD: system libs, no GUI'
+    name: 'FreeBSD ${{ matrix.release }}: system libs, no GUI'
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: freebsd {0}
+    strategy: &RELEASE_MATRIX
+      fail-fast: false
+      matrix:
+        # Test all supported releases.
+        # See https://www.freebsd.org/releases/.
+        include:
+          - release: 14.3
+          - release: 15.0
 
     steps:
       - &CHECKOUT_BITCOIN_CORE
@@ -99,11 +107,12 @@ jobs:
             --timeout-factor=8
 
   freebsd-depends:
-    name: 'FreeBSD: depends'
+    name: 'FreeBSD ${{ matrix.release }}: depends'
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: freebsd {0}
+    strategy: *RELEASE_MATRIX
 
     steps:
       - *CHECKOUT_BITCOIN_CORE
@@ -129,6 +138,7 @@ jobs:
           vm: freebsd
           # TODO: Fix a linking error.
           options: "NO_QT=1"
+          cache-tag: freebsd-${{ matrix.release }}
 
       - name: Generate buildsystem
         run: |
