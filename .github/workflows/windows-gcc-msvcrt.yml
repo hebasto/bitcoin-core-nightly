@@ -105,6 +105,7 @@ jobs:
           Get-Content "test\config.ini"
 
       - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
         shell: bash
         env:
           PYTHONUTF8: 1
