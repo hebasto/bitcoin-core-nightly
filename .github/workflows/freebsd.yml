@@ -45,7 +45,8 @@ jobs:
         name: Checkout Bitcoin Core repo
         uses: actions/checkout@v6
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 260130-no-sched_batch-on-bsd
 
       - &CLEAR_STORAGE_SPACE
         name: Clear unnecessary files on bloated GHA VM
