@@ -144,11 +144,11 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
+          # Not running extended tests to avoid disk space issues.
           python3.14 build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix . \
-            --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
-            `# TODD: Investigate the failure.` \
+            `# TODO: Investigate the failure.` \
             --exclude interface_bitcoin_cli \
             --timeout-factor=8
