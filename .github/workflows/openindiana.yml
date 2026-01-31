@@ -37,6 +37,9 @@ jobs:
         with:
           repository: bitcoin/bitcoin
 
+      - name: Clear unnecessary files on bloated GHA VM
+        uses: bitcoin/bitcoin/.github/actions/clear-files@master
+
       - name: Start OpenIndiana VM
         uses: vmactions/openindiana-vm@v1
         with:
