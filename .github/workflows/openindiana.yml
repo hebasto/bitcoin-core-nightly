@@ -21,7 +21,8 @@ concurrency:
 
 env:
   # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
-  CI_NCPU: 4
+  # Limited due to OOM.
+  CI_NCPU: 2
 
 jobs:
   openindiana:
@@ -36,6 +37,9 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: bitcoin/bitcoin
+
+      - name: Clear unnecessary files on bloated GHA VM
+        uses: bitcoin/bitcoin/.github/actions/clear-files@master
 
       - name: Start OpenIndiana VM
         uses: vmactions/openindiana-vm@v1
@@ -97,7 +101,7 @@ jobs:
           # Workaround for a bug in the FindThreads module.
           # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           export CXXFLAGS="-pthread"
-          cmake -B build -G "Ninja" --preset dev-mode \
+          cmake -B build --preset dev-mode \
             -DCMAKE_PREFIX_PATH=/usr/local \
             -DBUILD_GUI=OFF \
             -DBUILD_SHARED_LIBS=OFF \
@@ -147,7 +151,6 @@ jobs:
           cd ${{ github.workspace }}
           python3.14 build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix . \
-            --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
             `# TODD: Investigate the failure.` \
