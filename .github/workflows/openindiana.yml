@@ -101,7 +101,7 @@ jobs:
           # Workaround for a bug in the FindThreads module.
           # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           export CXXFLAGS="-pthread"
-          cmake -B build -G "Ninja" --preset dev-mode \
+          cmake -B build --preset dev-mode \
             -DCMAKE_PREFIX_PATH=/usr/local \
             -DBUILD_GUI=OFF \
             -DBUILD_SHARED_LIBS=OFF \
