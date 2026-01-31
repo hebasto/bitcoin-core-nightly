@@ -113,7 +113,7 @@ jobs:
       - name: Build
         run: |
           cd ${{ github.workspace }}
-          cmake --build build -- -j${{ env.CI_NCPU }}
+          cmake --build build
 
       - name: Check 'bitcoind' executable
         run: |
