@@ -43,7 +43,7 @@ jobs:
       - name: Start OpenIndiana VM
         uses: vmactions/openindiana-vm@v1
         with:
-          mem: 18432
+          mem: 24576
           # The `pkg install` command often encounters networking issues in the CI
           # environment. To mitigate these, the following steps have been taken:
           # 1. Each package is installed individually.
