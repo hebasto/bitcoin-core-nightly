@@ -21,7 +21,8 @@ concurrency:
 
 env:
   # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
-  CI_NCPU: 4
+  # Limited due to OOM.
+  CI_NCPU: 2
 
 jobs:
   openindiana:
@@ -112,7 +113,7 @@ jobs:
       - name: Build
         run: |
           cd ${{ github.workspace }}
-          cmake --build build
+          cmake --build build -j ${{ env.CI_NCPU }}
 
       - name: Check 'bitcoind' executable
         run: |
