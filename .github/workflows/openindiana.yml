@@ -54,7 +54,6 @@ jobs:
             pkg list > packages_before
             pkg install developer/versioning/git
             pkg install developer/build/cmake
-            pkg install developer/build/ninja
             pkg install developer/build/pkgconf
             pkg install developer/gcc-14
             pkg install library/c++/zeromq
@@ -97,7 +96,7 @@ jobs:
           # Workaround for a bug in the FindThreads module.
           # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           export CXXFLAGS="-pthread"
-          cmake -B build -G "Ninja" --preset dev-mode \
+          cmake -B build --preset dev-mode \
             -DCMAKE_PREFIX_PATH=/usr/local \
             -DBUILD_GUI=OFF \
             -DBUILD_SHARED_LIBS=OFF \
@@ -109,7 +108,7 @@ jobs:
       - name: Build
         run: |
           cd ${{ github.workspace }}
-          cmake --build build
+          cmake --build build -- -j ${{ env.CI_NCPU }}
 
       - name: Check 'bitcoind' executable
         run: |
