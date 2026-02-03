@@ -64,10 +64,7 @@ jobs:
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
             -DWITH_ZMQ=ON \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
-            `# A workaround for https://github.com/bitcoin/bitcoin/pull/34093.` \
-            -DAPPEND_CXXFLAGS='-Wno-error=sign-compare' \
-            -DWERROR=ON
+            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON
 
       - &BUILD
         name: Build
@@ -147,10 +144,7 @@ jobs:
             --toolchain depends/$(depends/config.sub $(depends/config.guess))/toolchain.cmake \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             `# TODO: Reenable GUI tests.` \
-            -DBUILD_GUI_TESTS=OFF \
-            `# A workaround for https://github.com/bitcoin/bitcoin/pull/34093.` \
-            -DAPPEND_CXXFLAGS='-Wno-error=sign-compare' \
-            -DWERROR=ON
+            -DBUILD_GUI_TESTS=OFF
 
       - *BUILD
       - *CHECK_BITCOIND
