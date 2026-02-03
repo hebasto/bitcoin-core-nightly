@@ -37,10 +37,10 @@ jobs:
         # Test all supported releases.
         # See https://www.netbsd.org/releases/.
         include:
-          - release: 9.4
+          - release: '9.4'
             capnproto-cppflags: '-DKJ_USE_KQUEUE=0'
             zeromq-cppflags: '-DZMQ_NETBSD_KEVENT_UDATA_INTPTR_T=1'
-          - release: 10.1
+          - release: '10.1'
 
     steps:
       - &CHECKOUT_BITCOIN_CORE

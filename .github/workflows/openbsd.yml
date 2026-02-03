@@ -40,7 +40,7 @@ jobs:
         # > security and reliability fixes for the base system.
         # However, Bitcoin Core requires OpenBSD 7.8 or newer.
         # See https://github.com/bitcoin/bitcoin/pull/34182.
-        release: [7.8]
+        release: ['7.8']
 
     steps:
       - &CHECKOUT_BITCOIN_CORE
