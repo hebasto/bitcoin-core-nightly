@@ -37,8 +37,10 @@ jobs:
         # Test all supported releases.
         # See https://www.freebsd.org/releases/.
         include:
-          - release: 14.3
-          - release: 15.0
+          - release: '14.3'
+          - release: '15.0'
+            # A workaround for https://github.com/bitcoin/bitcoin/pull/34093.
+            cxxflags: '-DAPPEND_CXXFLAGS="-Wno-error=sign-compare"'
 
     steps:
       - &CHECKOUT_BITCOIN_CORE
@@ -54,6 +56,7 @@ jobs:
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
+          release: ${{ matrix.release }}
           prepare: pkg install -y curl cmake-core ninja git pkgconf boost-libs libevent sqlite3 capnproto libzmq4 python3 net/py-pyzmq databases/py-sqlite3
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
@@ -65,8 +68,7 @@ jobs:
           cmake -B build -G "Ninja" \
             -DWITH_ZMQ=ON \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
-            `# A workaround for https://github.com/bitcoin/bitcoin/pull/34093.` \
-            -DAPPEND_CXXFLAGS='-Wno-error=sign-compare' \
+            ${{ matrix.cxxflags }} \
             -DWERROR=ON
 
       - &BUILD
@@ -121,6 +123,7 @@ jobs:
       - name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
+          release: ${{ matrix.release }}
           prepare: pkg install -y bash curl gmake cmake-core ninja git pkgconf bison python3 net/py-pyzmq databases/py-sqlite3
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
@@ -148,8 +151,7 @@ jobs:
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             `# TODO: Reenable GUI tests.` \
             -DBUILD_GUI_TESTS=OFF \
-            `# A workaround for https://github.com/bitcoin/bitcoin/pull/34093.` \
-            -DAPPEND_CXXFLAGS='-Wno-error=sign-compare' \
+            ${{ matrix.cxxflags }} \
             -DWERROR=ON
 
       - *BUILD
