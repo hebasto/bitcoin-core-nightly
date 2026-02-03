@@ -55,8 +55,6 @@ jobs:
             --toolchain depends/$(depends/config.sub $(depends/config.guess))/toolchain.cmake \
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
-            `# Temporary workaround. See https://github.com/bitcoin-core/secp256k1/pull/1813.` \
-            -DAPPEND_CXXFLAGS="-Wno-error=trailing-whitespace" \
             -DWERROR=ON
 
       - name: Build
