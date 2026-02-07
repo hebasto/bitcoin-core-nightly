@@ -23,7 +23,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: bitcoin/bitcoin
-          ref: refs/pull/34421/merge
 
       - name: Configure Docker
         uses: ./.github/actions/configure-docker
