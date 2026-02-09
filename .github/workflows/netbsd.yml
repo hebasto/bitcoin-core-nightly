@@ -158,7 +158,7 @@ jobs:
                 pkgsrc/sysutils/install-sh/files
           run: |
             pkg_add digest libtool-base mktools cwrappers
-            env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2 replace
+            ( unset PKG_PATH; make -C /usr/pkgsrc/devel/pcre2 replace )
             pkg_info > packages_before
             pkg_add curl mozilla-rootcerts-openssl gmake cmake ninja-build git-base perl gcc14 pkgconf python313 py313-zmq
             pkg_info > packages_after
