@@ -61,7 +61,7 @@ jobs:
             -DBUILD_FUZZ_BINARY=ON \
             -DWITH_ZMQ=ON \
             -DWITH_USDT=ON \
-            -DWERROR=ON
+            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - name: Build
         run: cmake --build build -j $(nproc)

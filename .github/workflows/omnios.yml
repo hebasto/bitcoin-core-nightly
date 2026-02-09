@@ -83,7 +83,7 @@ jobs:
             `# TODO: Build Cap'n Proto from source and reenable IPC.` \
             -DENABLE_IPC=OFF \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
-            -DWERROR=ON
+            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - name: Build
         run: |

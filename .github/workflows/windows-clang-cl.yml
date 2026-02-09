@@ -54,7 +54,7 @@ jobs:
         env:
           CXXFLAGS: '-Wno-return-type -Wno-error=unused-private-field -Wno-error=conditional-uninitialized'
         run: |
-          cmake -B build --preset vs2022 -T ClangCL -DBUILD_UTIL_CHAINSTATE=ON -DBUILD_BENCH=ON -DWERROR=ON
+          cmake -B build --preset vs2022 -T ClangCL -DBUILD_UTIL_CHAINSTATE=ON -DBUILD_BENCH=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - name: Build
         working-directory: build
