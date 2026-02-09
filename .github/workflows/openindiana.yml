@@ -103,7 +103,7 @@ jobs:
             `# TODO: Build Cap'n Proto from source and reenable IPC.` \
             -DENABLE_IPC=OFF \
             -DWITH_USDT=OFF \
-            -DWERROR=ON
+            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - name: Build
         run: |

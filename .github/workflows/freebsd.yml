@@ -69,7 +69,7 @@ jobs:
             -DWITH_ZMQ=ON \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             ${{ matrix.cxxflags }} \
-            -DWERROR=ON
+            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - &BUILD
         name: Build
@@ -152,7 +152,7 @@ jobs:
             `# TODO: Reenable GUI tests.` \
             -DBUILD_GUI_TESTS=OFF \
             ${{ matrix.cxxflags }} \
-            -DWERROR=ON
+            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - *BUILD
       - *CHECK_BITCOIND

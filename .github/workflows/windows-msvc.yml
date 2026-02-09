@@ -44,7 +44,7 @@ jobs:
 
       - name: Generate buildsystem
         run: |
-          cmake -B build --preset vs2022 -DBUILD_UTIL_CHAINSTATE=ON -DBUILD_BENCH=ON -DWERROR=ON
+          cmake -B build --preset vs2022 -DBUILD_UTIL_CHAINSTATE=ON -DBUILD_BENCH=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - name: Build
         working-directory: build
