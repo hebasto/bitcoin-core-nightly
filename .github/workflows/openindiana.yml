@@ -40,11 +40,14 @@ jobs:
       - name: Start OpenIndiana VM
         uses: vmactions/openindiana-vm@v1
         with:
+          # This release has `metapackages/build-essential` preinstalled.
+          release: '202510-build'
           mem: 18432
           # The `pkg install` command often encounters networking issues in the CI
           # environment. To mitigate these, the following steps have been taken:
           # 1. Each package is installed individually.
-          # 2. `library/libevent2` and `runtime/python-314` are already preinstalled
+          # 2. `metapackages/build-essential` (includes git, cmake, gcc-14),
+          #    `library/libevent2` and `runtime/python-314` are already preinstalled
           #    on the VM image, so they are skipped.
           # 3. Installing `system/library/boost` is skipped, as it often takes
           #    more than 60 minutes and causes a job timeout.
@@ -52,10 +55,7 @@ jobs:
           prepare: |
             set -e
             pkg list > packages_before
-            pkg install developer/versioning/git
-            pkg install developer/build/cmake
             pkg install developer/build/pkgconf
-            pkg install developer/gcc-14
             pkg install library/c++/zeromq
             pkg list > packages_after
             diff -w packages_before packages_after | grep '^>' || true
