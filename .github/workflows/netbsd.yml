@@ -40,7 +40,9 @@ jobs:
           - release: '9.4'
             capnproto-cppflags: '-DKJ_USE_KQUEUE=0'
             zeromq-cppflags: '-DZMQ_NETBSD_KEVENT_UDATA_INTPTR_T=1'
+            pcre2-action: 'install'
           - release: '10.1'
+            pcre2-action: 'replace'
 
     steps:
       - &CHECKOUT_BITCOIN_CORE
@@ -71,7 +73,7 @@ jobs:
                 pkgsrc/sysutils/install-sh/files
           run: |
             pkg_add digest libtool-base mktools cwrappers
-            ( unset PKG_PATH; make -C /usr/pkgsrc/devel/pcre2 replace )
+            ( unset PKG_PATH; make -C /usr/pkgsrc/devel/pcre2 ${{ matrix.pcre2-action }} )
             pkg_info > packages_before
             pkg_add curl mozilla-rootcerts-openssl cmake ninja-build git-base gcc14 pkgconf boost libevent sqlite3 zeromq python313 py313-zmq
             pkg_info > packages_after
@@ -158,7 +160,7 @@ jobs:
                 pkgsrc/sysutils/install-sh/files
           run: |
             pkg_add digest libtool-base mktools cwrappers
-            env -u PKG_PATH make -C /usr/pkgsrc/devel/pcre2 replace
+            ( unset PKG_PATH; make -C /usr/pkgsrc/devel/pcre2 ${{ matrix.pcre2-action }} )
             pkg_info > packages_before
             pkg_add curl mozilla-rootcerts-openssl gmake cmake ninja-build git-base perl gcc14 pkgconf python313 py313-zmq
             pkg_info > packages_after
