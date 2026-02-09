@@ -41,7 +41,8 @@ jobs:
           repository: bitcoin/bitcoin
 
       - name: Start OmniOS VM
-        uses: vmactions/omnios-vm@v1
+        # See https://github.com/vmactions/omnios-vm/issues/7.
+        uses: vmactions/omnios-vm@v1.2.4
         with:
           mem: 12288
           envs: 'LD_LIBRARY_PATH'
