@@ -28,6 +28,8 @@ jobs:
   netbsd-syslibs:
     name: 'NetBSD ${{ matrix.release }}: system libs, no GUI'
     runs-on: ubuntu-latest
+    env:
+      PACKAGES: 'boost libevent sqlite3 zeromq'
     defaults:
       run:
         shell: netbsd {0}
@@ -49,14 +51,15 @@ jobs:
         with:
           repository: bitcoin/bitcoin
 
-      - name: Start NetBSD VM
+      - &START_VM
+        name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
           release: ${{ matrix.release }}
           mem: 12288
           prepare: |
             pkg_info > packages_before
-            pkg_add -u curl mozilla-rootcerts-openssl cmake ninja-build git-base gcc14 pkgconf boost libevent sqlite3 zeromq python314
+            pkg_add -u cmake ninja-build git-base gcc14 pkgconf python314 ${{ env.PACKAGES }}
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           sync: 'rsync'
@@ -135,6 +138,8 @@ jobs:
   netbsd-depends:
     name: 'NetBSD ${{ matrix.release }}: depends'
     runs-on: ubuntu-latest
+    env:
+      PACKAGES: 'curl mozilla-rootcerts-openssl gmake perl'
     defaults:
       run:
         shell: netbsd {0}
@@ -142,19 +147,7 @@ jobs:
 
     steps:
       - *CHECKOUT_BITCOIN_CORE
-
-      - name: Start NetBSD VM
-        uses: vmactions/netbsd-vm@v1
-        with:
-          release: ${{ matrix.release }}
-          mem: 12288
-          prepare: |
-            pkg_info > packages_before
-            pkg_add -u curl mozilla-rootcerts-openssl gmake cmake ninja-build git-base perl gcc14 pkgconf python314
-            pkg_info > packages_after
-            diff -w packages_before packages_after | grep '^>'
-          sync: 'rsync'
-          copyback: false
+      - *START_VM
 
       - name: Checkout helper actions
         uses: actions/checkout@v6
