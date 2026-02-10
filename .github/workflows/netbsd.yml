@@ -40,9 +40,7 @@ jobs:
           - release: '9.4'
             capnproto-cppflags: '-DKJ_USE_KQUEUE=0'
             zeromq-cppflags: '-DZMQ_NETBSD_KEVENT_UDATA_INTPTR_T=1'
-            pcre2-action: 'install'
           - release: '10.1'
-            pcre2-action: 'replace'
 
     steps:
       - &CHECKOUT_BITCOIN_CORE
@@ -60,25 +58,22 @@ jobs:
             pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
             cd /usr
             cvs -danoncvs@anoncvs.NetBSD.org:/cvsroot checkout -P \
-                pkgsrc/devel/pcre2 \
-                pkgsrc/devel/capnproto \
-                pkgsrc/archivers/bzip2 \
-                pkgsrc/devel/libtool-base \
-                pkgsrc/devel/pkgconf \
-                pkgsrc/devel/zlib \
-                pkgsrc/lang/gcc15 \
-                pkgsrc/mk \
-                pkgsrc/pkgtools \
-                pkgsrc/security/openssl \
-                pkgsrc/sysutils/install-sh/files
+              pkgsrc/devel/capnproto \
+              pkgsrc/devel/libtool-base \
+              pkgsrc/devel/pkgconf \
+              pkgsrc/devel/zlib \
+              pkgsrc/lang/gcc15 \
+              pkgsrc/mk \
+              pkgsrc/pkgtools \
+              pkgsrc/security/openssl \
+              pkgsrc/sysutils/install-sh/files
           run: |
-            pkg_add digest libtool-base mktools cwrappers
-            ( unset PKG_PATH; make -C /usr/pkgsrc/devel/pcre2 ${{ matrix.pcre2-action }} )
             pkg_info > packages_before
-            pkg_add curl mozilla-rootcerts-openssl cmake ninja-build git-base gcc14 pkgconf boost libevent sqlite3 zeromq python313 py313-zmq
+            pkg_add -u curl mozilla-rootcerts-openssl cmake ninja-build git-base gcc14 pkgconf boost libevent sqlite3 zeromq python313 py313-zmq
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
             # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
+            pkg_add -u digest libtool-base mktools cwrappers
             ( unset PKG_PATH; make -C /usr/pkgsrc/devel/capnproto CPPFLAGS="-DKJ_NO_EXCEPTIONS=0 ${{ matrix.capnproto-cppflags }}" install )
           sync: 'rsync'
           copyback: false
@@ -146,23 +141,9 @@ jobs:
         with:
           release: ${{ matrix.release }}
           mem: 12288
-          prepare: |
-            pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
-            cd /usr
-            cvs -danoncvs@anoncvs.NetBSD.org:/cvsroot checkout -P \
-                pkgsrc/devel/pcre2 \
-                pkgsrc/archivers/bzip2 \
-                pkgsrc/devel/libtool-base \
-                pkgsrc/devel/zlib \
-                pkgsrc/lang/gcc15 \
-                pkgsrc/mk \
-                pkgsrc/pkgtools \
-                pkgsrc/sysutils/install-sh/files
           run: |
-            pkg_add digest libtool-base mktools cwrappers
-            ( unset PKG_PATH; make -C /usr/pkgsrc/devel/pcre2 ${{ matrix.pcre2-action }} )
             pkg_info > packages_before
-            pkg_add curl mozilla-rootcerts-openssl gmake cmake ninja-build git-base perl gcc14 pkgconf python313 py313-zmq
+            pkg_add -u curl mozilla-rootcerts-openssl gmake cmake ninja-build git-base perl gcc14 pkgconf python313 py313-zmq
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           sync: 'rsync'
