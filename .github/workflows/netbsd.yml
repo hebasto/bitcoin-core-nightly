@@ -55,28 +55,34 @@ jobs:
           release: ${{ matrix.release }}
           mem: 12288
           prepare: |
-            pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
-            cd /usr
-            cvs -danoncvs@anoncvs.NetBSD.org:/cvsroot checkout -P \
-              pkgsrc/devel/capnproto \
-              pkgsrc/devel/libtool-base \
-              pkgsrc/devel/pkgconf \
-              pkgsrc/devel/zlib \
-              pkgsrc/lang/gcc15 \
-              pkgsrc/mk \
-              pkgsrc/pkgtools \
-              pkgsrc/security/openssl \
-              pkgsrc/sysutils/install-sh/files
-          run: |
             pkg_info > packages_before
             pkg_add -u curl mozilla-rootcerts-openssl cmake ninja-build git-base gcc14 pkgconf boost libevent sqlite3 zeromq python313 py313-zmq
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
-            # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
-            pkg_add -u digest libtool-base mktools cwrappers
-            ( unset PKG_PATH; make -C /usr/pkgsrc/devel/capnproto CPPFLAGS="-DKJ_NO_EXCEPTIONS=0 ${{ matrix.capnproto-cppflags }}" install )
           sync: 'rsync'
           copyback: false
+
+      # The preinstalled `devel/capnproto` package is broken.
+      # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
+      - name: Build Cap'n Proto
+        run: |
+          set -e
+          pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
+          pkg_add -u digest libtool-base mktools cwrappers
+          cd /usr
+          cvs -danoncvs@anoncvs.NetBSD.org:/cvsroot checkout -P \
+            pkgsrc/devel/capnproto \
+            pkgsrc/devel/libtool-base \
+            pkgsrc/devel/pkgconf \
+            pkgsrc/devel/zlib \
+            pkgsrc/lang/gcc15 \
+            pkgsrc/mk \
+            pkgsrc/pkgtools \
+            pkgsrc/security/openssl \
+            pkgsrc/sysutils/install-sh/files
+          cd /usr/pkgsrc/devel/capnproto
+          unset PKG_PATH
+          make CPPFLAGS="-DKJ_NO_EXCEPTIONS=0 ${{ matrix.capnproto-cppflags }}" install
 
       - name: Generate buildsystem
         run: |
@@ -141,7 +147,7 @@ jobs:
         with:
           release: ${{ matrix.release }}
           mem: 12288
-          run: |
+          prepare: |
             pkg_info > packages_before
             pkg_add -u curl mozilla-rootcerts-openssl gmake cmake ninja-build git-base perl gcc14 pkgconf python313 py313-zmq
             pkg_info > packages_after
