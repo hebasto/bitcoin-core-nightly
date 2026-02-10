@@ -28,6 +28,8 @@ jobs:
   netbsd-syslibs:
     name: 'NetBSD ${{ matrix.release }}: system libs, no GUI'
     runs-on: ubuntu-latest
+    env:
+      PACKAGES: 'boost libevent sqlite3 zeromq'
     defaults:
       run:
         shell: netbsd {0}
@@ -40,9 +42,8 @@ jobs:
           - release: '9.4'
             capnproto-cppflags: '-DKJ_USE_KQUEUE=0'
             zeromq-cppflags: '-DZMQ_NETBSD_KEVENT_UDATA_INTPTR_T=1'
-            pcre2-action: 'install'
+            packages: 'mozilla-rootcerts-openssl'
           - release: '10.1'
-            pcre2-action: 'replace'
 
     steps:
       - &CHECKOUT_BITCOIN_CORE
@@ -51,37 +52,41 @@ jobs:
         with:
           repository: bitcoin/bitcoin
 
-      - name: Start NetBSD VM
+      - &START_VM
+        name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
         with:
           release: ${{ matrix.release }}
           mem: 12288
           prepare: |
-            pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
-            cd /usr
-            cvs -danoncvs@anoncvs.NetBSD.org:/cvsroot checkout -P \
-                pkgsrc/devel/pcre2 \
-                pkgsrc/devel/capnproto \
-                pkgsrc/archivers/bzip2 \
-                pkgsrc/devel/libtool-base \
-                pkgsrc/devel/pkgconf \
-                pkgsrc/devel/zlib \
-                pkgsrc/lang/gcc15 \
-                pkgsrc/mk \
-                pkgsrc/pkgtools \
-                pkgsrc/security/openssl \
-                pkgsrc/sysutils/install-sh/files
-          run: |
-            pkg_add digest libtool-base mktools cwrappers
-            ( unset PKG_PATH; make -C /usr/pkgsrc/devel/pcre2 ${{ matrix.pcre2-action }} )
             pkg_info > packages_before
-            pkg_add curl mozilla-rootcerts-openssl cmake ninja-build git-base gcc14 pkgconf boost libevent sqlite3 zeromq python313 py313-zmq
+            pkg_add -u cmake curl gcc14 git-base ninja-build pkgconf py313-zmq python313 ${{ matrix.packages }} ${{ env.PACKAGES }}
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
-            # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
-            ( unset PKG_PATH; make -C /usr/pkgsrc/devel/capnproto CPPFLAGS="-DKJ_NO_EXCEPTIONS=0 ${{ matrix.capnproto-cppflags }}" install )
           sync: 'rsync'
           copyback: false
+
+      # The preinstalled `devel/capnproto` package is broken.
+      # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
+      - name: Build Cap'n Proto
+        run: |
+          set -e
+          pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
+          pkg_add -u digest libtool-base mktools cwrappers
+          cd /usr
+          cvs -danoncvs@anoncvs.NetBSD.org:/cvsroot checkout -P \
+            pkgsrc/devel/capnproto \
+            pkgsrc/devel/libtool-base \
+            pkgsrc/devel/pkgconf \
+            pkgsrc/devel/zlib \
+            pkgsrc/lang/gcc15 \
+            pkgsrc/mk \
+            pkgsrc/pkgtools \
+            pkgsrc/security/openssl \
+            pkgsrc/sysutils/install-sh/files
+          cd /usr/pkgsrc/devel/capnproto
+          unset PKG_PATH
+          make CPPFLAGS="-DKJ_NO_EXCEPTIONS=0 ${{ matrix.capnproto-cppflags }}" install
 
       - name: Generate buildsystem
         run: |
@@ -133,6 +138,8 @@ jobs:
   netbsd-depends:
     name: 'NetBSD ${{ matrix.release }}: depends'
     runs-on: ubuntu-latest
+    env:
+      PACKAGES: 'gmake perl'
     defaults:
       run:
         shell: netbsd {0}
@@ -140,33 +147,7 @@ jobs:
 
     steps:
       - *CHECKOUT_BITCOIN_CORE
-
-      - name: Start NetBSD VM
-        uses: vmactions/netbsd-vm@v1
-        with:
-          release: ${{ matrix.release }}
-          mem: 12288
-          prepare: |
-            pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
-            cd /usr
-            cvs -danoncvs@anoncvs.NetBSD.org:/cvsroot checkout -P \
-                pkgsrc/devel/pcre2 \
-                pkgsrc/archivers/bzip2 \
-                pkgsrc/devel/libtool-base \
-                pkgsrc/devel/zlib \
-                pkgsrc/lang/gcc15 \
-                pkgsrc/mk \
-                pkgsrc/pkgtools \
-                pkgsrc/sysutils/install-sh/files
-          run: |
-            pkg_add digest libtool-base mktools cwrappers
-            ( unset PKG_PATH; make -C /usr/pkgsrc/devel/pcre2 ${{ matrix.pcre2-action }} )
-            pkg_info > packages_before
-            pkg_add curl mozilla-rootcerts-openssl gmake cmake ninja-build git-base perl gcc14 pkgconf python313 py313-zmq
-            pkg_info > packages_after
-            diff -w packages_before packages_after | grep '^>'
-          sync: 'rsync'
-          copyback: false
+      - *START_VM
 
       - name: Checkout helper actions
         uses: actions/checkout@v6
