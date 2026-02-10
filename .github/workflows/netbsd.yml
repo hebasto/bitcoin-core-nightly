@@ -75,7 +75,7 @@ jobs:
             pkg_add digest libtool-base mktools cwrappers
             ( unset PKG_PATH; make -C /usr/pkgsrc/devel/pcre2 ${{ matrix.pcre2-action }} )
             pkg_info > packages_before
-            pkg_add curl mozilla-rootcerts-openssl cmake ninja-build git-base gcc14 pkgconf boost libevent sqlite3 zeromq python313 py313-zmq
+            pkg_add curl mozilla-rootcerts-openssl cmake ninja-build git-base gcc14 pkgconf boost libevent sqlite3 zeromq python313
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
             # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
@@ -123,6 +123,7 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           cd ${{ github.workspace }}
+          python3.13 -m pip install pyzmq
           python3.13 build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix . \
             --extended \
@@ -162,7 +163,7 @@ jobs:
             pkg_add digest libtool-base mktools cwrappers
             ( unset PKG_PATH; make -C /usr/pkgsrc/devel/pcre2 ${{ matrix.pcre2-action }} )
             pkg_info > packages_before
-            pkg_add curl mozilla-rootcerts-openssl gmake cmake ninja-build git-base perl gcc14 pkgconf python313 py313-zmq
+            pkg_add curl mozilla-rootcerts-openssl gmake cmake ninja-build git-base perl gcc14 pkgconf python313
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           sync: 'rsync'
