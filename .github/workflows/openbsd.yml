@@ -107,8 +107,11 @@ jobs:
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
-            `# interface_rest intermittently hangs since 2025-10-23.` \
+            `# interface_rest intermittently hangs since 2025-10-23. Running separately in the next command.` \
             --exclude interface_rest \
+            --timeout-factor=8
+          build/test/functional/test_runner.py interface_rest --combinedlogslen=99999999 \
+            --tmpdirprefix . \
             --timeout-factor=8
 
   openbsd-depends:
