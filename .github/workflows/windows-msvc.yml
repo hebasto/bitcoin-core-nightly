@@ -16,7 +16,7 @@ concurrency:
 jobs:
   windows-native:
     name: 'Windows, MSVC, Debug'
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     defaults:
       run:
         shell: pwsh -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
@@ -44,7 +44,7 @@ jobs:
 
       - name: Generate buildsystem
         run: |
-          cmake -B build --preset vs2022 -DBUILD_UTIL_CHAINSTATE=ON -DBUILD_BENCH=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          cmake -B build --preset vs2026 -DBUILD_UTIL_CHAINSTATE=ON -DBUILD_BENCH=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - name: Build
         working-directory: build
