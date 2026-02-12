@@ -50,7 +50,8 @@ jobs:
         name: Checkout Bitcoin Core repo
         uses: actions/checkout@v6
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 260212-netbsd-boost
 
       - &START_VM
         name: Start NetBSD VM
