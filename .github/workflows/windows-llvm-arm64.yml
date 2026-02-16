@@ -48,14 +48,14 @@ jobs:
           gmake -C depends -j $(nproc) HOST=${{ env.CI_HOST }} CC=${{ env.CI_HOST }}-clang CXX=${{ env.CI_HOST }}-clang++ NO_QT=1 NO_ZMQ=1 LOG=1
 
       - name: Generate buildsystem
-        run: >
+        run: |
           cmake -B build \
             --toolchain depends/${{ env.CI_HOST }}/toolchain.cmake \
             -DREDUCE_EXPORTS=ON \
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
-            -DAPPEND_CXXFLAGS='-Wno-error=deprecated-declarations -Wno-error=unused-member-function -Wno-error=unused-private-field'
+            -DAPPEND_CXXFLAGS="-Wno-error=deprecated-declarations -Wno-error=unused-member-function -Wno-error=unused-private-field"
 
       - name: Build
         run: cmake --build build -j $(nproc)

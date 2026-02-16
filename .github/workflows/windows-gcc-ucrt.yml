@@ -43,16 +43,16 @@ jobs:
           gmake -C depends -j $(nproc) HOST=${{ env.CI_HOST }} NO_QT=1 LOG=1
 
       - name: Generate buildsystem
-        run: >
+        run: |
           cmake -B build \
             --toolchain depends/${{ env.CI_HOST }}/toolchain.cmake \
             -DREDUCE_EXPORTS=ON \
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
-            -DAPPEND_CXXFLAGS='-Wno-error=array-bounds \
+            -DAPPEND_CXXFLAGS="-Wno-error=array-bounds \
               `# TODO: Drop -Wno-error=deprecated-declarations once https://github.com/bitcoin/bitcoin/issues/32361 is fixed.` \
               -Wno-error=deprecated-declarations \
-            ' \
+            " \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - name: Build

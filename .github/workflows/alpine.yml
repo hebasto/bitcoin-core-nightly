@@ -50,7 +50,7 @@ jobs:
           gmake -C depends -j $(nproc) ${{ matrix.depends-options }} NO_QT=1 LOG=1
 
       - name: Generate buildsystem
-        run: >
+        run: |
           cmake -B build ${{ matrix.config-options }} \
             --toolchain depends/$(depends/config.sub $(depends/config.guess))/toolchain.cmake \
             -DBUILD_BENCH=ON \
