@@ -40,7 +40,7 @@ jobs:
           gmake -C depends -j $(nproc) HOST=x86_64-w64-mingw32 NO_QT=1 LOG=1
 
       - name: Generate buildsystem
-        run: >
+        run: |
           cmake -B build \
             --toolchain depends/x86_64-w64-mingw32/toolchain.cmake \
             -DREDUCE_EXPORTS=ON \

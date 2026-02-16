@@ -43,7 +43,7 @@ jobs:
           gmake -C depends -j $(nproc) HOST=${{ env.CI_HOST }} NO_QT=1 LOG=1
 
       - name: Generate buildsystem
-        run: >
+        run: |
           cmake -B build \
             --toolchain depends/${{ env.CI_HOST }}/toolchain.cmake \
             -DREDUCE_EXPORTS=ON \

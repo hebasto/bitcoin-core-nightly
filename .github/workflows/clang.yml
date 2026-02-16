@@ -53,7 +53,7 @@ jobs:
         run: clang-${LLVM_VERSION} -v
 
       - name: Generate buildsystem
-        run: >
+        run: |
           cmake -B build \
             -DCMAKE_C_COMPILER="clang-${LLVM_VERSION}" \
             -DCMAKE_CXX_COMPILER="clang++-${LLVM_VERSION};-stdlib=${{ matrix.stdlib }}" \
