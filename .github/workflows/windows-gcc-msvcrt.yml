@@ -47,7 +47,7 @@ jobs:
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
-            -DAPPEND_CXXFLAGS='-Wno-error=maybe-uninitialized'
+            -DAPPEND_CXXFLAGS="-Wno-error=maybe-uninitialized"
 
       - name: Build
         run: cmake --build build -j $(nproc)
