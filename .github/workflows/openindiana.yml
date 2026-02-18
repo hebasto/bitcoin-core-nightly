@@ -126,10 +126,7 @@ jobs:
           export DIR_UNIT_TEST_DATA="${{ github.workspace }}/qa-assets/unit_test_data"
           mkdir -p ${DIR_UNIT_TEST_DATA}
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
-          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure \
-            `# TODO: Fix the code, then re-enable system_tests.` \
-            `# See https://github.com/bitcoin/bitcoin/issues/32574.` \
-            --exclude-regex "^system_tests$"
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - name: Install Python packages for functional tests
         if: ${{ ! inputs.skip_functional_tests }}
