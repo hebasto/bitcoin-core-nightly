@@ -54,7 +54,7 @@ jobs:
         env:
           CXXFLAGS: '-Wno-return-type -Wno-error=unused-private-field -Wno-error=conditional-uninitialized'
         run: |
-          cmake -B build --preset vs2026 -T ClangCL -DBUILD_UTIL_CHAINSTATE=ON -DBUILD_BENCH=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          cmake -B build --preset windows -DBUILD_UTIL_CHAINSTATE=ON -DBUILD_BENCH=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - name: Build
         working-directory: build
