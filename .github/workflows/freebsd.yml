@@ -39,15 +39,14 @@ jobs:
         include:
           - release: '14.3'
           - release: '15.0'
-            # A workaround for https://github.com/bitcoin/bitcoin/pull/34093.
-            cxxflags: '-DAPPEND_CXXFLAGS="-Wno-error=sign-compare"'
 
     steps:
       - &CHECKOUT_BITCOIN_CORE
         name: Checkout Bitcoin Core repo
         uses: actions/checkout@v6
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 260226-pr34093-suggestion
 
       - &CLEAR_STORAGE_SPACE
         name: Clear unnecessary files on bloated GHA VM
