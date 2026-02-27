@@ -57,7 +57,7 @@ jobs:
         uses: vmactions/netbsd-vm@v1
         with:
           release: ${{ matrix.release }}
-          mem: 12288
+          mem: 18432
           prepare: |
             pkg_info > packages_before
             pkg_add -u cmake curl gcc14 git-base ninja-build pkgconf py313-zmq python313 ${{ matrix.packages }} ${{ env.PACKAGES }}
