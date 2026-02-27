@@ -39,8 +39,6 @@ jobs:
         include:
           - release: '14.3'
           - release: '15.0'
-            # A workaround for https://github.com/bitcoin/bitcoin/pull/34093.
-            cxxflags: '-DAPPEND_CXXFLAGS="-Wno-error=sign-compare"'
 
     steps:
       - &CHECKOUT_BITCOIN_CORE
@@ -68,7 +66,6 @@ jobs:
           cmake -B build -G "Ninja" \
             -DWITH_ZMQ=ON \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
-            ${{ matrix.cxxflags }} \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - &BUILD
@@ -151,7 +148,6 @@ jobs:
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             `# TODO: Reenable GUI tests.` \
             -DBUILD_GUI_TESTS=OFF \
-            ${{ matrix.cxxflags }} \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - *BUILD
