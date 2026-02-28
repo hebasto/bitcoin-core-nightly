@@ -133,6 +133,11 @@ jobs:
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
+            `# p2p_invalid_messages causes OOM. Running separately in the next command.` \
+            --exclude p2p_invalid_messages \
+            --timeout-factor=8
+          python3.13 build/test/functional/test_runner.py p2p_invalid_messages --combinedlogslen=99999999 \
+            --tmpdirprefix . \
             --timeout-factor=8
 
   netbsd-depends:
