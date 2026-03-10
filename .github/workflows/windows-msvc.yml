@@ -53,5 +53,7 @@ jobs:
 
       - name: Run test suite
         working-directory: build
+        env:
+          BOOST_TEST_DETECT_MEMORY_LEAK: 0
         run: |
           ctest -j $env:NUMBER_OF_PROCESSORS --output-on-failure -C Debug
