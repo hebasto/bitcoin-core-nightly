@@ -47,7 +47,8 @@ jobs:
         name: Checkout Bitcoin Core repo
         uses: actions/checkout@v6
         with:
-          repository: bitcoin/bitcoin
+          repository: l0rinc/bitcoin
+          ref: refs/pull/125/head
 
       - &CLEAR_STORAGE_SPACE
         name: Clear unnecessary files on bloated GHA VM
