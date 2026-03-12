@@ -55,7 +55,7 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           release: ${{ matrix.release }}
-          prepare: pkg install -y curl cmake-core ninja git pkgconf boost-libs libevent sqlite3 capnproto libzmq4 python3 net/py-pyzmq databases/py-sqlite3
+          prepare: pkg install -y curl cmake-core ninja git lsof pkgconf boost-libs libevent sqlite3 capnproto libzmq4 python3 net/py-pyzmq databases/py-sqlite3
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
@@ -121,7 +121,7 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           release: ${{ matrix.release }}
-          prepare: pkg install -y bash curl gmake cmake-core ninja git pkgconf bison python3 net/py-pyzmq databases/py-sqlite3
+          prepare: pkg install -y bash curl gmake cmake-core ninja git lsof pkgconf bison python3 net/py-pyzmq databases/py-sqlite3
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
