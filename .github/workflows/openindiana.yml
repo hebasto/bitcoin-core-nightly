@@ -59,6 +59,7 @@ jobs:
             set -e
             pkg list > packages_before
             pkg install developer/build/pkgconf
+            pkg install system/storage/lsof
             pkg install library/c++/zeromq
             pkg list > packages_after
             diff -w packages_before packages_after | grep '^>' || true

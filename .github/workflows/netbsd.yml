@@ -55,8 +55,9 @@ jobs:
           release: ${{ matrix.release }}
           mem: 12288
           prepare: |
+            echo "CHECK_OSABI=no" >> /etc/pkg_install.conf
             pkg_info > packages_before
-            pkg_add -u cmake curl gcc14 git-base ninja-build pkgconf py313-zmq python313 ${{ env.PACKAGES }}
+            pkg_add -u cmake curl gcc14 git-base lsof ninja-build pkgconf py313-zmq python313 ${{ env.PACKAGES }}
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           sync: 'rsync'
