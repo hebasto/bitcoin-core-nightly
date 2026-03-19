@@ -28,7 +28,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v6
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 260319-win-error-trigger
 
       - name: Install dependencies
         run: |
@@ -73,7 +74,8 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v6
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 260319-win-error-trigger
 
       - name: Download built executables
         uses: actions/download-artifact@v7
