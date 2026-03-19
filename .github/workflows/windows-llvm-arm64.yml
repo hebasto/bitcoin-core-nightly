@@ -122,6 +122,6 @@ jobs:
           py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix "$RUNNER_TEMP" \
             --extended \
-            `# See https://github.com/bitcoin/bitcoin/issues/31409.` \
+            `# See https://github.com/hebasto/bitcoin-core-nightly/issues/213.` \
             --exclude wallet_multiwallet \
             --timeout-factor=40
