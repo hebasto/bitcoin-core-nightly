@@ -1,0 +1,61 @@
+name: macOS, arm64
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/macos.yml'
+  workflow_dispatch:
+    inputs:
+      skip_functional_tests:
+        description: 'Skip functional tests'
+        required: true
+        default: false
+        type: boolean
+  workflow_run:
+    workflows: ["Manager"]
+    types: [requested]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    name: 'macOS 26 ARM64'
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v6
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install cmake pkgconf boost libevent zeromq qt qrencode capnp
+
+      - name: Generate buildsystem
+        run: |
+          cmake -B build --preset dev-mode \
+            -DWITH_USDT=OFF \
+            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+
+      - name: Build
+        run: cmake --build build -j 4
+
+      - name: Check 'bitcoind' executable
+        run: |
+          ls -l build/bin/bitcoind
+          file build/bin/bitcoind
+          otool -L build/bin/bitcoind
+          build/bin/bitcoind -version
+
+      - name: Run test suite
+        run: ctest --test-dir build -j 4
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          build/test/functional/test_runner.py -j 8 --combinedlogslen=99999999 \
+            --extended
