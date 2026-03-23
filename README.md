@@ -43,3 +43,9 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 | [MSVC](https://learn.microsoft.com/en-us/cpp/), x86_64 | [![Windows, MSVC, x86_64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-msvc-x86_64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-msvc-x86_64.yml?query=event%3Aworkflow_run) | "Debug" configuration<br>No functional tests |
 | [clang-cl](https://clang.llvm.org/docs/UsersManual.html#clang-cl), ARM64 | [![Windows, clang-cl, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-arm64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-arm64.yml?query=event%3Aworkflow_run) | "Release" configuration<br>No functional tests |
 | [clang-cl](https://clang.llvm.org/docs/UsersManual.html#clang-cl), x86_64 | [![Windows, clang-cl, x86_64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-x86_64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-x86_64.yml?query=event%3Aworkflow_run) | "Release" configuration<br>No functional tests |
+
+## [Homebrew](https://brew.sh/)
+
+| Operating System | Status | Notes |
+|------------------|--------|-------|
+| [macOS Tahoe](https://www.apple.com/os/macos/), ARM64 | [![macOS, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos.yml?query=event%3Aworkflow_run) | No depends |
