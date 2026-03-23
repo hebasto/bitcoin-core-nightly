@@ -4,6 +4,12 @@ on:
     paths:
       - '.github/workflows/windows-clang-cl-arm64.yml'
   workflow_dispatch:
+    inputs:
+      skip_functional_tests:
+        description: 'Skip functional tests'
+        required: true
+        default: false
+        type: boolean
   workflow_run:
     workflows: ["Manager"]
     types: [requested]
@@ -63,3 +69,25 @@ jobs:
         working-directory: build
         run: |
           ctest -j $env:NUMBER_OF_PROCESSORS --output-on-failure -C Release
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        working-directory: build
+        env:
+          PYTHONUTF8: 1
+          BITCOIN_BIN: '${{ github.workspace }}\build\bin\Release\bitcoin.exe'
+          BITCOIND: '${{ github.workspace }}\build\bin\Release\bitcoind.exe'
+          BITCOINCLI: '${{ github.workspace }}\build\bin\Release\bitcoin-cli.exe'
+          BITCOIN_BENCH: '${{ github.workspace }}\build\bin\Release\bench_bitcoin.exe'
+          BITCOINTX: '${{ github.workspace }}\build\bin\Release\bitcoin-tx.exe'
+          BITCOINUTIL: '${{ github.workspace }}\build\bin\Release\bitcoin-util.exe'
+          BITCOINWALLET: '${{ github.workspace }}\build\bin\Release\bitcoin-wallet.exe'
+          BITCOINCHAINSTATE: '${{ github.workspace }}\build\bin\Release\bitcoin-chainstate.exe'
+          TEST_RUNNER_EXTRA: ${{ github.event_name != 'pull_request' && '--extended' || '' }}
+        shell: bash
+        run: |
+          py -3 -m pip install pyzmq
+          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
+            --tmpdirprefix "$RUNNER_TEMP" \
+            --extended \
+            --timeout-factor=40
