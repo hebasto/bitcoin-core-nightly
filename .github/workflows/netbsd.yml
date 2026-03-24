@@ -73,8 +73,9 @@ jobs:
           set -e
           pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
           pkg_add -u digest libtool-base mktools cwrappers
-          cd /usr
-          cvs -danoncvs@anoncvs.NetBSD.org:/cvsroot checkout -P \
+          # https://www.netbsd.org/docs/pkgsrc/getting.html#getting-via-tar
+          ftp ftp://ftp.NetBSD.org/pub/pkgsrc/stable/pkgsrc.tar.gz
+          tar -xzf pkgsrc.tar.gz -C /usr \
             pkgsrc/devel/capnproto \
             pkgsrc/devel/libtool-base \
             pkgsrc/devel/pkgconf \
