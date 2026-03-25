@@ -37,6 +37,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: bitcoin/bitcoin
+          ref: refs/pull/34918/head
 
       - name: Install dependencies
         run: |
