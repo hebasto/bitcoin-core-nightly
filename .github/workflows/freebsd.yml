@@ -28,6 +28,8 @@ jobs:
   freebsd-syslibs:
     name: 'FreeBSD ${{ matrix.release }}: system libs, no GUI'
     runs-on: ubuntu-latest
+    env:
+      PACKAGES: 'boost-libs libevent sqlite3 capnproto libzmq4'
     defaults:
       run:
         shell: freebsd {0}
@@ -51,11 +53,12 @@ jobs:
         name: Clear unnecessary files on bloated GHA VM
         uses: bitcoin/bitcoin/.github/actions/clear-files@master
 
-      - name: Start FreeBSD VM
+      - &START_VM
+        name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
           release: ${{ matrix.release }}
-          prepare: pkg install -y curl cmake-core ninja git pkgconf boost-libs libevent sqlite3 capnproto libzmq4 python3 net/py-pyzmq databases/py-sqlite3
+          prepare: pkg install -y curl cmake-core ninja git pkgconf python3 net/py-pyzmq databases/py-sqlite3 ${{ env.PACKAGES }}
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
@@ -108,6 +111,8 @@ jobs:
   freebsd-depends:
     name: 'FreeBSD ${{ matrix.release }}: depends'
     runs-on: ubuntu-latest
+    env:
+      PACKAGES: 'bash gmake bison'
     defaults:
       run:
         shell: freebsd {0}
@@ -116,15 +121,7 @@ jobs:
     steps:
       - *CHECKOUT_BITCOIN_CORE
       - *CLEAR_STORAGE_SPACE
-
-      - name: Start FreeBSD VM
-        uses: vmactions/freebsd-vm@v1
-        with:
-          release: ${{ matrix.release }}
-          prepare: pkg install -y bash curl gmake cmake-core ninja git pkgconf bison python3 net/py-pyzmq databases/py-sqlite3
-          run: git config --global --add safe.directory ${{ github.workspace }}
-          sync: 'rsync'
-          copyback: false
+      - *START_VM
 
       - name: Checkout helper actions
         uses: actions/checkout@v6
