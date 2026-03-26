@@ -43,12 +43,6 @@ jobs:
           - release: '15.0'
 
     steps:
-      - &CHECKOUT_BITCOIN_CORE
-        name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v6
-        with:
-          repository: bitcoin/bitcoin
-
       - &CLEAR_STORAGE_SPACE
         name: Clear unnecessary files on bloated GHA VM
         uses: bitcoin/bitcoin/.github/actions/clear-files@master
@@ -58,15 +52,20 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           release: ${{ matrix.release }}
-          prepare: pkg install -y curl cmake-core ninja git pkgconf python3 net/py-pyzmq databases/py-sqlite3 ${{ env.PACKAGES }}
-          run: git config --global --add safe.directory ${{ github.workspace }}
-          sync: 'rsync'
-          copyback: false
+          prepare: pkg install -y curl cmake-core ninja pkgconf python3 net/py-pyzmq databases/py-sqlite3 ${{ env.PACKAGES }}
+          sync: no
+
+      - &FETCH_SOURCE
+        name: Fetch source tarball
+        run: |
+          set -e
+          curl --location --fail --output source.tar.gz https://github.com/bitcoin/bitcoin/archive/refs/heads/master.tar.gz
+          mkdir bitcoin
+          tar -xf source.tar.gz -C bitcoin --strip-components=1
 
       - name: Generate buildsystem
         run: |
-          cd ${{ github.workspace }}
-          cmake -B build -G "Ninja" \
+          cmake -S bitcoin -B build -G "Ninja" \
             -DWITH_ZMQ=ON \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
@@ -74,14 +73,12 @@ jobs:
       - &BUILD
         name: Build
         run: |
-          cd ${{ github.workspace }}
           cmake --build build
 
       - &CHECK_BITCOIND
         name: Check 'bitcoind' executable
         run: |
           set -e
-          cd ${{ github.workspace }}
           ls -l build/bin/bitcoind
           file build/bin/bitcoind
           ldd build/bin/bitcoind
@@ -91,8 +88,7 @@ jobs:
         name: Run test suite
         run: |
           set -e
-          cd ${{ github.workspace }}
-          export DIR_UNIT_TEST_DATA="${{ github.workspace }}/qa-assets/unit_test_data"
+          export DIR_UNIT_TEST_DATA="$(pwd)/qa-assets/unit_test_data"
           mkdir -p ${DIR_UNIT_TEST_DATA}
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
           ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
@@ -101,7 +97,6 @@ jobs:
         name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
-          cd ${{ github.workspace }}
           build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
@@ -119,9 +114,9 @@ jobs:
     strategy: *RELEASE_MATRIX
 
     steps:
-      - *CHECKOUT_BITCOIN_CORE
       - *CLEAR_STORAGE_SPACE
       - *START_VM
+      - *FETCH_SOURCE
 
       - name: Checkout helper actions
         uses: actions/checkout@v6
@@ -135,13 +130,13 @@ jobs:
           vm: freebsd
           # TODO: Fix a linking error.
           options: "NO_QT=1"
+          source-dir: /root/bitcoin
           cache-tag: freebsd-${{ matrix.release }}
 
       - name: Generate buildsystem
         run: |
-          cd ${{ github.workspace }}
-          cmake -B build -G "Ninja" \
-            --toolchain depends/$(depends/config.sub $(depends/config.guess))/toolchain.cmake \
+          cmake -S bitcoin -B build -G "Ninja" \
+            --toolchain /root/bitcoin/depends/*freebsd*/toolchain.cmake \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             `# TODO: Reenable GUI tests.` \
             -DBUILD_GUI_TESTS=OFF \
