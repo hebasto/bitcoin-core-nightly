@@ -6,6 +6,16 @@ on:
       - '.github/workflows/openbsd.yml'
   workflow_dispatch:
     inputs:
+      repository:
+        description: 'Repository name with owner'
+        required: true
+        default: bitcoin/bitcoin
+        type: string
+      ref:
+        description: 'Repository reference: refs/heads/<branch>, refs/tags/<tag>, refs/pull/<PR>/head or refs/<commit>'
+        required: true
+        default: refs/heads/master
+        type: string
       skip_functional_tests:
         description: 'Skip functional tests'
         required: true
@@ -45,12 +55,6 @@ jobs:
         release: ['7.8']
 
     steps:
-      - &CHECKOUT_BITCOIN_CORE
-        name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v6
-        with:
-          repository: bitcoin/bitcoin
-
       - &CLEAR_STORAGE_SPACE
         name: Clear unnecessary files on bloated GHA VM
         uses: bitcoin/bitcoin/.github/actions/clear-files@master
@@ -60,15 +64,21 @@ jobs:
         uses: vmactions/openbsd-vm@v1
         with:
           release: ${{ matrix.release }}
-          prepare: pkg_add -U -v curl cmake-core ninja git python%3 py3-zmq ${{ env.PACKAGES }}
-          run: git config --global --add safe.directory ${{ github.workspace }}
-          sync: 'rsync'
-          copyback: false
+          prepare: pkg_add -U -v curl gtar-- cmake-core ninja python%3 py3-zmq ${{ env.PACKAGES }}
+          sync: no
+
+      - &FETCH_SOURCE
+        name: Fetch source tarball
+        run: |
+          set -e
+          curl --location --fail --output source.tar.gz https://github.com/${{ inputs.repository || 'bitcoin/bitcoin' }}/archive/${{ inputs.ref || 'refs/heads/master' }}.tar.gz
+          mkdir /home/bitcoin
+          gtar -xf source.tar.gz -C /home/bitcoin --strip-components=1
+          rm -rf source.tar.gz
 
       - name: Generate buildsystem
         run: |
-          cd ${{ github.workspace }}
-          cmake -B build -G "Ninja" \
+          cmake -S /home/bitcoin -B /home/build -G "Ninja" \
             -DWITH_ZMQ=ON \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
@@ -76,61 +86,57 @@ jobs:
       - &BUILD
         name: Build
         run: |
-          cd ${{ github.workspace }}
-          cmake --build build
+          cmake --build /home/build
 
       - &CHECK_BITCOIND
         name: Check 'bitcoind' executable
         run: |
           set -e
-          cd ${{ github.workspace }}
-          ls -l build/bin/bitcoind
-          file build/bin/bitcoind
-          ldd build/bin/bitcoind
-          build/bin/bitcoind -version
+          ls -l /home/build/bin/bitcoind
+          file /home/build/bin/bitcoind
+          ldd /home/build/bin/bitcoind
+          /home/build/bin/bitcoind -version
 
       - &RUN_TEST_SUITE
         name: Run test suite
         run: |
           set -e
-          cd ${{ github.workspace }}
-          export DIR_UNIT_TEST_DATA="${{ github.workspace }}/qa-assets/unit_test_data"
+          export DIR_UNIT_TEST_DATA="/home/qa-assets/unit_test_data"
           mkdir -p ${DIR_UNIT_TEST_DATA}
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
-          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
+          ctest --test-dir /home/build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - &RUN_FUNCTIONAL_TESTS
         name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
-          cd ${{ github.workspace }}
           ulimit -n 1024
-          build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
-            --tmpdirprefix . \
+          /home/build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
+            --tmpdirprefix /home \
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
             `# interface_rest intermittently hangs since 2025-10-23. Running separately in the next command.` \
             --exclude interface_rest \
             --timeout-factor=8
-          build/test/functional/test_runner.py interface_rest --combinedlogslen=99999999 \
-            --tmpdirprefix . \
+          /home/build/test/functional/test_runner.py interface_rest --combinedlogslen=99999999 \
+            --tmpdirprefix /home \
             --timeout-factor=8
 
   openbsd-depends:
     name: 'OpenBSD ${{ matrix.release }}: depends'
     runs-on: ubuntu-latest
     env:
-      PACKAGES: 'bash gmake gtar--'
+      PACKAGES: 'bash gmake'
     defaults:
       run:
         shell: openbsd {0}
     strategy: *RELEASE_MATRIX
 
     steps:
-      - *CHECKOUT_BITCOIN_CORE
       - *CLEAR_STORAGE_SPACE
       - *START_VM
+      - *FETCH_SOURCE
 
       - name: Checkout helper actions
         uses: actions/checkout@v6
@@ -142,13 +148,13 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: openbsd
+          source-dir: /home/bitcoin
           cache-tag: openbsd-${{ matrix.release }}
 
       - name: Generate buildsystem
         run: |
-          cd ${{ github.workspace }}
-          cmake -B build -G "Ninja" \
-            --toolchain depends/$(depends/config.sub $(depends/config.guess))/toolchain.cmake \
+          cmake -S /home/bitcoin -B /home/build -G "Ninja" \
+            --toolchain /home/bitcoin/depends/*openbsd*/toolchain.cmake \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
