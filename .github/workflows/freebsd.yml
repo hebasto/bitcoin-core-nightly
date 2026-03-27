@@ -6,6 +6,16 @@ on:
       - '.github/workflows/freebsd.yml'
   workflow_dispatch:
     inputs:
+      repository:
+        description: 'Repository name with owner'
+        required: true
+        default: bitcoin/bitcoin
+        type: string
+      ref:
+        description: 'Repository reference: refs/heads/<branch>, refs/tags/<tag>, refs/pull/<PR>/head or refs/<commit>'
+        required: true
+        default: refs/heads/master
+        type: string
       skip_functional_tests:
         description: 'Skip functional tests'
         required: true
@@ -59,7 +69,7 @@ jobs:
         name: Fetch source tarball
         run: |
           set -e
-          curl --location --fail --output source.tar.gz https://github.com/bitcoin/bitcoin/archive/refs/heads/master.tar.gz
+          curl --location --fail --output source.tar.gz https://github.com/${{ inputs.repository || 'bitcoin/bitcoin' }}/archive/${{ inputs.ref || 'refs/heads/master' }}.tar.gz
           mkdir bitcoin
           tar -xf source.tar.gz -C bitcoin --strip-components=1
 
