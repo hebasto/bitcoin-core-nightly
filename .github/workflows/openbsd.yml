@@ -28,6 +28,8 @@ jobs:
   openbsd-syslibs:
     name: 'OpenBSD ${{ matrix.release }}: system libs, no GUI'
     runs-on: ubuntu-latest
+    env:
+      PACKAGES: 'boost libevent sqlite3 capnproto zeromq'
     defaults:
       run:
         shell: openbsd {0}
@@ -53,11 +55,12 @@ jobs:
         name: Clear unnecessary files on bloated GHA VM
         uses: bitcoin/bitcoin/.github/actions/clear-files@master
 
-      - name: Start OpenBSD VM
+      - &START_VM
+        name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
         with:
           release: ${{ matrix.release }}
-          prepare: pkg_add -v cmake-core ninja git boost libevent sqlite3 capnproto zeromq python%3 py3-zmq
+          prepare: pkg_add -U -v curl cmake-core ninja git python%3 py3-zmq ${{ env.PACKAGES }}
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
@@ -117,6 +120,8 @@ jobs:
   openbsd-depends:
     name: 'OpenBSD ${{ matrix.release }}: depends'
     runs-on: ubuntu-latest
+    env:
+      PACKAGES: 'bash gmake gtar--'
     defaults:
       run:
         shell: openbsd {0}
@@ -125,16 +130,7 @@ jobs:
     steps:
       - *CHECKOUT_BITCOIN_CORE
       - *CLEAR_STORAGE_SPACE
-
-      - name: Start OpenBSD VM
-        uses: vmactions/openbsd-vm@v1
-        with:
-          release: ${{ matrix.release }}
-          # sqlite3 is necessary for python%3 for some reason.
-          prepare: pkg_add -v bash curl gmake gtar-- cmake-core ninja git sqlite3 python%3 py3-zmq
-          run: git config --global --add safe.directory ${{ github.workspace }}
-          sync: 'rsync'
-          copyback: false
+      - *START_VM
 
       - name: Checkout helper actions
         uses: actions/checkout@v6
