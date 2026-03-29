@@ -48,9 +48,7 @@ jobs:
       matrix:
         # Test all supported releases.
         # See https://www.freebsd.org/releases/.
-        include:
-          - release: '14.3'
-          - release: '15.0'
+        release: ['14.4', '15.0']
 
     steps:
       - &CLEAR_STORAGE_SPACE
