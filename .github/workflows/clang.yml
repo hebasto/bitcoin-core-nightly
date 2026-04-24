@@ -47,20 +47,18 @@ jobs:
           sudo apt-get update
           LLVM_VERSION=$(apt-cache search --names-only '^clang-[0-9]+$' | sort -V | tail -1 | cut -f1 -d" " | cut -f2 -d"-" )
           echo "LLVM_VERSION=${LLVM_VERSION}" >> "$GITHUB_ENV"
-          sudo apt-get install --no-install-recommends clang-${LLVM_VERSION} ${{ matrix.dependencies }} libboost-dev libevent-dev libsqlite3-dev libcapnp-dev capnproto libzmq3-dev systemtap-sdt-dev
+          sudo apt-get install --no-install-recommends clang-${LLVM_VERSION} ${{ matrix.dependencies }} \
+            libboost-dev libevent-dev libsqlite3-dev libcapnp-dev capnproto libzmq3-dev systemtap-sdt-dev \
+            qt6-base-dev qt6-tools-dev qt6-l10n-tools qt6-tools-dev-tools libqrencode-dev
 
       - name: Clang version
         run: clang-${LLVM_VERSION} -v
 
       - name: Generate buildsystem
         run: |
-          cmake -B build \
+          cmake -B build --preset dev-mode \
             -DCMAKE_C_COMPILER="clang-${LLVM_VERSION}" \
             -DCMAKE_CXX_COMPILER="clang++-${LLVM_VERSION};-stdlib=${{ matrix.stdlib }}" \
-            -DBUILD_BENCH=ON \
-            -DBUILD_FUZZ_BINARY=ON \
-            -DWITH_ZMQ=ON \
-            -DWITH_USDT=ON \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
       - name: Build
