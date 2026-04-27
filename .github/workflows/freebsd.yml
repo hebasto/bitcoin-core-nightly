@@ -60,7 +60,9 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           release: ${{ matrix.release }}
-          prepare: pkg install -y curl cmake-core ninja pkgconf python3 net/py-pyzmq databases/py-sqlite3 ${{ env.PACKAGES }}
+          prepare: |
+            pkg update
+            pkg install -y curl cmake-core ninja pkgconf python3 net/py-pyzmq databases/py-sqlite3 ${{ env.PACKAGES }}
           sync: no
 
       - &FETCH_SOURCE
