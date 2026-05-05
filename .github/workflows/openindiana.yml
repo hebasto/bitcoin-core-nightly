@@ -38,7 +38,10 @@ jobs:
           repository: bitcoin/bitcoin
 
       - name: Start OpenIndiana VM
-        uses: vmactions/openindiana-vm@v1
+        # openindiana-vm@v1.0.9 introduces multiple regressions, including:
+        # 1. A libc thread failure in the `coins_tests_base` test.
+        # 2. Doubled build times.
+        uses: vmactions/openindiana-vm@v1.0.8
         with:
           # This release has `metapackages/build-essential` preinstalled.
           release: '202510-build'
@@ -127,9 +130,7 @@ jobs:
           export DIR_UNIT_TEST_DATA="${{ github.workspace }}/qa-assets/unit_test_data"
           mkdir -p ${DIR_UNIT_TEST_DATA}
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
-          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure \
-            `# TODO: Investigate libc thread failure in coins_tests_base.` \
-            -E '^coins_tests_base$'
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - name: Install Python packages for functional tests
         if: ${{ ! inputs.skip_functional_tests }}
