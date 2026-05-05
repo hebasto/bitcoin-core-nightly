@@ -110,6 +110,7 @@ jobs:
         name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
+          set -e
           ulimit -n 1024
           /home/build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix /home \
