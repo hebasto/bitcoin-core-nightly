@@ -48,7 +48,7 @@ jobs:
           prepare: |
             set -e
             pkg list -H -o name,publisher,version > packages_before
-            pkg install cmake ninja git gcc14 pkg-config sqlite-3 python-313
+            pkg install cmake ninja git gcc14 pkg-config sqlite-3 python-313 lsof
             pkg set-publisher -g https://sfe.opencsw.org/localhostomnios localhostomnios
             pkg install libevent2
             pkg list -H -o name,publisher,version > packages_after
