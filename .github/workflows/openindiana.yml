@@ -36,6 +36,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: bitcoin/bitcoin
+          ref: refs/pull/35216/head
 
       - name: Start OpenIndiana VM
         # openindiana-vm@v1.0.9 introduces multiple regressions, including:
@@ -60,6 +61,7 @@ jobs:
             pkg list > packages_before
             pkg install developer/build/pkgconf
             pkg install library/c++/zeromq
+            pkg install system/storage/lsof
             pkg list > packages_after
             diff -w packages_before packages_after | grep '^>' || true
           run: git config --global --add safe.directory ${{ github.workspace }}
