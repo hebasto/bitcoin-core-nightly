@@ -127,9 +127,7 @@ jobs:
           export DIR_UNIT_TEST_DATA="${{ github.workspace }}/qa-assets/unit_test_data"
           mkdir -p ${DIR_UNIT_TEST_DATA}
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
-          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure \
-            `# TODO: Investigate libc thread failure in coins_tests_base.` \
-            -E '^coins_tests_base$'
+          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - name: Install Python packages for functional tests
         if: ${{ ! inputs.skip_functional_tests }}
