@@ -70,7 +70,7 @@ jobs:
           release: ${{ matrix.release }}
           prepare: |
             pkg update
-            pkg install -y curl cmake-core ninja pkgconf python3 net/py-pyzmq databases/py-sqlite3 ${{ matrix.packages }} ${{ env.PACKAGES }}
+            pkg install -y curl cmake-core ninja pkgconf python3 net/py-pyzmq databases/py-sqlite3 lsof ${{ matrix.packages }} ${{ env.PACKAGES }}
           sync: no
 
       - &FETCH_SOURCE
