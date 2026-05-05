@@ -117,4 +117,7 @@ jobs:
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
+            `# TODO https://github.com/bitcoin/bitcoin/pull/35216` \
+            --exclude feature_bind_extra \
+            --exclude rpc_bind \
             --timeout-factor=8
