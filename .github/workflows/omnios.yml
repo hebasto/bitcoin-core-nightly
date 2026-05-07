@@ -48,7 +48,7 @@ jobs:
           prepare: |
             set -e
             pkg list -H -o name,publisher,version > packages_before
-            pkg install cmake ninja git gcc14 pkg-config sqlite-3 python-313
+            pkg install cmake ninja git gcc14 ooce/file/lsof pkg-config sqlite-3 python-313
             pkg set-publisher -g https://sfe.opencsw.org/localhostomnios localhostomnios
             pkg install libevent2
             pkg list -H -o name,publisher,version > packages_after
@@ -117,4 +117,7 @@ jobs:
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
+            `# TODO https://github.com/bitcoin/bitcoin/pull/35216` \
+            --exclude feature_bind_extra \
+            --exclude rpc_bind \
             --timeout-factor=8
