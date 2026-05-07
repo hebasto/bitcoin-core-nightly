@@ -54,21 +54,29 @@ jobs:
         run: |
           Add-Content -Path "$env:VCPKG_ROOT\triplets\x64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
 
-      - name: Generate buildsystem
+      - name: Run CDash pipeline
         env:
           CXXFLAGS: '-Wno-return-type -Wno-error=unused-private-field -Wno-error=conditional-uninitialized'
+        shell: ctest --build-config Release --script {0}
         run: |
-          cmake -B build --preset windows -DBUILD_UTIL_CHAINSTATE=ON -DBUILD_BENCH=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          set(CTEST_SITE "github.com/hebasto")
+          set(CTEST_BUILD_NAME "Windows x86_64, clang-cl")
+          set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
+          set(CTEST_BINARY_DIRECTORY "$ENV{GITHUB_WORKSPACE}/build")
+          set(CTEST_CMAKE_GENERATOR "Visual Studio 18 2026")
 
-      - name: Build
-        working-directory: build
-        run: |
-          cmake --build . -j $env:NUMBER_OF_PROCESSORS --config Release
+          set(configure_opts
+            "--preset windows"
+            "-DBUILD_UTIL_CHAINSTATE=ON"
+            "-DBUILD_BENCH=ON"
+            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+          )
 
-      - name: Run test suite
-        working-directory: build
-        run: |
-          ctest -j $env:NUMBER_OF_PROCESSORS --output-on-failure -C Release
+          ctest_start(${{ case(github.event_name == 'workflow_run', 'Nightly', format('Experimental GROUP {0}', github.event_name)) }})
+          ctest_configure(OPTIONS "${configure_opts}")
+          ctest_build(PARALLEL_LEVEL $ENV{NUMBER_OF_PROCESSORS})
+          ctest_test(PARALLEL_LEVEL $ENV{NUMBER_OF_PROCESSORS})
+          ctest_submit()
 
       - name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
