@@ -64,6 +64,7 @@ jobs:
           set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
           set(CTEST_BINARY_DIRECTORY "$ENV{GITHUB_WORKSPACE}/build")
           set(CTEST_CMAKE_GENERATOR "Visual Studio 18 2026")
+          set(CTEST_NIGHTLY_START_TIME "01:00:00 UTC")
 
           set(configure_opts
             "--preset windows"
