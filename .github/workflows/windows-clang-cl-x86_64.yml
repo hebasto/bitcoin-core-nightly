@@ -56,7 +56,7 @@ jobs:
 
       - name: Run CDash pipeline
         env:
-          CXXFLAGS: '-Wno-return-type -Wno-error=unused-private-field -Wno-error=conditional-uninitialized'
+          CXXFLAGS: '-Wno-return-type -Wno-error=unused-private-field'
         shell: ctest --build-config Release --script {0}
         run: |
           set(CTEST_SITE "github.com/hebasto")
