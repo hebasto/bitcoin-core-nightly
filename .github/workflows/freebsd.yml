@@ -147,8 +147,6 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: freebsd
-          # TODO: Fix a linking error.
-          options: "NO_QT=1"
           source-dir: /root/bitcoin
           cache-tag: freebsd-${{ matrix.release }}
 
