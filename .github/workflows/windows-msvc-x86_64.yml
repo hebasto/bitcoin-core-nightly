@@ -40,16 +40,57 @@ jobs:
           py -3 --version
           Write-Host "PowerShell version $($PSVersionTable.PSVersion.ToString())"
 
-      - name: Generate buildsystem
+      - name: Generate CTest configuration
         run: |
-          cmake -B build --preset vs2026 -DBUILD_UTIL_CHAINSTATE=ON -DBUILD_BENCH=ON -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          $config = @'
+          set(CTEST_SITE "${{ github.repository }}")
+          set(CTEST_BUILD_NAME "Windows x86_64, MSVC, Debug")
+          set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
+          set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
+          set(CTEST_CMAKE_GENERATOR "Visual Studio 18 2026")
+          '@
+          Set-Content -Path "ctest_config.cmake" -Value $config -Encoding utf8
 
-      - name: Build
-        working-directory: build
+      - name: CDash -- Start & Update
+        shell: ctest --script {0}
         run: |
-          cmake --build . -j $env:NUMBER_OF_PROCESSORS --config Debug
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(${{ case(github.event_name == 'workflow_run', 'Nightly', format('Experimental GROUP {0}', github.event_name)) }})
+          find_program(CTEST_GIT_COMMAND git REQUIRED)
+          set(CTEST_UPDATE_VERSION_ONLY TRUE)
+          ctest_update()
 
-      - name: Run test suite
-        working-directory: build
+      - name: CDash -- Configure
+        shell: ctest --build-config Debug --extra-verbose --script {0}
         run: |
-          ctest -j $env:NUMBER_OF_PROCESSORS --output-on-failure -C Debug
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          set(configure_opts
+            "--preset vs2026"
+            "-DBUILD_UTIL_CHAINSTATE=ON"
+            "-DBUILD_BENCH=ON"
+            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+          )
+          ctest_start(APPEND)
+          ctest_configure(OPTIONS "${configure_opts}")
+
+      - name: CDash -- Build
+        shell: ctest --build-config Debug --extra-verbose --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_build(PARALLEL_LEVEL $ENV{NUMBER_OF_PROCESSORS})
+
+      - name: CDash -- Test
+        shell: ctest --build-config Debug --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_test(PARALLEL_LEVEL $ENV{NUMBER_OF_PROCESSORS})
+
+      - name: CDash -- Submit
+        if: always()
+        shell: ctest --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_submit()
