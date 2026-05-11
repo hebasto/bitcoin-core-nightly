@@ -33,16 +33,45 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-          brew install cmake pkgconf boost libevent zeromq qt qrencode capnp
+          brew install git cmake pkgconf boost libevent zeromq qt qrencode capnp
 
-      - name: Generate buildsystem
+      - name: Generate CTest configuration
         run: |
-          cmake -B build --preset dev-mode \
-            -DWITH_USDT=OFF \
-            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          cat << 'EOF' > ctest_config.cmake
+          set(CTEST_SITE "${{ github.repository }}")
+          set(CTEST_BUILD_NAME "macOS 26 ARM64")
+          set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
+          set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
+          set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
+          EOF
 
-      - name: Build
-        run: cmake --build build -j 4
+      - name: CDash -- Start & Update
+        shell: ctest --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(${{ case(github.event_name == 'workflow_run', 'Nightly', format('Experimental GROUP {0}', github.event_name)) }})
+          find_program(CTEST_GIT_COMMAND git REQUIRED)
+          set(CTEST_UPDATE_VERSION_ONLY TRUE)
+          ctest_update()
+
+      - name: CDash -- Configure
+        shell: ctest --extra-verbose --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          set(configure_opts
+            "--preset dev-mode"
+            "-DWITH_USDT=OFF"
+            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+          )
+          ctest_start(APPEND)
+          ctest_configure(OPTIONS "${configure_opts}")
+
+      - name: CDash -- Build
+        shell: ctest --extra-verbose --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_build(PARALLEL_LEVEL 4)
 
       - name: Check 'bitcoind' executable
         run: |
@@ -51,8 +80,20 @@ jobs:
           otool -L build/bin/bitcoind
           build/bin/bitcoind -version
 
-      - name: Run test suite
-        run: ctest --test-dir build -j 4
+      - name: CDash -- Test
+        shell: ctest --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_test(PARALLEL_LEVEL 4)
+
+      - name: CDash -- Submit
+        if: always()
+        shell: ctest --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_submit()
 
       - name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
