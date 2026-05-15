@@ -116,10 +116,18 @@ jobs:
         name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
+          set -e
           build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
+            `# Tests using lsof may fail due to the following warning:` \
+            `# lsof: WARNING -- reading lockf list failed: Cannot allocate memory` \
+            `# Run them separately in the subsequent command.` \
+            --exclude feature_bind_extra \
+            --exclude rpc_bind \
+            --timeout-factor=8
+          build/test/functional/test_runner.py feature_bind_extra rpc_bind -j 1 --combinedlogslen=99999999 \
             --timeout-factor=8
 
   freebsd-depends:
