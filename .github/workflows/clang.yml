@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   clang:
-    name: 'Clang-SNAPSHOT, ${{ matrix.stdlib }}: system libs, no GUI'
+    name: 'Clang-SNAPSHOT, ${{ matrix.stdlib }}, system libs, no GUI'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -34,6 +34,7 @@ jobs:
 
     steps:
       - name: Checkout Bitcoin Core repo
+        id: checkout
         uses: actions/checkout@v6
         with:
           repository: bitcoin/bitcoin
@@ -52,26 +53,70 @@ jobs:
       - name: Clang version
         run: clang-${LLVM_VERSION} -v
 
-      - name: Generate buildsystem
+      - name: Generate CTest configuration
         run: |
-          cmake -B build \
-            -DCMAKE_C_COMPILER="clang-${LLVM_VERSION}" \
-            -DCMAKE_CXX_COMPILER="clang++-${LLVM_VERSION};-stdlib=${{ matrix.stdlib }}" \
-            -DBUILD_BENCH=ON \
-            -DBUILD_FUZZ_BINARY=ON \
-            -DWITH_ZMQ=ON \
-            -DWITH_USDT=ON \
-            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          cat << 'EOF' > ctest_config.cmake
+          set(CTEST_SITE "${{ github.repository }}")
+          set(CTEST_BUILD_NAME "Clang-SNAPSHOT, ${{ matrix.stdlib }}, system libs, no GUI")
+          set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
+          set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
+          set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
+          cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
+          EOF
 
-      - name: Build
-        run: cmake --build build -j $(nproc)
+      - name: CDash -- Start & Update
+        shell: ctest --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(${{ case(github.event_name == 'workflow_run', 'Nightly', format('Experimental GROUP {0}', github.event_name)) }})
+          set(CTEST_UPDATE_TYPE git)
+          # This command may be redundant once the following MR is merged:
+          # https://gitlab.kitware.com/cmake/cmake/-/merge_requests/12038
+          set(CTEST_UPDATE_COMMAND "${CMAKE_COMMAND} -E true")
+          set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.checkout.outputs.commit }}")
+          ctest_update()
+
+      - name: CDash -- Configure
+        shell: ctest --extra-verbose --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          set(configure_opts
+            "-DCMAKE_C_COMPILER=clang-$ENV{LLVM_VERSION}"
+            "-DCMAKE_CXX_COMPILER=clang++-$ENV{LLVM_VERSION}\;-stdlib=${{ matrix.stdlib }}"
+            "-DBUILD_BENCH=ON"
+            "-DBUILD_FUZZ_BINARY=ON"
+            "-DWITH_ZMQ=ON"
+            "-DWITH_USDT=ON"
+            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+          )
+          ctest_start(APPEND)
+          ctest_configure(OPTIONS "${configure_opts}")
+
+      - name: CDash -- Build
+        shell: ctest --extra-verbose --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_build(PARALLEL_LEVEL ${nproc})
 
       - name: Check 'bitcoind' executable
         run: |
           ls -l build/bin/bitcoind
           file build/bin/bitcoind
           ldd build/bin/bitcoind
-          ./build/bin/bitcoind -version
+          build/bin/bitcoind -version
 
-      - name: Run test suite
-        run: ctest --test-dir build -j $(nproc)
+      - name: CDash -- Test
+        shell: ctest --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_test(PARALLEL_LEVEL ${nproc})
+
+      - name: CDash -- Submit
+        if: always()
+        shell: ctest --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_submit()
