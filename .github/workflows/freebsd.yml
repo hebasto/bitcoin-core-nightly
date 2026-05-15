@@ -39,7 +39,7 @@ jobs:
     name: 'FreeBSD ${{ matrix.release }}: system libs, no GUI'
     runs-on: ubuntu-latest
     env:
-      PACKAGES: 'boost-libs libevent sqlite3 libzmq4'
+      PACKAGES: 'boost-libs libevent sqlite3 capnproto libzmq4'
     defaults:
       run:
         shell: freebsd {0}
@@ -48,15 +48,7 @@ jobs:
       matrix:
         # Test all supported releases.
         # See https://www.freebsd.org/releases/.
-        include:
-          - release: '14.4'
-            packages: 'capnproto'
-          - release: '15.0'
-            # devel/capnproto is marked BROKEN on 15+.
-            # See:
-            # - https://www.freshports.org/devel/capnproto/
-            # - https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=294259
-            # - https://github.com/capnproto/capnproto/issues/2594
+        release: ['14.4', '15.0']
 
     steps:
       - &CLEAR_STORAGE_SPACE
@@ -70,7 +62,7 @@ jobs:
           release: ${{ matrix.release }}
           prepare: |
             pkg update
-            pkg install -y curl cmake-core ninja pkgconf python3 net/py-pyzmq databases/py-sqlite3 lsof ${{ matrix.packages }} ${{ env.PACKAGES }}
+            pkg install -y curl cmake-core ninja pkgconf python3 net/py-pyzmq databases/py-sqlite3 lsof ${{ env.PACKAGES }}
           sync: no
 
       - &FETCH_SOURCE
@@ -84,7 +76,6 @@ jobs:
       - name: Generate buildsystem
         run: |
           cmake -S bitcoin -B build -G "Ninja" \
-            -DENABLE_IPC=OFF \
             -DWITH_ZMQ=ON \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
