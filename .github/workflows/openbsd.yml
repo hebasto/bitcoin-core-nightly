@@ -50,9 +50,7 @@ jobs:
         # From https://www.openbsd.org/faq/faq5.html:
         # > Only the two most recent OpenBSD releases receive
         # > security and reliability fixes for the base system.
-        # However, Bitcoin Core requires OpenBSD 7.8 or newer.
-        # See https://github.com/bitcoin/bitcoin/pull/34182.
-        release: ['7.8']
+        release: ['7.8', '7.9']
 
     steps:
       - &CLEAR_STORAGE_SPACE
@@ -119,6 +117,9 @@ jobs:
             --exclude feature_reindex_init \
             `# interface_rest intermittently hangs since 2025-10-23. Running separately in the next command.` \
             --exclude interface_rest \
+            `# Disable tests using lsof, as this package is not available.` \
+            --exclude feature_bind_extra \
+            --exclude rpc_bind \
             --timeout-factor=8
           /home/build/test/functional/test_runner.py interface_rest --combinedlogslen=99999999 \
             --tmpdirprefix /home \
