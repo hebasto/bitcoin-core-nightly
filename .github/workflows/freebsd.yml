@@ -36,10 +36,10 @@ env:
 
 jobs:
   freebsd-syslibs:
-    name: 'FreeBSD ${{ matrix.release }}, system libs, no GUI'
+    name: 'FreeBSD ${{ matrix.release }}, system libs'
     runs-on: ubuntu-latest
     env:
-      PACKAGES: 'boost-libs libevent sqlite3 capnproto libzmq4'
+      PACKAGES: 'boost-libs libevent sqlite3 capnproto libzmq4 qt6-base qt6-tools libqrencode'
     defaults:
       run:
         shell: freebsd {0}
@@ -81,7 +81,7 @@ jobs:
         run: |
           cat << 'EOF' > ctest_config.cmake
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "FreeBSD ${{ matrix.release }}, system libs, no GUI")
+          set(CTEST_BUILD_NAME "FreeBSD ${{ matrix.release }}, system libs")
           set(CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/bitcoin")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Ninja")
@@ -114,7 +114,6 @@ jobs:
           include(ctest_config.cmake)
           set(configure_opts
             "--preset dev-mode"
-            "-DBUILD_GUI=OFF"
             "-DWITH_USDT=OFF"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
