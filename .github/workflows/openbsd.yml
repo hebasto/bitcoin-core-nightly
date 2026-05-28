@@ -36,7 +36,7 @@ env:
 
 jobs:
   openbsd-syslibs:
-    name: 'OpenBSD ${{ matrix.release }}: system libs, no GUI'
+    name: 'OpenBSD ${{ matrix.release }}, system libs, no GUI'
     runs-on: ubuntu-latest
     env:
       PACKAGES: 'boost libevent sqlite3 capnproto zeromq'
@@ -73,18 +73,66 @@ jobs:
           mkdir /home/bitcoin
           gtar -xf source.tar.gz -C /home/bitcoin --strip-components=1
           rm -rf source.tar.gz
+          # Test data.
+          DIR_UNIT_TEST_DATA=/home/qa-assets/unit_test_data
+          mkdir -p "$DIR_UNIT_TEST_DATA"
+          curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
 
-      - name: Generate buildsystem
+      - name: Generate CTest configuration
         run: |
-          cmake -S /home/bitcoin -B /home/build -G "Ninja" \
-            -DWITH_ZMQ=ON \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
-            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          cat << 'EOF' > ctest_config.cmake
+          set(CTEST_SITE "${{ github.repository }}")
+          set(CTEST_BUILD_NAME "OpenBSD ${{ matrix.release }}, system libs, no GUI")
+          set(CTEST_SOURCE_DIRECTORY "/home/bitcoin")
+          set(CTEST_BINARY_DIRECTORY "/home/build")
+          set(CTEST_CMAKE_GENERATOR "Ninja")
+          cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
+          EOF
 
-      - &BUILD
-        name: Build
+      - &CDASH_START_UPDATE
+        name: CDash -- Start & Update
         run: |
-          cmake --build /home/build
+          COMMIT="$(awk -F '"' '/^#define GIT_COMMIT_ID/ {print $2}' /home/bitcoin/src/clientversion.cpp)"
+          echo "set(CTEST_UPDATE_VERSION_OVERRIDE $COMMIT)" >> ctest_update_version_override.cmake
+          cat << 'EOF' > ctest_start_upate.cmake
+          include(ctest_config.cmake)
+          ctest_start(${{ case(github.event_name == 'workflow_run', 'Nightly', format('Experimental GROUP {0}', github.event_name)) }})
+          set(CTEST_UPDATE_TYPE git)
+          # This command may be redundant once the following MR is merged:
+          # https://gitlab.kitware.com/cmake/cmake/-/merge_requests/12038
+          set(CTEST_UPDATE_COMMAND "${CMAKE_COMMAND} -E true")
+          include(ctest_update_version_override.cmake)
+          ctest_update()
+          EOF
+          ctest --script ctest_start_upate.cmake
+          # A hack to work around the broken CTEST_UPDATE_VERSION_OVERRIDE.
+          sed -i 's/\([[:blank:]]*\)<UpdateType>Unknown<\/UpdateType>/\1<UpdateType>GIT<\/UpdateType>\
+            \1<Revision>'"$COMMIT"'<\/Revision>/' "/home/build/Testing/$(head -1 /home/build/Testing/TAG)/Update.xml"
+
+      - name: CDash -- Configure
+        run: |
+          cat << 'EOF' > ctest_configure.cmake
+          include(ctest_config.cmake)
+          set(configure_opts
+            "-DWITH_ZMQ=ON"
+            "-DBUILD_BENCH=ON"
+            "-DBUILD_FUZZ_BINARY=ON"
+            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+          )
+          ctest_start(APPEND)
+          ctest_configure(OPTIONS "${configure_opts}")
+          EOF
+          ctest --extra-verbose --script ctest_configure.cmake
+
+      - &CDASH_BUILD
+        name: CDash -- Build
+        run: |
+          cat << 'EOF' > ctest_build.cmake
+          include(ctest_config.cmake)
+          ctest_start(APPEND)
+          ctest_build(PARALLEL_LEVEL ${nproc})
+          EOF
+          ctest --extra-verbose --script ctest_build.cmake
 
       - &CHECK_BITCOIND
         name: Check 'bitcoind' executable
@@ -95,14 +143,27 @@ jobs:
           ldd /home/build/bin/bitcoind
           /home/build/bin/bitcoind -version
 
-      - &RUN_TEST_SUITE
-        name: Run test suite
+      - &CDASH_TEST
+        name: CDash -- Test
         run: |
-          set -e
-          export DIR_UNIT_TEST_DATA="/home/qa-assets/unit_test_data"
-          mkdir -p ${DIR_UNIT_TEST_DATA}
-          curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
-          ctest --test-dir /home/build -j ${{ env.CI_NCPU }} --output-on-failure
+          cat << 'EOF' > ctest_test.cmake
+          include(ctest_config.cmake)
+          set(ENV{DIR_UNIT_TEST_DATA} /home/qa-assets/unit_test_data)
+          ctest_start(APPEND)
+          ctest_test(PARALLEL_LEVEL ${nproc})
+          EOF
+          ctest --script ctest_test.cmake
+
+      - &CDASH_SUBMIT
+        name: CDash -- Submit
+        if: always()
+        run: |
+          cat << 'EOF' > ctest_submit.cmake
+          include(ctest_config.cmake)
+          ctest_start(APPEND)
+          ctest_submit()
+          EOF
+          ctest --script ctest_submit.cmake
 
       - &RUN_FUNCTIONAL_TESTS
         name: Run functional tests
@@ -126,7 +187,7 @@ jobs:
             --timeout-factor=8
 
   openbsd-depends:
-    name: 'OpenBSD ${{ matrix.release }}: depends'
+    name: 'OpenBSD ${{ matrix.release }}, depends'
     runs-on: ubuntu-latest
     env:
       PACKAGES: 'bash gmake'
@@ -153,14 +214,36 @@ jobs:
           source-dir: /home/bitcoin
           cache-tag: openbsd-${{ matrix.release }}
 
-      - name: Generate buildsystem
+      - name: Generate CTest configuration
         run: |
-          cmake -S /home/bitcoin -B /home/build -G "Ninja" \
-            --toolchain /home/bitcoin/depends/*openbsd*/toolchain.cmake \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
-            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          cat << 'EOF' > ctest_config.cmake
+          set(CTEST_SITE "${{ github.repository }}")
+          set(CTEST_BUILD_NAME "OpenBSD ${{ matrix.release }}, depends")
+          set(CTEST_SOURCE_DIRECTORY "/home/bitcoin")
+          set(CTEST_BINARY_DIRECTORY "/home/build")
+          set(CTEST_CMAKE_GENERATOR "Ninja")
+          cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
+          EOF
 
-      - *BUILD
+      - *CDASH_START_UPDATE
+
+      - name: CDash -- Configure
+        run: |
+          cat << 'EOF' > ctest_configure.cmake
+          include(ctest_config.cmake)
+          set(configure_opts
+            "--toolchain /home/bitcoin/depends/x86_64-unknown-openbsd${{ matrix.release }}/toolchain.cmake"
+            "-DBUILD_BENCH=ON"
+            "-DBUILD_FUZZ_BINARY=ON"
+            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+          )
+          ctest_start(APPEND)
+          ctest_configure(OPTIONS "${configure_opts}")
+          EOF
+          ctest --extra-verbose --script ctest_configure.cmake
+
+      - *CDASH_BUILD
       - *CHECK_BITCOIND
-      - *RUN_TEST_SUITE
+      - *CDASH_TEST
+      - *CDASH_SUBMIT
       - *RUN_FUNCTIONAL_TESTS
