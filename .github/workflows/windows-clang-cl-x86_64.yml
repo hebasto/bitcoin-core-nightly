@@ -85,7 +85,7 @@ jobs:
         shell: ctest --build-config Release --extra-verbose --script {0}
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
-          set(ENV{CXXFLAGS} "-Wno-return-type -Wno-error=unused-private-field -Wno-error=conditional-uninitialized")
+          set(ENV{CXXFLAGS} "-Wno-return-type -Wno-error=conditional-uninitialized")
           set(configure_opts
             "--preset windows"
             "-DBUILD_UTIL_CHAINSTATE=ON"
