@@ -71,7 +71,7 @@ jobs:
 
   windows-x86_64-native-test:
     name: 'Windows x86-64, test cross-built executables natively'
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     needs: windows-x86_64-cross
     defaults:
       run:
@@ -88,15 +88,13 @@ jobs:
         with:
           name: ${{ env.CI_HOST }}-executables-${{ github.run_id }}
 
-      - name: Configure Developer Command Prompt for Microsoft Visual C++
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-
       - name: Check 'bitcoind.exe' executable
+        # https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-180#developer_command_file_locations
+        shell: cmd
         run: |
-          dumpbin.exe /imports bin\bitcoind.exe | Select-String -Pattern "\S+\.dll" -CaseSensitive:$false
-          bin\bitcoind.exe -version
+          call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64 -no_logo
+          pwsh.exe -Command "dumpbin.exe /imports bin\bitcoind.exe | Select-String -Pattern '\S+\.dll' -CaseSensitive:$false" || exit 1
+          bin\bitcoind.exe -version || exit 1
 
       - name: Run unit tests
         run: |

@@ -88,15 +88,13 @@ jobs:
         with:
           name: ${{ env.CI_HOST }}-executables-${{ github.run_id }}
 
-      - name: Configure Developer Command Prompt for Microsoft Visual C++
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: arm64
-
       - name: Check 'bitcoind.exe' executable
+        # https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-180#developer_command_file_locations
+        shell: cmd
         run: |
-          dumpbin.exe /imports bin\bitcoind.exe | Select-String -Pattern "\S+\.dll" -CaseSensitive:$false
-          bin\bitcoind.exe -version
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=arm64 -no_logo
+          pwsh.exe -Command "dumpbin.exe /imports bin\bitcoind.exe | Select-String -Pattern '\S+\.dll' -CaseSensitive:$false" || exit 1
+          bin\bitcoind.exe -version || exit 1
 
       - name: Run unit tests
         run: |
