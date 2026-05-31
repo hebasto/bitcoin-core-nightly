@@ -1,0 +1,46 @@
+name: OpenBSD, PR35397
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/openbsd-pr35397.yml'
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  openbsd-syslibs:
+    name: 'OpenBSD, ${{ matrix.name }}'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: openbsd {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ref: 'refs/heads/master'
+            name: 'master'
+          - ref: 'refs/pull/35397/head'
+            name: 'PR35397'
+
+    steps:
+      - name: Start OpenBSD VM
+        uses: vmactions/openbsd-vm@v1
+        with:
+          release: 7.9
+          # See https://github.com/bitcoin/bitcoin/tree/master/depends#openbsd.
+          prepare: pkg_add -U -v bash cmake curl gmake gtar--
+          sync: no
+
+      - name: Fetch source tarball
+        run: |
+          set -e
+          curl --location --fail --output source.tar.gz https://github.com/bitcoin/bitcoin/archive/${{ matrix.ref }}.tar.gz
+          mkdir /home/bitcoin
+          gtar -xf source.tar.gz -C /home/bitcoin --strip-components=1
+          rm -rf source.tar.gz
+
+      - name: Build libevent in depends
+        run: |
+          gmake -C /home/bitcoin/depends libevent
