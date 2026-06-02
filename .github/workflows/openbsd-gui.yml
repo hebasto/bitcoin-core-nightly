@@ -1,0 +1,222 @@
+name: OpenBSD with GUI
+on:
+  pull_request:
+    paths:
+      - '.github/actions/build-depends/action.yml'
+      - '.github/workflows/openbsd-gui.yml'
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
+  CI_NCPU: 4
+
+jobs:
+  openbsd-syslibs:
+    name: 'OpenBSD ${{ matrix.release }}, system libs'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: openbsd {0}
+    strategy: &RELEASE_MATRIX
+      fail-fast: false
+      matrix:
+        # Test all supported releases.
+        # From https://www.openbsd.org/faq/faq5.html:
+        # > Only the two most recent OpenBSD releases receive
+        # > security and reliability fixes for the base system.
+        release: ['7.8', '7.9']
+
+    steps:
+      - &CLEAR_STORAGE_SPACE
+        name: Clear unnecessary files on bloated GHA VM
+        uses: bitcoin/bitcoin/.github/actions/clear-files@master
+
+      - &START_VM
+        name: Start OpenBSD VM
+        uses: vmactions/openbsd-vm@v1
+        with:
+          release: ${{ matrix.release }}
+          sync: no
+
+      - &FETCH_SOURCE
+        name: Fetch source tarball
+        run: |
+          set -e
+          pkg_add curl gtar--
+          curl --location --fail --output source.tar.gz https://github.com/bitcoin/bitcoin/archive/refs/pull/35427/head.tar.gz
+          mkdir /home/bitcoin
+          gtar -xf source.tar.gz -C /home/bitcoin --strip-components=1
+          rm -rf source.tar.gz
+          # Test data.
+          DIR_UNIT_TEST_DATA=/home/qa-assets/unit_test_data
+          mkdir -p "$DIR_UNIT_TEST_DATA"
+          curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
+
+      - name: Install build dependencies
+        run: pkg_add cmake-core ninja boost libevent sqlite3 capnproto zeromq qt6-qtbase qt6-qttools libqrencode python%3
+
+      - name: Generate CTest configuration
+        run: |
+          cat << 'EOF' > ctest_config.cmake
+          set(CTEST_SITE "${{ github.repository }}")
+          set(CTEST_BUILD_NAME "OpenBSD ${{ matrix.release }}, system libs")
+          set(CTEST_SOURCE_DIRECTORY "/home/bitcoin")
+          set(CTEST_BINARY_DIRECTORY "/home/build")
+          set(CTEST_CMAKE_GENERATOR "Ninja")
+          cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
+          EOF
+
+      - &CDASH_START_UPDATE
+        name: CDash -- Start & Update
+        run: |
+          COMMIT="$(awk -F '"' '/^#define GIT_COMMIT_ID/ {print $2}' /home/bitcoin/src/clientversion.cpp)"
+          echo "set(CTEST_UPDATE_VERSION_OVERRIDE $COMMIT)" >> ctest_update_version_override.cmake
+          cat << 'EOF' > ctest_start_upate.cmake
+          include(ctest_config.cmake)
+          ctest_start(${{ case(github.event_name == 'workflow_run', 'Nightly', format('Experimental GROUP {0}', github.event_name)) }})
+          set(CTEST_UPDATE_TYPE git)
+          # This command may be redundant once the following MR is merged:
+          # https://gitlab.kitware.com/cmake/cmake/-/merge_requests/12038
+          set(CTEST_UPDATE_COMMAND "${CMAKE_COMMAND} -E true")
+          include(ctest_update_version_override.cmake)
+          ctest_update()
+          EOF
+          ctest --script ctest_start_upate.cmake
+          # A hack to work around the broken CTEST_UPDATE_VERSION_OVERRIDE.
+          sed -i 's/\([[:blank:]]*\)<UpdateType>Unknown<\/UpdateType>/\1<UpdateType>GIT<\/UpdateType>\
+            \1<Revision>'"$COMMIT"'<\/Revision>/' "/home/build/Testing/$(head -1 /home/build/Testing/TAG)/Update.xml"
+
+      - name: CDash -- Configure
+        run: |
+          cat << 'EOF' > ctest_configure.cmake
+          include(ctest_config.cmake)
+          set(configure_opts
+            "-DBUILD_GUI=ON"
+            "-DWITH_ZMQ=ON"
+            "-DBUILD_BENCH=ON"
+            "-DBUILD_FUZZ_BINARY=ON"
+            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+          )
+          ctest_start(APPEND)
+          ctest_configure(OPTIONS "${configure_opts}")
+          EOF
+          ctest --extra-verbose --script ctest_configure.cmake
+
+      - &CDASH_BUILD
+        name: CDash -- Build
+        run: |
+          cat << 'EOF' > ctest_build.cmake
+          include(ctest_config.cmake)
+          ctest_start(APPEND)
+          ctest_build(PARALLEL_LEVEL ${nproc})
+          EOF
+          ctest --extra-verbose --script ctest_build.cmake
+
+      - &CHECK_BITCOIN-QT
+        name: Check 'bitcoin-qt' executable
+        run: |
+          set -e
+          ls -l /home/build/bin/bitcoin-qt
+          file /home/build/bin/bitcoin-qt
+          ldd /home/build/bin/bitcoin-qt
+
+      - &CDASH_TEST
+        name: CDash -- Test
+        run: |
+          cat << 'EOF' > ctest_test.cmake
+          include(ctest_config.cmake)
+          set(ENV{DIR_UNIT_TEST_DATA} /home/qa-assets/unit_test_data)
+          ctest_start(APPEND)
+          ctest_test(PARALLEL_LEVEL ${nproc})
+          EOF
+          ctest --script ctest_test.cmake
+
+      - &CDASH_SUBMIT
+        name: CDash -- Submit
+        if: always()
+        run: |
+          cat << 'EOF' > ctest_submit.cmake
+          include(ctest_config.cmake)
+          ctest_start(APPEND)
+          ctest_submit()
+          EOF
+          ctest --script ctest_submit.cmake
+
+  openbsd-depends:
+    name: 'OpenBSD ${{ matrix.release }}, depends with GUI'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: openbsd {0}
+    strategy: *RELEASE_MATRIX
+
+    steps:
+      - *CLEAR_STORAGE_SPACE
+      - *START_VM
+      - *FETCH_SOURCE
+
+      - name: Checkout helper actions
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/actions/build-depends
+          path: ci/nightly
+
+      - name: Install basic build dependencies
+        run: pkg_add bash cmake-core curl gmake gtar--
+
+      - name: Build depends with NO_QT=1
+        uses: ./ci/nightly/.github/actions/build-depends
+        with:
+          vm: openbsd
+          source-dir: /home/bitcoin
+          options: NO_QT=1
+          cache-tag: openbsd-${{ matrix.release }}
+
+      - name: Install GUI build dependencies
+        run: pkg_add bison ninja
+
+      - name: Build all depends
+        uses: ./ci/nightly/.github/actions/build-depends
+        with:
+          vm: openbsd
+          source-dir: /home/bitcoin
+          cache-tag: openbsd-gui-${{ matrix.release }}
+
+      - name: Install other build dependencies
+        run: pkg_add python%3
+
+      - name: Generate CTest configuration
+        run: |
+          cat << 'EOF' > ctest_config.cmake
+          set(CTEST_SITE "${{ github.repository }}")
+          set(CTEST_BUILD_NAME "OpenBSD ${{ matrix.release }}, depends with GUI")
+          set(CTEST_SOURCE_DIRECTORY "/home/bitcoin")
+          set(CTEST_BINARY_DIRECTORY "/home/build")
+          set(CTEST_CMAKE_GENERATOR "Ninja")
+          cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
+          EOF
+
+      - *CDASH_START_UPDATE
+
+      - name: CDash -- Configure
+        run: |
+          cat << 'EOF' > ctest_configure.cmake
+          include(ctest_config.cmake)
+          set(configure_opts
+            "--toolchain /home/bitcoin/depends/x86_64-unknown-openbsd${{ matrix.release }}/toolchain.cmake"
+            "-DBUILD_BENCH=ON"
+            "-DBUILD_FUZZ_BINARY=ON"
+            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+          )
+          ctest_start(APPEND)
+          ctest_configure(OPTIONS "${configure_opts}")
+          EOF
+          ctest --extra-verbose --script ctest_configure.cmake
+
+      - *CDASH_BUILD
+      - *CHECK_BITCOIN-QT
+      - *CDASH_TEST
+      - *CDASH_SUBMIT
