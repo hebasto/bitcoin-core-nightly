@@ -38,13 +38,10 @@ jobs:
           repository: bitcoin/bitcoin
 
       - name: Start OpenIndiana VM
-        # openindiana-vm@v1.0.9 introduces multiple regressions, including:
-        # 1. A libc thread failure in the `coins_tests_base` test.
-        # 2. Doubled build times.
-        uses: vmactions/openindiana-vm@v1.0.8
+        uses: vmactions/openindiana-vm@v1
         with:
           # This release has `metapackages/build-essential` preinstalled.
-          release: '202510-build'
+          release: '202604-build'
           mem: 18432
           # The `pkg install` command often encounters networking issues in the CI
           # environment. To mitigate these, the following steps have been taken:
