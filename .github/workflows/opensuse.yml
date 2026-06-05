@@ -41,7 +41,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          zypper in -y gawk boost-devel libevent-devel sqlite3-devel libcapnp-devel capnproto zeromq-devel systemtap-sdt-devel qt6-base-devel qt6-tools-devel qt6-linguist-devel qrencode-devel cmake ninja clang llvm python3
+          zypper in -y gawk boost-devel libevent-devel sqlite3-devel libcapnp-devel capnproto zeromq-devel systemtap-sdt-devel qt6-base-devel qt6-tools-devel qt6-linguist-devel qrencode-devel cmake ninja clang llvm
 
       - name: Get master branch commit hash
         id: master_commit
