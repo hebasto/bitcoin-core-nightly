@@ -1,4 +1,4 @@
-name: OpenSUSE
+name: openSUSE
 on:
   pull_request:
     paths:
@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   opensuse:
-    name: 'OpenSUSE ${{ matrix.release }}'
+    name: 'openSUSE ${{ matrix.release }}'
     runs-on: ubuntu-latest
     container: ${{ matrix.image }}
     strategy:
@@ -53,7 +53,7 @@ jobs:
         run: |
           cat << 'EOF' > ctest_config.cmake
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "OpenSUSE ${{ matrix.release }}")
+          set(CTEST_BUILD_NAME "openSUSE ${{ matrix.release }}")
           set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Ninja")
