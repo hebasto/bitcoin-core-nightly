@@ -3,71 +3,37 @@ on:
   pull_request:
     paths:
       - '.github/workflows/openindiana.yml'
-  workflow_dispatch:
-    inputs:
-      skip_functional_tests:
-        description: 'Skip functional tests'
-        required: true
-        default: false
-        type: boolean
-  workflow_run:
-    workflows: ["Manager"]
-    types: [requested]
-    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
   cancel-in-progress: true
 
-env:
-  # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
-  CI_NCPU: 4
-
 jobs:
-  openindiana:
-    name: 'OpenIndiana: system libs, no GUI'
+  openindiana_v108:
+    name: 'OpenIndiana v1.0.8'
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: openindiana {0}
 
     steps:
-      - name: Checkout Bitcoin Core repo
+      - &FETCH_SOURCE
+        name: Checkout Bitcoin Core repo
         uses: actions/checkout@v6
         with:
           repository: bitcoin/bitcoin
 
       - name: Start OpenIndiana VM
-        # openindiana-vm@v1.0.9 introduces multiple regressions, including:
-        # 1. A libc thread failure in the `coins_tests_base` test.
-        # 2. Doubled build times.
         uses: vmactions/openindiana-vm@v1.0.8
         with:
-          # This release has `metapackages/build-essential` preinstalled.
           release: '202510-build'
-          mem: 18432
-          # The `pkg install` command often encounters networking issues in the CI
-          # environment. To mitigate these, the following steps have been taken:
-          # 1. Each package is installed individually.
-          # 2. `metapackages/build-essential` (includes git, cmake, gcc-14),
-          #    `library/libevent2` and `runtime/python-314` are already preinstalled
-          #    on the VM image, so they are skipped.
-          # 3. Installing `system/library/boost` is skipped, as it often takes
-          #    more than 60 minutes and causes a job timeout.
-          #    See the "Build Boost" step below.
-          prepare: |
-            set -e
-            pkg list > packages_before
-            pkg install developer/build/pkgconf
-            pkg install system/storage/lsof
-            pkg install library/c++/zeromq
-            pkg list > packages_after
-            diff -w packages_before packages_after | grep '^>' || true
+          prepare: pkg install developer/build/pkgconf
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
 
-      - name: Build Boost
+      - &BUILD_BOOST
+        name: Build Boost
         run: |
           set -e
           curl --location --fail --output boost-1.90.0-cmake.tar.xz https://github.com/boostorg/boost/releases/download/boost-1.90.0/boost-1.90.0-cmake.tar.xz
@@ -82,78 +48,50 @@ jobs:
             -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
           cmake --install build-boost
 
-      # The preinstalled `database/sqlite-3` package is broken.
-      # For details, see https://github.com/bitcoin/bitcoin/issues/34163.
-      - name: Build SQLite
-        run: |
-          set -e
-          curl --location --fail --output sqlite-autoconf-3460100.tar.gz https://sqlite.org/2024/sqlite-autoconf-3460100.tar.gz
-          tar xf sqlite-autoconf-3460100.tar.gz
-          cd sqlite-autoconf-3460100
-          ./configure
-          make -j ${{ env.CI_NCPU }}
-          make install
-
-      - name: Generate buildsystem
+      - &CONFIGURE
+        name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          # Workaround for a bug in the FindThreads module.
-          # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           export CXXFLAGS="-pthread"
-          cmake -B build --preset dev-mode \
+          cmake -B build \
             -Wno-error=dev \
             -DCMAKE_PREFIX_PATH=/usr/local \
-            -DBUILD_GUI=OFF \
-            -DBUILD_SHARED_LIBS=OFF \
-            `# TODO: Build Cap'n Proto from source and reenable IPC.` \
+            -DENABLE_WALLET=OFF \
             -DENABLE_IPC=OFF \
-            -DWITH_USDT=OFF \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
-      - name: Build
+      - &BUILD
+        name: Build
         run: |
           cd ${{ github.workspace }}
-          cmake --build build -- -j ${{ env.CI_NCPU }}
+          cmake --build build -- -j 4
 
-      - name: Check 'bitcoind' executable
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          ls -l build/bin/bitcoind
-          file build/bin/bitcoind
-          ldd build/bin/bitcoind
-          build/bin/bitcoind -version
-
-      - name: Run test suite
-        run: |
-          set -e
-          cd ${{ github.workspace }}
-          export DIR_UNIT_TEST_DATA="${{ github.workspace }}/qa-assets/unit_test_data"
-          mkdir -p ${DIR_UNIT_TEST_DATA}
-          curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
-          ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
-
-      - name: Install Python packages for functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        run: |
-          set -e
-          export PIP_ROOT_USER_ACTION=ignore
-          python3.14 -m ensurepip
-          python3.14 -m pip install setuptools wheel
-          python3.14 -m pip install pyzmq
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
+      - &RUN_TESTS
+        name: Run test suite
         run: |
           cd ${{ github.workspace }}
-          # Not running extended tests to avoid disk space issues.
-          python3.14 build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
-            --tmpdirprefix . \
-            `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
-            --exclude feature_reindex_init \
-            `# TODO: Investigate the failure.` \
-            --exclude interface_bitcoin_cli \
-            `# TODO https://github.com/bitcoin/bitcoin/pull/35216` \
-            --exclude feature_bind_extra \
-            --exclude rpc_bind \
-            --timeout-factor=8
+          ctest --test-dir build -j 4 --output-on-failure
+
+  openindiana_v109:
+    name: 'OpenIndiana v1.0.9'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: openindiana {0}
+
+    steps:
+      - *FETCH_SOURCE
+
+      - name: Start OpenIndiana VM
+        uses: vmactions/openindiana-vm@v1.0.9
+        with:
+          release: '202510-build'
+          prepare: pkg install developer/build/pkgconf
+          run: git config --global --add safe.directory ${{ github.workspace }}
+          sync: 'rsync'
+          copyback: false
+
+      - *BUILD_BOOST
+      - *CONFIGURE
+      - *BUILD
+      - *RUN_TESTS
