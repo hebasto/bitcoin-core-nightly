@@ -39,7 +39,7 @@ jobs:
     name: 'OpenBSD ${{ matrix.release }}, system libs, no GUI'
     runs-on: ubuntu-latest
     env:
-      PACKAGES: 'boost libevent sqlite3 capnproto zeromq'
+      PACKAGES: 'boost sqlite3 capnproto zeromq'
     defaults:
       run:
         shell: openbsd {0}

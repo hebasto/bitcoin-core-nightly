@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-          brew install git cmake pkgconf boost libevent zeromq qt qrencode capnp
+          brew install git cmake pkgconf boost zeromq qt qrencode capnp
 
       - name: Generate CTest configuration
         run: |

@@ -22,9 +22,9 @@ concurrency:
 env:
   # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
-  # Using the gcc14 and libevent2 packages requires adjusting
+  # Using the gcc14 packages requires adjusting
   # search directories for the runtime linker
-  LD_LIBRARY_PATH: '/opt/gcc-14/lib/amd64:/usr/gnu/lib/amd64'
+  LD_LIBRARY_PATH: '/opt/gcc-14/lib/amd64'
 
 jobs:
   omnios:
@@ -48,9 +48,7 @@ jobs:
           prepare: |
             set -e
             pkg list -H -o name,publisher,version > packages_before
-            pkg install cmake ninja git gcc14 ooce/file/lsof pkg-config sqlite-3 python-313
-            pkg set-publisher -g https://sfe.opencsw.org/localhostomnios localhostomnios
-            pkg install libevent2
+            pkg install cmake ninja git gcc14 ooce/file/lsof sqlite-3 python-313
             pkg list -H -o name,publisher,version > packages_after
             diff -w packages_before packages_after | grep '^>'
           run: git config --global --add safe.directory ${{ github.workspace }}
@@ -75,7 +73,6 @@ jobs:
       - name: Generate buildsystem
         run: |
           cd ${{ github.workspace }}
-          export PKG_CONFIG_PATH="/usr/gnu/lib/amd64/pkgconfig"  # For libevent2 package.
           # Workaround for a bug in the FindThreads module.
           # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           export CXXFLAGS="-pthread"

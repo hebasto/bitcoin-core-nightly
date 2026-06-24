@@ -39,7 +39,7 @@ jobs:
     name: 'FreeBSD ${{ matrix.release }}, system libs'
     runs-on: ubuntu-latest
     env:
-      PACKAGES: 'boost-libs libevent sqlite3 capnproto libzmq4 qt6-base qt6-tools libqrencode'
+      PACKAGES: 'boost-libs sqlite3 capnproto libzmq4 qt6-base qt6-tools libqrencode'
     defaults:
       run:
         shell: freebsd {0}
