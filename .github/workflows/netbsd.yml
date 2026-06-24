@@ -29,7 +29,7 @@ jobs:
     name: 'NetBSD ${{ matrix.release }}: system libs, no GUI'
     runs-on: ubuntu-latest
     env:
-      PACKAGES: 'boost libevent sqlite3 zeromq'
+      PACKAGES: 'boost sqlite3 zeromq'
     defaults:
       run:
         shell: netbsd {0}
