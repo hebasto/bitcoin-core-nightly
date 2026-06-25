@@ -25,11 +25,17 @@ jobs:
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v6
         with:
-          repository: bitcoin/bitcoin
+          repository: hebasto/bitcoin
+          ref: 260625-cmake-qrencode.WIP
 
       - name: Configure Developer Command Prompt for Microsoft Visual C++
         # Using microsoft/setup-msbuild is not enough.
         uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Using vcpkg with MSBuild
+        shell: bash
+        run: |
+          echo "set(VCPKG_BUILD_TYPE debug)" >> "${VCPKG_INSTALLATION_ROOT}/triplets/x64-windows.cmake"
 
       - name: Get tool information
         run: |
@@ -66,6 +72,7 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           set(configure_opts
             "--preset vs2026"
+            "-DCMAKE_TOOLCHAIN_FILE=$ENV{VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake"
             "-DBUILD_UTIL_CHAINSTATE=ON"
             "-DBUILD_BENCH=ON"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
