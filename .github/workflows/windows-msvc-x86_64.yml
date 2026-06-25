@@ -32,11 +32,6 @@ jobs:
         # Using microsoft/setup-msbuild is not enough.
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Using vcpkg with MSBuild
-        shell: bash
-        run: |
-          echo "set(VCPKG_BUILD_TYPE debug)" >> "${VCPKG_INSTALLATION_ROOT}/triplets/x64-windows.cmake"
-
       - name: Get tool information
         run: |
           cmake -version | Tee-Object -FilePath "cmake_version"
