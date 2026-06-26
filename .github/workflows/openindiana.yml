@@ -36,6 +36,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
+          ref: refs/pull/35216/head
 
       - name: Start OpenIndiana VM
         # openindiana-vm@v1.0.9 introduces multiple regressions, including:
@@ -154,7 +155,4 @@ jobs:
             --exclude feature_reindex_init \
             `# TODO: Investigate the failure.` \
             --exclude interface_bitcoin_cli \
-            `# TODO https://github.com/bitcoin/bitcoin/pull/35216` \
-            --exclude feature_bind_extra \
-            --exclude rpc_bind \
             --timeout-factor=8

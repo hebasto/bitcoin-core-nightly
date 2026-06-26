@@ -39,6 +39,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
+          ref: refs/pull/35216/head
 
       - name: Start OmniOS VM
         uses: vmactions/omnios-vm@v1
@@ -115,7 +116,4 @@ jobs:
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
-            `# TODO https://github.com/bitcoin/bitcoin/pull/35216` \
-            --exclude feature_bind_extra \
-            --exclude rpc_bind \
             --timeout-factor=8
