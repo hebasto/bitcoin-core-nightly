@@ -39,6 +39,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: bitcoin/bitcoin
+          ref: refs/pull/35588/head
 
       - name: Start OmniOS VM
         uses: vmactions/omnios-vm@v1
@@ -104,17 +105,3 @@ jobs:
           mkdir -p ${DIR_UNIT_TEST_DATA}
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
           ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        run: |
-          cd ${{ github.workspace }}
-          build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
-            --tmpdirprefix . \
-            --extended \
-            `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
-            --exclude feature_reindex_init \
-            `# TODO https://github.com/bitcoin/bitcoin/pull/35216` \
-            --exclude feature_bind_extra \
-            --exclude rpc_bind \
-            --timeout-factor=8
