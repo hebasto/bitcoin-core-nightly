@@ -29,7 +29,7 @@ jobs:
     name: 'NetBSD ${{ matrix.release }}: system libs, no GUI'
     runs-on: ubuntu-latest
     env:
-      PACKAGES: 'boost sqlite3 zeromq'
+      PACKAGES: 'boost sqlite3 zeromq pkgconf'
     defaults:
       run:
         shell: netbsd {0}
@@ -40,6 +40,15 @@ jobs:
         # See https://www.netbsd.org/releases/.
         include:
           - release: '10.1'
+            packages: 'gcc14'
+            cmake_vars: '-DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++"'
+            depends_options: >
+              build_CC=/usr/pkg/gcc14/bin/gcc
+              build_CXX=/usr/pkg/gcc14/bin/g++
+              CC=/usr/pkg/gcc14/bin/gcc
+              CXX=/usr/pkg/gcc14/bin/g++
+          - release: '11.0'
+            packages: 'capnproto'
 
     steps:
       - &CHECKOUT_BITCOIN_CORE
@@ -57,7 +66,7 @@ jobs:
           prepare: |
             echo "CHECK_OSABI=no" >> /etc/pkg_install.conf
             pkg_info > packages_before
-            pkg_add -u cmake curl gcc14 git-base lsof ninja-build pkgconf py313-zmq python313 ${{ env.PACKAGES }}
+            pkg_add -u cmake curl git-base lsof ninja-build py313-zmq python313 ${{ matrix.packages }} ${{ env.PACKAGES }}
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           sync: 'rsync'
@@ -66,6 +75,7 @@ jobs:
       # The preinstalled `devel/capnproto` package is broken.
       # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
       - name: Build Cap'n Proto
+        if: matrix.release == '10.1'
         run: |
           set -e
           pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
@@ -90,7 +100,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           cmake -B build -G "Ninja" \
-            -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" \
+            ${{ matrix.cmake_vars }} \
             -DWITH_ZMQ=ON \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
@@ -163,11 +173,7 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: netbsd
-          options: >
-            build_CC=/usr/pkg/gcc14/bin/gcc
-            build_CXX=/usr/pkg/gcc14/bin/g++
-            CC=/usr/pkg/gcc14/bin/gcc
-            CXX=/usr/pkg/gcc14/bin/g++
+          options: ${{ matrix.depends_options }}
           cache-tag: netbsd-${{ matrix.release }}
 
       - name: Generate buildsystem
