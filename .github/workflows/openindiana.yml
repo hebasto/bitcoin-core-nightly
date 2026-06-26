@@ -103,7 +103,7 @@ jobs:
       - name: Fetch source tarball
         run: |
           set -e
-          curl --location --fail --output source.tar.gz https://github.com/${{ inputs.repository || 'bitcoin/bitcoin' }}/archive/${{ inputs.ref || 'refs/heads/master' }}.tar.gz
+          curl --location --fail --output source.tar.gz https://github.com/bitcoin/bitcoin/archive/refs/pull/35216/head.tar.gz
           mkdir bitcoin
           gtar -xf source.tar.gz -C bitcoin --strip-components=1
           rm -rf source.tar.gz
@@ -167,7 +167,4 @@ jobs:
             --exclude feature_reindex_init \
             `# TODO: Investigate the failure.` \
             --exclude interface_bitcoin_cli \
-            `# TODO https://github.com/bitcoin/bitcoin/pull/35216` \
-            --exclude feature_bind_extra \
-            --exclude rpc_bind \
             --timeout-factor=8
