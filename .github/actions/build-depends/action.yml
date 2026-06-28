@@ -24,21 +24,28 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Determine the depends `final_build_id`
+      id: build_id
+      shell: bash
+      run: |
+        build_id="$(ssh ${{ inputs.vm }} "gmake --no-print-directory -C ${{ inputs.source-dir }}/depends ${{ inputs.host }} ${{ inputs.options }} print-final_build_id" | sed -n 's/^final_build_id=//p')"
+        echo "build_id=${build_id}" >> "$GITHUB_OUTPUT"
+
     - uses: actions/cache/restore@v6
       id: restore-cache
       with:
         path: depends_built
-        key: ${{ inputs.cache-tag }}-depends-${{ hashFiles('depends/**') }}
+        key: ${{ inputs.cache-tag }}-depends-${{ steps.build_id.outputs.build_id }}
 
     - if: steps.restore-cache.outputs.cache-hit == 'true'
-      shell: bash -e {0}
+      shell: bash
       run: rsync --archive --stats depends_built/ ${{ inputs.vm }}:${{ inputs.source-dir }}/depends/built
 
     - shell: ${{ inputs.vm }} {0}
       run: gmake -C ${{ inputs.source-dir }}/depends -j ${{ env.CI_NCPU }} LOG=1 ${{ inputs.host }} ${{ inputs.options }}
 
     - if: steps.restore-cache.outputs.cache-hit != 'true'
-      shell: bash -e {0}
+      shell: bash
       run: rsync --archive --stats ${{ inputs.vm }}:${{ inputs.source-dir }}/depends/built/ depends_built
 
     - if: steps.restore-cache.outputs.cache-hit != 'true'
