@@ -111,9 +111,9 @@ jobs:
           cat << 'EOF' > ctest_configure.cmake
           include(ctest_config.cmake)
           set(configure_opts
-            "-DWITH_ZMQ=ON"
-            "-DBUILD_BENCH=ON"
-            "-DBUILD_FUZZ_BINARY=ON"
+            "--preset dev-mode"
+            "-DBUILD_GUI=OFF"
+            "-DWITH_USDT=OFF"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
           ctest_start(APPEND)
@@ -229,8 +229,9 @@ jobs:
           include(ctest_config.cmake)
           set(configure_opts
             "--toolchain /home/bitcoin/depends/x86_64-unknown-openbsd${{ matrix.release }}/toolchain.cmake"
-            "-DBUILD_BENCH=ON"
-            "-DBUILD_FUZZ_BINARY=ON"
+            "--preset dev-mode"
+            "-DBUILD_GUI=OFF"
+            "-DWITH_USDT=OFF"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
           ctest_start(APPEND)
