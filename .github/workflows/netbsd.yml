@@ -2,7 +2,6 @@ name: NetBSD
 on:
   pull_request:
     paths:
-      - '.github/actions/build-depends/action.yml'
       - '.github/workflows/netbsd.yml'
   workflow_dispatch:
     inputs:
@@ -163,14 +162,8 @@ jobs:
       - *START_VM
       - *FETCH_SOURCE
 
-      - name: Checkout helper actions
-        uses: actions/checkout@v7
-        with:
-          sparse-checkout: .github/actions/build-depends
-          path: ci/nightly
-
       - name: Build depends
-        uses: ./ci/nightly/.github/actions/build-depends
+        uses: hebasto/bitcoin-core-nightly/.github/actions/build-depends@main
         with:
           vm: netbsd
           options: >
