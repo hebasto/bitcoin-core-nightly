@@ -60,6 +60,7 @@ jobs:
             pkg update
             pkg install -y curl cmake-core ninja pkgconf python3 net/py-pyzmq databases/py-sqlite3 lsof ${{ env.PACKAGES }}
           sync: no
+          disable-cache: true
 
       - &FETCH_SOURCE
         name: Fetch source tarball

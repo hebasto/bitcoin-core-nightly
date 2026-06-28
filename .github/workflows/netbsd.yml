@@ -65,6 +65,7 @@ jobs:
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
           sync: no
+          disable-cache: true
 
       # The preinstalled `devel/capnproto` package is broken.
       # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
