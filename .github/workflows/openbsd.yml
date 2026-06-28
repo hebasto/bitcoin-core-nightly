@@ -60,6 +60,7 @@ jobs:
           release: ${{ matrix.release }}
           prepare: pkg_add -U -v curl gtar-- cmake-core ninja python%3 py3-zmq ${{ env.PACKAGES }}
           sync: no
+          disable-cache: true
 
       - &FETCH_SOURCE
         name: Fetch source tarball

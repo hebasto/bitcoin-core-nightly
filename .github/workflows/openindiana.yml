@@ -66,6 +66,7 @@ jobs:
           run: git config --global --add safe.directory ${{ github.workspace }}
           sync: 'rsync'
           copyback: false
+          disable-cache: true
 
       - name: Build Boost
         run: |
