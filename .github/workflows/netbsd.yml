@@ -36,7 +36,7 @@ env:
 
 jobs:
   netbsd-syslibs:
-    name: 'NetBSD ${{ matrix.release }}: system libs, no GUI'
+    name: 'NetBSD ${{ matrix.release }}, system libs, no GUI'
     runs-on: ubuntu-latest
     env:
       PACKAGES: 'boost sqlite3 zeromq'
@@ -97,19 +97,68 @@ jobs:
           mkdir bitcoin
           tar -xf source.tar.gz -C bitcoin --strip-components=1
           rm -rf source.tar.gz
+          # Test data.
+          DIR_UNIT_TEST_DATA="$(pwd)/qa-assets/unit_test_data"
+          mkdir -p "$DIR_UNIT_TEST_DATA"
+          curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
 
-      - name: Generate buildsystem
+      - name: Generate CTest configuration
         run: |
-          cmake -S bitcoin -B build -G "Ninja" \
-            -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" \
-            -DWITH_ZMQ=ON \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
-            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          cat << 'EOF' > ctest_config.cmake
+          set(CTEST_SITE "${{ github.repository }}")
+          set(CTEST_BUILD_NAME "NetBSD ${{ matrix.release }}, system libs, no github")
+          set(CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/bitcoin")
+          set(CTEST_BINARY_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/build")
+          set(CTEST_CMAKE_GENERATOR "Ninja")
+          cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
+          EOF
 
-      - &BUILD
-        name: Build
+      - &CDASH_START_UPDATE
+        name: CDash -- Start & Update
         run: |
-          cmake --build build
+          COMMIT="$(awk -F '"' '/^#define GIT_COMMIT_ID/ {print $2}' bitcoin/src/clientversion.cpp)"
+          echo "set(CTEST_UPDATE_VERSION_OVERRIDE $COMMIT)" >> ctest_update_version_override.cmake
+          cat << 'EOF' > ctest_start_upate.cmake
+          include(ctest_config.cmake)
+          ctest_start(${{ case(github.event_name == 'workflow_run', 'Nightly', format('Experimental GROUP {0}', github.event_name)) }})
+          set(CTEST_UPDATE_TYPE git)
+          # This command may be redundant once the following MR is merged:
+          # https://gitlab.kitware.com/cmake/cmake/-/merge_requests/12038
+          set(CTEST_UPDATE_COMMAND "${CMAKE_COMMAND} -E true")
+          include(ctest_update_version_override.cmake)
+          ctest_update()
+          EOF
+          ctest --script ctest_start_upate.cmake
+          # A hack to work around the broken CTEST_UPDATE_VERSION_OVERRIDE.
+          sed -i 's/\([[:blank:]]*\)<UpdateType>Unknown<\/UpdateType>/\1<UpdateType>GIT<\/UpdateType>\
+            \1<Revision>'"$COMMIT"'<\/Revision>/' "build/Testing/$(head -1 build/Testing/TAG)/Update.xml"
+
+      - name: CDash -- Configure
+        run: |
+          cat << 'EOF' > ctest_configure.cmake
+          include(ctest_config.cmake)
+          set(configure_opts
+            "-DCMAKE_C_COMPILER=/usr/pkg/gcc14/bin/gcc"
+            "-DCMAKE_CXX_COMPILER=/usr/pkg/gcc14/bin/g++"
+            "-DWITH_ZMQ=ON"
+            "-DBUILD_BENCH=ON"
+            "-DBUILD_FUZZ_BINARY=ON"
+            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+          )
+          ctest_start(APPEND)
+          ctest_configure(OPTIONS "${configure_opts}")
+          EOF
+          ctest --extra-verbose --script ctest_configure.cmake
+
+      - &CDASH_BUILD
+        name: CDash -- Build
+        run: |
+          cat << 'EOF' > ctest_build.cmake
+          include(ctest_config.cmake)
+          ctest_start(APPEND)
+          ctest_build(PARALLEL_LEVEL ${nproc})
+          EOF
+          ctest --extra-verbose --script ctest_build.cmake
 
       - &CHECK_BITCOIND
         name: Check 'bitcoind' executable
@@ -120,6 +169,18 @@ jobs:
           ldd build/bin/bitcoind
           build/bin/bitcoind -version
 
+      - &CDASH_TEST
+        name: CDash -- Test
+        run: |
+          cat << 'EOF' > ctest_test.cmake
+          include(ctest_config.cmake)
+          set(ENV{DIR_UNIT_TEST_DATA} ${CTEST_SCRIPT_DIRECTORY}/qa-assets/unit_test_data)
+          set(ENV{TMPDIR} ${CTEST_SCRIPT_DIRECTORY})
+          ctest_start(APPEND)
+          ctest_test(PARALLEL_LEVEL ${nproc})
+          EOF
+          ctest --script ctest_test.cmake
+
       - &RUN_TEST_SUITE
         name: Run test suite
         run: |
@@ -128,6 +189,17 @@ jobs:
           mkdir -p ${DIR_UNIT_TEST_DATA}
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
           env TMPDIR="$(pwd)" ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
+
+      - &CDASH_SUBMIT
+        name: CDash -- Submit
+        if: always()
+        run: |
+          cat << 'EOF' > ctest_submit.cmake
+          include(ctest_config.cmake)
+          ctest_start(APPEND)
+          ctest_submit()
+          EOF
+          ctest --script ctest_submit.cmake
 
       - &RUN_FUNCTIONAL_TESTS
         name: Run functional tests
@@ -150,7 +222,7 @@ jobs:
             --timeout-factor=8
 
   netbsd-depends:
-    name: 'NetBSD ${{ matrix.release }}: depends'
+    name: 'NetBSD ${{ matrix.release }}, depends'
     runs-on: ubuntu-latest
     env:
       PACKAGES: 'gmake perl'
@@ -181,14 +253,36 @@ jobs:
           source-dir: /root/bitcoin
           cache-tag: netbsd-${{ matrix.release }}
 
-      - name: Generate buildsystem
+      - name: Generate CTest configuration
         run: |
-          cmake -S bitcoin -B build -G "Ninja" \
-            --toolchain /root/bitcoin/depends/*netbsd*/toolchain.cmake  \
-            -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
-            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          cat << 'EOF' > ctest_config.cmake
+          set(CTEST_SITE "${{ github.repository }}")
+          set(CTEST_BUILD_NAME "NetBSD ${{ matrix.release }}, depends")
+          set(CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/bitcoin")
+          set(CTEST_BINARY_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/build")
+          set(CTEST_CMAKE_GENERATOR "Ninja")
+          cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
+          EOF
 
-      - *BUILD
+      - *CDASH_START_UPDATE
+
+      - name: CDash -- Configure
+        run: |
+          cat << 'EOF' > ctest_configure.cmake
+          include(ctest_config.cmake)
+          set(configure_opts
+            "--toolchain /root/bitcoin/depends/x86_64-unknown-netbsd${{ matrix.release }}/toolchain.cmake"
+            "-DBUILD_BENCH=ON"
+            "-DBUILD_FUZZ_BINARY=ON"
+            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+          )
+          ctest_start(APPEND)
+          ctest_configure(OPTIONS "${configure_opts}")
+          EOF
+          ctest --extra-verbose --script ctest_configure.cmake
+
+      - *CDASH_BUILD
       - *CHECK_BITCOIND
-      - *RUN_TEST_SUITE
+      - *CDASH_TEST
+      - *CDASH_SUBMIT
       - *RUN_FUNCTIONAL_TESTS
