@@ -53,10 +53,6 @@ jobs:
         release: ['7.8', '7.9']
 
     steps:
-      - &CLEAR_STORAGE_SPACE
-        name: Clear unnecessary files on bloated GHA VM
-        uses: bitcoin/bitcoin/.github/actions/clear-files@master
-
       - &START_VM
         name: Start OpenBSD VM
         uses: vmactions/openbsd-vm@v1
@@ -197,7 +193,6 @@ jobs:
     strategy: *RELEASE_MATRIX
 
     steps:
-      - *CLEAR_STORAGE_SPACE
       - *START_VM
       - *FETCH_SOURCE
 

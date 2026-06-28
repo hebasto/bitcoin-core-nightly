@@ -51,10 +51,6 @@ jobs:
         release: ['14.4', '15.1']
 
     steps:
-      - &CLEAR_STORAGE_SPACE
-        name: Clear unnecessary files on bloated GHA VM
-        uses: bitcoin/bitcoin/.github/actions/clear-files@master
-
       - &START_VM
         name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
@@ -192,7 +188,6 @@ jobs:
     strategy: *RELEASE_MATRIX
 
     steps:
-      - *CLEAR_STORAGE_SPACE
       - *START_VM
       - *FETCH_SOURCE
 
