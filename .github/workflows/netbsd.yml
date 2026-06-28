@@ -6,6 +6,16 @@ on:
       - '.github/workflows/netbsd.yml'
   workflow_dispatch:
     inputs:
+      repository:
+        description: 'Repository name with owner'
+        required: true
+        default: bitcoin/bitcoin
+        type: string
+      ref:
+        description: 'Repository reference: refs/heads/<branch>, refs/tags/<tag>, refs/pull/<PR>/head or refs/<commit>'
+        required: true
+        default: refs/heads/master
+        type: string
       skip_functional_tests:
         description: 'Skip functional tests'
         required: true
@@ -42,12 +52,6 @@ jobs:
           - release: '10.1'
 
     steps:
-      - &CHECKOUT_BITCOIN_CORE
-        name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v6
-        with:
-          repository: bitcoin/bitcoin
-
       - &START_VM
         name: Start NetBSD VM
         uses: vmactions/netbsd-vm@v1
@@ -57,11 +61,10 @@ jobs:
           prepare: |
             echo "CHECK_OSABI=no" >> /etc/pkg_install.conf
             pkg_info > packages_before
-            pkg_add -u cmake curl gcc14 git-base lsof ninja-build pkgconf py313-zmq python313 ${{ env.PACKAGES }}
+            pkg_add -u cmake curl gcc14 lsof ninja-build pkgconf py313-zmq python313 ${{ env.PACKAGES }}
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>'
-          sync: 'rsync'
-          copyback: false
+          sync: no
 
       # The preinstalled `devel/capnproto` package is broken.
       # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
@@ -86,10 +89,18 @@ jobs:
           unset PKG_PATH
           make CPPFLAGS="-DKJ_NO_EXCEPTIONS=0" install
 
+      - &FETCH_SOURCE
+        name: Fetch source tarball
+        run: |
+          set -e
+          curl --location --fail --output source.tar.gz https://github.com/${{ inputs.repository || 'bitcoin/bitcoin' }}/archive/${{ inputs.ref || 'refs/heads/master' }}.tar.gz
+          mkdir bitcoin
+          tar -xf source.tar.gz -C bitcoin --strip-components=1
+          rm -rf source.tar.gz
+
       - name: Generate buildsystem
         run: |
-          cd ${{ github.workspace }}
-          cmake -B build -G "Ninja" \
+          cmake -S bitcoin -B build -G "Ninja" \
             -DCMAKE_C_COMPILER="/usr/pkg/gcc14/bin/gcc" -DCMAKE_CXX_COMPILER="/usr/pkg/gcc14/bin/g++" \
             -DWITH_ZMQ=ON \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
@@ -98,14 +109,12 @@ jobs:
       - &BUILD
         name: Build
         run: |
-          cd ${{ github.workspace }}
           cmake --build build
 
       - &CHECK_BITCOIND
         name: Check 'bitcoind' executable
         run: |
           set -e
-          cd ${{ github.workspace }}
           ls -l build/bin/bitcoind
           file build/bin/bitcoind
           ldd build/bin/bitcoind
@@ -115,18 +124,16 @@ jobs:
         name: Run test suite
         run: |
           set -e
-          cd ${{ github.workspace }}
-          export DIR_UNIT_TEST_DATA="${{ github.workspace }}/qa-assets/unit_test_data"
+          export DIR_UNIT_TEST_DATA="$(pwd)/qa-assets/unit_test_data"
           mkdir -p ${DIR_UNIT_TEST_DATA}
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
-          env TMPDIR="${{ github.workspace }}" ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
+          env TMPDIR="$(pwd)" ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
 
       - &RUN_FUNCTIONAL_TESTS
         name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           set -e
-          cd ${{ github.workspace }}
           python3.13 build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix . \
             --extended \
@@ -153,8 +160,8 @@ jobs:
     strategy: *RELEASE_MATRIX
 
     steps:
-      - *CHECKOUT_BITCOIN_CORE
       - *START_VM
+      - *FETCH_SOURCE
 
       - name: Checkout helper actions
         uses: actions/checkout@v6
@@ -171,13 +178,13 @@ jobs:
             build_CXX=/usr/pkg/gcc14/bin/g++
             CC=/usr/pkg/gcc14/bin/gcc
             CXX=/usr/pkg/gcc14/bin/g++
+          source-dir: /root/bitcoin
           cache-tag: netbsd-${{ matrix.release }}
 
       - name: Generate buildsystem
         run: |
-          cd ${{ github.workspace }}
-          cmake -B build -G "Ninja" \
-            --toolchain depends/$(depends/config.sub $(depends/config.guess))/toolchain.cmake \
+          cmake -S bitcoin -B build -G "Ninja" \
+            --toolchain /root/bitcoin/depends/*netbsd*/toolchain.cmake  \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
