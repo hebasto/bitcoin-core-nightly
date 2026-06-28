@@ -24,7 +24,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/cache/restore@v5
+    - uses: actions/cache/restore@v6
       id: restore-cache
       with:
         path: depends_built
@@ -42,7 +42,7 @@ runs:
       run: rsync --archive --stats ${{ inputs.vm }}:${{ inputs.source-dir }}/depends/built/ depends_built
 
     - if: steps.restore-cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v5
+      uses: actions/cache/save@v6
       with:
         path: depends_built
         key: ${{ steps.restore-cache.outputs.cache-primary-key }}

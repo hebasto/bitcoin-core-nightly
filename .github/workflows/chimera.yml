@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
 

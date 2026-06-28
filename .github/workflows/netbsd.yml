@@ -164,7 +164,7 @@ jobs:
       - *FETCH_SOURCE
 
       - name: Checkout helper actions
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           sparse-checkout: .github/actions/build-depends
           path: ci/nightly

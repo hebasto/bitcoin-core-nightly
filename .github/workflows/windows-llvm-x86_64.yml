@@ -31,7 +31,7 @@ jobs:
 
     steps:
       - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
 
@@ -61,7 +61,7 @@ jobs:
         run: cmake --build build -j $(nproc)
 
       - name: Upload built executables
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.CI_HOST }}-executables-${{ github.run_id }}
           path: |
@@ -79,12 +79,12 @@ jobs:
 
     steps:
       - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
 
       - name: Download built executables
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.CI_HOST }}-executables-${{ github.run_id }}
 
