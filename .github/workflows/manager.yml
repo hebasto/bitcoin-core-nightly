@@ -4,7 +4,7 @@ on:
     paths:
       - '.github/workflows/manager.yml'
   schedule:
-    - cron: '22 02 * * *'
+    - cron: '22 01 * * *'
   workflow_dispatch:
 jobs:
   manager:
