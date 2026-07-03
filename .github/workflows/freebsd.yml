@@ -51,6 +51,10 @@ jobs:
         release: ['14.4', '15.1']
 
     steps:
+      - &CHECK_DISK_SPACE
+        shell: bash
+        run: df -h
+
       - &START_VM
         name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
@@ -61,6 +65,8 @@ jobs:
             pkg install -y curl cmake-core ninja pkgconf python3 net/py-pyzmq databases/py-sqlite3 lsof ${{ env.PACKAGES }}
           sync: no
           disable-cache: true
+
+      - *CHECK_DISK_SPACE
 
       - &FETCH_SOURCE
         name: Fetch source tarball
@@ -73,6 +79,8 @@ jobs:
           DIR_UNIT_TEST_DATA="$(pwd)/qa-assets/unit_test_data"
           mkdir -p "$DIR_UNIT_TEST_DATA"
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
+
+      - *CHECK_DISK_SPACE
 
       - name: Generate CTest configuration
         run: |
@@ -129,6 +137,8 @@ jobs:
           EOF
           ctest --extra-verbose --script ctest_build.cmake
 
+      - *CHECK_DISK_SPACE
+
       - &CHECK_BITCOIND
         name: Check 'bitcoind' executable
         run: |
@@ -148,6 +158,8 @@ jobs:
           ctest_test(PARALLEL_LEVEL ${nproc})
           EOF
           ctest --script ctest_test.cmake
+
+      - *CHECK_DISK_SPACE
 
       - &CDASH_SUBMIT
         name: CDash -- Submit
@@ -178,6 +190,8 @@ jobs:
           build/test/functional/test_runner.py feature_bind_extra rpc_bind -j 1 --combinedlogslen=99999999 \
             --timeout-factor=8
 
+      - *CHECK_DISK_SPACE
+
   freebsd-depends:
     name: 'FreeBSD ${{ matrix.release }}, depends'
     runs-on: ubuntu-latest
@@ -189,8 +203,11 @@ jobs:
     strategy: *RELEASE_MATRIX
 
     steps:
+      - *CHECK_DISK_SPACE
       - *START_VM
+      - *CHECK_DISK_SPACE
       - *FETCH_SOURCE
+      - *CHECK_DISK_SPACE
 
       - name: Checkout helper actions
         uses: actions/checkout@v7
@@ -234,7 +251,10 @@ jobs:
           ctest --extra-verbose --script ctest_configure.cmake
 
       - *CDASH_BUILD
+      - *CHECK_DISK_SPACE
       - *CHECK_BITCOIND
       - *CDASH_TEST
+      - *CHECK_DISK_SPACE
       - *CDASH_SUBMIT
       - *RUN_FUNCTIONAL_TESTS
+      - *CHECK_DISK_SPACE
