@@ -55,6 +55,12 @@ jobs:
         shell: bash
         run: df -h
 
+      - &CLEAR_STORAGE_SPACE
+        name: Clear unnecessary files on bloated GHA VM
+        uses: bitcoin/bitcoin/.github/actions/clear-files@master
+
+      - *CHECK_DISK_SPACE
+
       - &START_VM
         name: Start FreeBSD VM
         uses: vmactions/freebsd-vm@v1
@@ -203,6 +209,8 @@ jobs:
     strategy: *RELEASE_MATRIX
 
     steps:
+      - *CHECK_DISK_SPACE
+      - *CLEAR_STORAGE_SPACE
       - *CHECK_DISK_SPACE
       - *START_VM
       - *CHECK_DISK_SPACE
