@@ -56,8 +56,16 @@ jobs:
         run: df -h
 
       - &CLEAR_STORAGE_SPACE
-        name: Clear unnecessary files on bloated GHA VM
-        uses: bitcoin/bitcoin/.github/actions/clear-files@master
+        shell: bash
+        run: >
+          sudo rm -rf
+          /usr/share/dotnet/
+          /usr/local/graalvm/
+          /usr/local/.ghcup/
+          /usr/local/share/powershell
+          /usr/local/share/chromium
+          /usr/local/lib/android
+          /usr/local/lib/node_modules
 
       - *CHECK_DISK_SPACE
 
