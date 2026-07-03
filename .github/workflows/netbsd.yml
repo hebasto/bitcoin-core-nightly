@@ -202,6 +202,12 @@ jobs:
           EOF
           ctest --script ctest_submit.cmake
 
+      - &CHECK_HOST_DISK_SPACE
+        name: Check host disk space
+        if: ${{ ! inputs.skip_functional_tests }}
+        shell: bash
+        run: df -h
+
       - &RUN_FUNCTIONAL_TESTS
         name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
@@ -287,4 +293,5 @@ jobs:
       - *CHECK_BITCOIND
       - *CDASH_TEST
       - *CDASH_SUBMIT
+      - *CHECK_HOST_DISK_SPACE
       - *RUN_FUNCTIONAL_TESTS

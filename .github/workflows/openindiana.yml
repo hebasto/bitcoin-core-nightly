@@ -143,6 +143,11 @@ jobs:
           python3.14 -m pip install setuptools wheel
           python3.14 -m pip install pyzmq
 
+      - name: Check host disk space
+        if: ${{ ! inputs.skip_functional_tests }}
+        shell: bash
+        run: df -h
+
       - name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
