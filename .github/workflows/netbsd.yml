@@ -182,15 +182,6 @@ jobs:
           EOF
           ctest --script ctest_test.cmake
 
-      - &RUN_TEST_SUITE
-        name: Run test suite
-        run: |
-          set -e
-          export DIR_UNIT_TEST_DATA="$(pwd)/qa-assets/unit_test_data"
-          mkdir -p ${DIR_UNIT_TEST_DATA}
-          curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
-          env TMPDIR="$(pwd)" ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
-
       - &CDASH_SUBMIT
         name: CDash -- Submit
         if: always()
