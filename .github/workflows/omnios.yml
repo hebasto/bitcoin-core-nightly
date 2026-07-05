@@ -32,28 +32,41 @@ concurrency:
 env:
   # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
-  # Using the gcc14 packages requires adjusting
-  # search directories for the runtime linker
-  LD_LIBRARY_PATH: '/opt/gcc-14/lib/amd64'
 
 jobs:
   omnios:
-    name: 'OmniOS: system libs, no GUI'
+    name: 'OmniOS ${{ matrix.name }}'
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: omnios {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Test the "current LTS" and "current stable" releases.
+        # See https://omnios.org/releasenotes.html.
+        include:
+          - release: 'r151054'
+            name: 'r151054 LTS'
+            packages: 'developer/gcc14'
+          - release: 'r151058'
+            name: 'r151058 stable'
+            packages: 'developer/gcc15'
 
     steps:
       - name: Start OmniOS VM
         uses: vmactions/omnios-vm@v1
         with:
           mem: 12288
-          envs: 'LD_LIBRARY_PATH'
           prepare: |
             set -e
             pkg list -H -o name,publisher,version > packages_before
-            pkg install cmake ninja gcc14 ooce/file/lsof sqlite-3 python-313
+            pkg install ${{ matrix.packages }} \
+              ooce/developer/cmake \
+              ooce/developer/ninja \
+              ooce/file/lsof \
+              database/sqlite-3 \
+              runtime/python-313
             pkg list -H -o name,publisher,version > packages_after
             diff -w packages_before packages_after | grep '^>'
           sync: no
