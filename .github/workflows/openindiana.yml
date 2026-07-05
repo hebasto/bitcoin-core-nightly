@@ -59,9 +59,9 @@ jobs:
             pkg install developer/build/cmake
             pkg install developer/build/ninja
             pkg install developer/build/pkgconf
-            pkg install developer/gcc-14
-            pkg install system/storage/lsof
+            pkg install developer/clang-21
             pkg install library/c++/zeromq
+            pkg install system/storage/lsof
             pkg list > packages_after
             diff -w packages_before packages_after | grep '^>' || true
           sync: no
@@ -110,6 +110,8 @@ jobs:
           # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           export CXXFLAGS="-pthread"
           cmake -S bitcoin -B build -G Ninja --preset dev-mode \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
             -Wno-error=dev \
             -DCMAKE_PREFIX_PATH=/usr/local \
             -DBUILD_GUI=OFF \
