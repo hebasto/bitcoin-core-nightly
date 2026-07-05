@@ -25,9 +25,9 @@ on:
     types: [requested]
     branches: [main]
 
-concurrency:
-  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+#   cancel-in-progress: true
 
 env:
   # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
