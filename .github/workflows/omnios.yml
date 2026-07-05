@@ -5,6 +5,16 @@ on:
       - '.github/workflows/omnios.yml'
   workflow_dispatch:
     inputs:
+      repository:
+        description: 'Repository name with owner'
+        required: true
+        default: bitcoin/bitcoin
+        type: string
+      ref:
+        description: 'Repository reference: refs/heads/<branch>, refs/tags/<tag>, refs/pull/<PR>/head or refs/<commit>'
+        required: true
+        default: refs/heads/master
+        type: string
       skip_functional_tests:
         description: 'Skip functional tests'
         required: true
@@ -35,11 +45,6 @@ jobs:
         shell: omnios {0}
 
     steps:
-      - name: Checkout Bitcoin Core repo
-        uses: actions/checkout@v7
-        with:
-          repository: bitcoin/bitcoin
-
       - name: Start OmniOS VM
         uses: vmactions/omnios-vm@v1
         with:
@@ -48,12 +53,10 @@ jobs:
           prepare: |
             set -e
             pkg list -H -o name,publisher,version > packages_before
-            pkg install cmake ninja git gcc14 ooce/file/lsof sqlite-3 python-313
+            pkg install cmake ninja gcc14 ooce/file/lsof sqlite-3 python-313
             pkg list -H -o name,publisher,version > packages_after
             diff -w packages_before packages_after | grep '^>'
-          run: git config --global --add safe.directory ${{ github.workspace }}
-          sync: 'rsync'
-          copyback: false
+          sync: no
           disable-cache: true
 
       - name: Build Boost
@@ -73,13 +76,21 @@ jobs:
             -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
           cmake --install build-boost
 
+      - name: Fetch source tarball
+        run: |
+          set -e
+          pkg install archiver/gnu-tar
+          curl --location --fail --output source.tar.gz https://github.com/${{ inputs.repository || 'bitcoin/bitcoin' }}/archive/${{ inputs.ref || 'refs/heads/master' }}.tar.gz
+          mkdir bitcoin
+          gtar -xf source.tar.gz -C bitcoin --strip-components=1
+          rm -rf source.tar.gz
+
       - name: Generate buildsystem
         run: |
-          cd ${{ github.workspace }}
           # Workaround for a bug in the FindThreads module.
           # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           export CXXFLAGS="-pthread"
-          cmake -B build -G "Ninja" \
+          cmake -S bitcoin -B build -G "Ninja" \
             `# TODO: Build Cap'n Proto from source and reenable IPC.` \
             -DENABLE_IPC=OFF \
             -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON \
@@ -87,13 +98,11 @@ jobs:
 
       - name: Build
         run: |
-          cd ${{ github.workspace }}
           cmake --build build
 
       - name: Check 'bitcoind' executable
         run: |
           set -e
-          cd ${{ github.workspace }}
           ls -l build/bin/bitcoind
           file build/bin/bitcoind
           ldd build/bin/bitcoind
@@ -102,8 +111,7 @@ jobs:
       - name: Run test suite
         run: |
           set -e
-          cd ${{ github.workspace }}
-          export DIR_UNIT_TEST_DATA="${{ github.workspace }}/qa-assets/unit_test_data"
+          export DIR_UNIT_TEST_DATA="$(pwd)/qa-assets/unit_test_data"
           mkdir -p ${DIR_UNIT_TEST_DATA}
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
           ctest --test-dir build -j ${{ env.CI_NCPU }} --output-on-failure
@@ -116,7 +124,6 @@ jobs:
       - name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
-          cd ${{ github.workspace }}
           build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix . \
             --extended \
