@@ -43,6 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # https://sqlite.org/chronology.html
         include:
           - sqlite_ver: '3.51.0'
             sqlite_tar_ver: '3510000'
@@ -58,6 +59,18 @@ jobs:
             sqlite_url: 'https://sqlite.org/2026'
           - sqlite_ver: '3.52.0'
             sqlite_tar_ver: '3520000'
+            sqlite_url: 'https://sqlite.org/2026'
+          - sqlite_ver: '3.53.0'
+            sqlite_tar_ver: '3530000'
+            sqlite_url: 'https://sqlite.org/2026'
+          - sqlite_ver: '3.53.1'
+            sqlite_tar_ver: '3530100'
+            sqlite_url: 'https://sqlite.org/2026'
+          - sqlite_ver: '3.53.2'
+            sqlite_tar_ver: '3530200'
+            sqlite_url: 'https://sqlite.org/2026'
+          - sqlite_ver: '3.53.3'
+            sqlite_tar_ver: '3530300'
             sqlite_url: 'https://sqlite.org/2026'
 
     steps:
