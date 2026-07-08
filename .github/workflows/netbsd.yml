@@ -63,7 +63,7 @@ jobs:
             pkg_info > packages_before
             pkg_add -u cmake curl gcc14 lsof ninja-build pkgconf py313-zmq python313 ${{ env.PACKAGES }}
             pkg_info > packages_after
-            diff -w packages_before packages_after | grep '^>'
+            diff -w packages_before packages_after | grep '^>' | sort
           sync: no
           disable-cache: true
 
