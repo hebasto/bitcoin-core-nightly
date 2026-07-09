@@ -59,9 +59,8 @@ jobs:
           release: ${{ matrix.release }}
           mem: 12288
           prepare: |
-            echo "CHECK_OSABI=no" >> /etc/pkg_install.conf
             pkg_info > packages_before
-            pkg_add -u cmake curl gcc14 lsof ninja-build pkgconf py313-zmq python313 ${{ env.PACKAGES }}
+            pkg_add -u cmake curl gcc14 ninja-build pkgconf python313 ${{ env.PACKAGES }}
             pkg_info > packages_after
             diff -w packages_before packages_after | grep '^>' | sort
           sync: no
@@ -193,6 +192,19 @@ jobs:
           EOF
           ctest --script ctest_submit.cmake
 
+      - &FUNCTIONAL_TESTS_DEPS
+        name: Install functional test dependencies
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          set -e
+          echo "CHECK_OSABI=no" >> /etc/pkg_install.conf
+          pkg_add lsof py313-pip py313-zmq
+          CXXFLAGS="-DKJ_NO_EXCEPTIONS=0" pip3.13 install pycapnp
+          python3.13 --version
+          python3.13 -c "import sqlite3; print(f'SQLite {sqlite3.sqlite_version}')"
+          python3.13 -c "import capnp; print(f'pycapnp {capnp.__version__} / libcapnp {capnp.version.LIBCAPNP_VERSION_MAJOR}.{capnp.version.LIBCAPNP_VERSION_MINOR}.{capnp.version.LIBCAPNP_VERSION_MICRO}')"
+          python3.13 -c "import zmq; print(f'pyzmq {zmq.__version__} / libzmq {zmq.zmq_version()}')"
+
       - &CHECK_HOST_DISK_SPACE
         name: Check host disk space
         if: ${{ ! inputs.skip_functional_tests }}
@@ -284,5 +296,6 @@ jobs:
       - *CHECK_BITCOIND
       - *CDASH_TEST
       - *CDASH_SUBMIT
+      - *FUNCTIONAL_TESTS_DEPS
       - *CHECK_HOST_DISK_SPACE
       - *RUN_FUNCTIONAL_TESTS
