@@ -58,7 +58,7 @@ jobs:
         uses: vmactions/openbsd-vm@v1
         with:
           release: ${{ matrix.release }}
-          prepare: pkg_add -U -v curl gtar-- cmake-core ninja python%3 py3-zmq ${{ env.PACKAGES }}
+          prepare: pkg_add -U -v curl gtar-- cmake-core ninja python%3 ${{ env.PACKAGES }}
           sync: no
           disable-cache: true
 
@@ -162,6 +162,33 @@ jobs:
           EOF
           ctest --script ctest_submit.cmake
 
+      - &FUNCTIONAL_TESTS_DEPS
+        name: Install functional test dependencies
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          set -e
+          pkg_add -U -v py3-pip py3-zmq
+          # The system's `capnproto` package ships static libraries
+          # built without -fPIC, causing relocation errors when linking
+          # pycapnp's shared extension module.
+          #
+          # A two-part workaround is applied:
+          #  1. Force building the bundled libcapnp, which is compiled
+          #     with -fPIC.
+          #  2. Override LDCXXSHARED to drop the -L/usr/local/lib/ that
+          #     Python's sysconfig injects ahead of the bundled library
+          #     directories, and which would otherwise resolve -lcapnp*
+          #     and -lkj* to the system's static archives.
+          if pkg_info -e 'capnproto-*'; then
+            LDCXXSHARED="c++ -pthread -shared -fPIC" pip3 install --break-system-packages pycapnp -C force-bundled-libcapnp=True
+          else
+            pip3 install --break-system-packages pycapnp
+          fi
+          python3 --version
+          python3 -c "import sqlite3; print(f'SQLite {sqlite3.sqlite_version}')"
+          python3 -c "import capnp; print(f'pycapnp {capnp.__version__} / libcapnp {capnp.version.LIBCAPNP_VERSION_MAJOR}.{capnp.version.LIBCAPNP_VERSION_MINOR}.{capnp.version.LIBCAPNP_VERSION_MICRO}')"
+          python3 -c "import zmq; print(f'pyzmq {zmq.__version__} / libzmq {zmq.zmq_version()}')"
+
       - &CHECK_HOST_DISK_SPACE
         name: Check host disk space
         if: ${{ ! inputs.skip_functional_tests }}
@@ -249,5 +276,6 @@ jobs:
       - *CHECK_BITCOIND
       - *CDASH_TEST
       - *CDASH_SUBMIT
+      - *FUNCTIONAL_TESTS_DEPS
       - *CHECK_HOST_DISK_SPACE
       - *RUN_FUNCTIONAL_TESTS
