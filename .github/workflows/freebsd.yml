@@ -161,7 +161,7 @@ jobs:
           ctest --script ctest_submit.cmake
 
       - &FUNCTIONAL_TESTS_DEPS
-        name: Install Python packages for functional tests
+        name: Install functional test dependencies
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           set -e
