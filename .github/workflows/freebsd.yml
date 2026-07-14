@@ -220,6 +220,8 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: freebsd
+          options: >-
+            NO_QT=1
           source-dir: /root/bitcoin
           cache-tag: freebsd-${{ matrix.release }}
 
@@ -243,6 +245,7 @@ jobs:
           set(configure_opts
             "--toolchain /root/bitcoin/depends/x86_64-unknown-freebsd${{ matrix.release }}/toolchain.cmake"
             "--preset dev-mode"
+            "-DBUILD_GUI=OFF"
             "-DWITH_USDT=OFF"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
