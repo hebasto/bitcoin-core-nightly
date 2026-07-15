@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - &START_VM
-        name: Start FreeBSD VM
+        name: Start FreeBSD ${{ matrix.release }} VM
         uses: vmactions/freebsd-vm@v1
         with:
           release: ${{ matrix.release }}

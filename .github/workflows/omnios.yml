@@ -54,7 +54,7 @@ jobs:
             packages: 'developer/gcc15'
 
     steps:
-      - name: Start OmniOS VM
+      - name: Start OmniOS ${{ matrix.release }} VM
         uses: vmactions/omnios-vm@v1
         with:
           mem: 12288

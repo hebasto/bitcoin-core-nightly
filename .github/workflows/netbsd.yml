@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - &START_VM
-        name: Start NetBSD VM
+        name: Start NetBSD ${{ matrix.release }} VM
         uses: vmactions/netbsd-vm@v1
         with:
           release: ${{ matrix.release }}

@@ -54,7 +54,7 @@ jobs:
 
     steps:
       - &START_VM
-        name: Start OpenBSD VM
+        name: Start OpenBSD ${{ matrix.release }} VM
         uses: vmactions/openbsd-vm@v1
         with:
           release: ${{ matrix.release }}
