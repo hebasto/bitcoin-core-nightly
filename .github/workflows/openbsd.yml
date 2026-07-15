@@ -36,10 +36,10 @@ env:
 
 jobs:
   openbsd-syslibs:
-    name: 'OpenBSD ${{ matrix.release }}, system libs, no GUI'
+    name: 'OpenBSD ${{ matrix.release }}, system libs'
     runs-on: ubuntu-latest
     env:
-      PACKAGES: 'boost sqlite3 capnproto zeromq'
+      PACKAGES: 'boost sqlite3 capnproto zeromq qt6-qtbase qt6-qttools libqrencode'
     defaults:
       run:
         shell: openbsd {0}
@@ -79,7 +79,7 @@ jobs:
         run: |
           cat << 'EOF' > ctest_config.cmake
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "OpenBSD ${{ matrix.release }}, system libs, no GUI")
+          set(CTEST_BUILD_NAME "OpenBSD ${{ matrix.release }}, system libs")
           set(CTEST_SOURCE_DIRECTORY "/home/bitcoin")
           set(CTEST_BINARY_DIRECTORY "/home/build")
           set(CTEST_CMAKE_GENERATOR "Ninja")
@@ -112,7 +112,6 @@ jobs:
           include(ctest_config.cmake)
           set(configure_opts
             "--preset dev-mode"
-            "-DBUILD_GUI=OFF"
             "-DWITH_USDT=OFF"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
@@ -220,7 +219,7 @@ jobs:
     name: 'OpenBSD ${{ matrix.release }}, depends'
     runs-on: ubuntu-latest
     env:
-      PACKAGES: 'bash gmake'
+      PACKAGES: 'bash gmake bison'
     defaults:
       run:
         shell: openbsd {0}
@@ -263,7 +262,6 @@ jobs:
           set(configure_opts
             "--toolchain /home/bitcoin/depends/x86_64-unknown-openbsd${{ matrix.release }}/toolchain.cmake"
             "--preset dev-mode"
-            "-DBUILD_GUI=OFF"
             "-DWITH_USDT=OFF"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
