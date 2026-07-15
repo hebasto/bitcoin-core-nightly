@@ -82,6 +82,7 @@ jobs:
           set(CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/bitcoin")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Ninja")
+          set(CTEST_CONFIGURATION_TYPE "RelWithDebInfo")
           cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
           EOF
 
