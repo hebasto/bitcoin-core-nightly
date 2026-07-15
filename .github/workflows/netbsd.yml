@@ -232,7 +232,7 @@ jobs:
             --timeout-factor=8
 
   netbsd-depends:
-    name: 'NetBSD ${{ matrix.release }}, depends'
+    name: 'NetBSD ${{ matrix.release }}, depends, no GUI'
     runs-on: ubuntu-latest
     env:
       PACKAGES: 'gmake perl'
@@ -267,7 +267,7 @@ jobs:
         run: |
           cat << 'EOF' > ctest_config.cmake
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "NetBSD ${{ matrix.release }}, depends")
+          set(CTEST_BUILD_NAME "NetBSD ${{ matrix.release }}, depends, no GUI")
           set(CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/bitcoin")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Ninja")
