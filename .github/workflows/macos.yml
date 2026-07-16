@@ -21,8 +21,8 @@ concurrency:
 
 jobs:
   macos:
-    name: 'macOS 26 ARM64'
-    runs-on: macos-26
+    name: 'macOS ARM64, Xcode 27'
+    runs-on: xcode-27
 
     steps:
       - name: Checkout Bitcoin Core repo
@@ -39,7 +39,7 @@ jobs:
         run: |
           cat << 'EOF' > ctest_config.cmake
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "macOS 26 ARM64")
+          set(CTEST_BUILD_NAME "macOS ARM64, Xcode 27")
           set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Unix Makefiles")

@@ -48,7 +48,7 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 
 | Operating System | Status | Notes |
 |------------------|--------|-------|
-| [macOS Tahoe](https://www.apple.com/os/macos/), ARM64 | [![macOS, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos.yml?query=event%3Aworkflow_run) | No depends |
+| macOS ARM64, Xcode 27 | [![macOS, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos.yml?query=event%3Aworkflow_run) | No depends |
 
 ## [openSUSE](https://www.opensuse.org/)
 
