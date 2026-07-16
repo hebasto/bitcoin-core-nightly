@@ -51,7 +51,7 @@ jobs:
           sudo apt-get install --no-install-recommends clang-${LLVM_VERSION} ${{ matrix.dependencies }} libboost-dev libsqlite3-dev libcapnp-dev capnproto libzmq3-dev systemtap-sdt-dev
 
       - name: Clang version
-        run: clang-${LLVM_VERSION} -v
+        run: clang-${LLVM_VERSION} -v 2>&1 | tee clang_version.txt
 
       - name: Generate CTest configuration
         run: |
@@ -119,4 +119,5 @@ jobs:
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
+          set(CTEST_NOTES_FILES "$ENV{GITHUB_WORKSPACE}/clang_version.txt")
           ctest_submit()
