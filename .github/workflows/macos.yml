@@ -43,6 +43,7 @@ jobs:
           set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
+          cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
           EOF
 
       - name: CDash -- Start & Update
@@ -71,7 +72,7 @@ jobs:
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
-          ctest_build(PARALLEL_LEVEL 4)
+          ctest_build(PARALLEL_LEVEL ${nproc})
 
       - name: Check 'bitcoind' executable
         run: |
@@ -85,7 +86,7 @@ jobs:
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
-          ctest_test(PARALLEL_LEVEL 4)
+          ctest_test(PARALLEL_LEVEL ${nproc})
 
       - name: CDash -- Submit
         if: always()
