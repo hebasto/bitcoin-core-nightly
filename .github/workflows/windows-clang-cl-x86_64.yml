@@ -95,6 +95,11 @@ jobs:
           ctest_start(APPEND)
           ctest_configure(OPTIONS "${configure_opts}")
 
+      - name: Print CMakeConfigureLog.yaml
+        if: always()
+        run: |
+          Get-Content ${{ github.workspace }}\build\CMakeFiles\CMakeConfigureLog.yaml
+
       - name: CDash -- Build
         shell: ctest --build-config Release --extra-verbose --script {0}
         run: |
