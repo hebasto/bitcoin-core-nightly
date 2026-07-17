@@ -91,6 +91,9 @@ jobs:
             "-DBUILD_UTIL_CHAINSTATE=ON"
             "-DBUILD_BENCH=ON"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+            # A workaround for a bug in CMake 4.4.0.
+            # See https://gitlab.kitware.com/cmake/cmake/-/work_items/27957.
+            "-DCMAKE_CXX_SCAN_FOR_MODULES=OFF"
           )
           ctest_start(APPEND)
           ctest_configure(OPTIONS "${configure_opts}")
