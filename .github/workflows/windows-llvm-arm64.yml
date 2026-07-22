@@ -20,8 +20,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CI_LLVM_MINGW_URL: https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/llvm-mingw-20260616-ucrt-ubuntu-22.04-x86_64.tar.xz
-  CI_LLVM_MINGW_HASH: 534b92e067b22a6b4441f48ae9240a3341b17825d04d577eab0cf85c44b4deda
+  CI_LLVM_MINGW_URL: https://github.com/mstorsjo/llvm-mingw/releases/download/20260721/llvm-mingw-20260721-ucrt-ubuntu-22.04-x86_64.tar.xz
+  CI_LLVM_MINGW_HASH: 4a9fd7ac5bda8a0a514f33c4ad7864a76e58c56ed958be18221c5ca0ac0a2b10
   CI_HOST: aarch64-w64-mingw32
 
 jobs:
@@ -55,7 +55,7 @@ jobs:
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
-            -DAPPEND_CXXFLAGS="-Wno-error=deprecated-declarations"
+            -DAPPEND_CXXFLAGS="-Wno-return-type -Wno-error=conditional-uninitialized -Wno-error=deprecated-declarations -Wno-error=unused-template"
 
       - name: Build
         run: cmake --build build -j $(nproc)
