@@ -199,7 +199,7 @@ jobs:
           set -e
           echo "CHECK_OSABI=no" >> /etc/pkg_install.conf
           pkg_add lsof py313-pip py313-zmq
-          CXXFLAGS="-DKJ_NO_EXCEPTIONS=0" pip3.13 install pycapnp
+          CXXFLAGS="-DKJ_NO_EXCEPTIONS=0" pip-3.13 install pycapnp
           python3.13 --version
           python3.13 -c "import sqlite3; print(f'SQLite {sqlite3.sqlite_version}')"
           python3.13 -c "import capnp; print(f'pycapnp {capnp.__version__} / libcapnp {capnp.version.LIBCAPNP_VERSION_MAJOR}.{capnp.version.LIBCAPNP_VERSION_MINOR}.{capnp.version.LIBCAPNP_VERSION_MICRO}')"
