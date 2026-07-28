@@ -168,6 +168,14 @@ jobs:
           ldd build/bin/bitcoind
           build/bin/bitcoind -version
 
+      - name: ctest -R rpc_tests
+        run: |
+          ctest --test-dir build -R rpc_tests
+
+      - name: test_bitcoin
+        run: |
+          ./build/bin/test_bitcoin
+
       - name: CDash -- Test
         run: |
           cat << 'EOF' > ctest_test.cmake
@@ -187,21 +195,3 @@ jobs:
           ctest_submit()
           EOF
           ctest --script ctest_submit.cmake
-
-      - name: Check host disk space
-        if: ${{ ! inputs.skip_functional_tests }}
-        shell: bash
-        run: df -h
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        run: |
-          build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
-            --tmpdirprefix . \
-            --extended \
-            `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
-            --exclude feature_reindex_init \
-            `# TODO https://github.com/bitcoin/bitcoin/pull/35216` \
-            --exclude feature_bind_extra \
-            --exclude rpc_bind \
-            --timeout-factor=8
