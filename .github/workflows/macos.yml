@@ -38,6 +38,9 @@ jobs:
       - name: Generate CTest configuration
         run: |
           cat << 'EOF' > ctest_config.cmake
+          set(CTEST_PROJECT_NAME bitcoin-core)
+          set(CTEST_SUBMIT_URL "https://my.cdash.org/submit.php?project=bitcoin-core")
+          set(CTEST_NIGHTLY_START_TIME "00:00:00 UTC")
           set(CTEST_SITE "${{ github.repository }}")
           set(CTEST_BUILD_NAME "macOS ARM64, Xcode 27")
           set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
@@ -90,7 +93,7 @@ jobs:
 
       - name: CDash -- Submit
         if: always()
-        shell: ctest --script {0}
+        shell: ctest --extra-verbose --script {0}
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
