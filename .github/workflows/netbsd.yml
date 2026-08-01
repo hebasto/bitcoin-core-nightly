@@ -33,13 +33,14 @@ concurrency:
 env:
   # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
+  PACKAGES: cmake curl ninja-build python313
 
 jobs:
   netbsd-syslibs:
     name: 'NetBSD ${{ matrix.release }}, system libs, no GUI'
     runs-on: ubuntu-latest
     env:
-      PACKAGES: 'boost sqlite3 zeromq'
+      SYSTEM_PACKAGES: 'boost sqlite3 zeromq pkgconf'
     defaults:
       run:
         shell: netbsd {0}
@@ -50,6 +51,22 @@ jobs:
         # See https://www.netbsd.org/releases/.
         include:
           - release: '10.1'
+            packages: 'gcc14'
+            cmake_vars: '"-DCMAKE_C_COMPILER=/usr/pkg/gcc14/bin/gcc" "-DCMAKE_CXX_COMPILER=/usr/pkg/gcc14/bin/g++"'
+            dep_packages: 'gcc14'
+            dep_options: >
+              build_CC=/usr/pkg/gcc14/bin/gcc
+              build_CXX=/usr/pkg/gcc14/bin/g++
+              CC=/usr/pkg/gcc14/bin/gcc
+              CXX=/usr/pkg/gcc14/bin/g++
+          - release: '11.0'
+            cmake_vars: '"-DAPPEND_CPPFLAGS=-DKJ_NO_EXCEPTIONS=0"' # Needed for the default GCC 12.5.0.
+            dep_packages: 'gcc15'
+            dep_options: >
+              build_CC=/usr/pkg/gcc15/bin/gcc
+              build_CXX=/usr/pkg/gcc15/bin/g++
+              CC=/usr/pkg/gcc15/bin/gcc
+              CXX=/usr/pkg/gcc15/bin/g++
 
     steps:
       - &START_VM
@@ -58,13 +75,16 @@ jobs:
         with:
           release: ${{ matrix.release }}
           mem: 12288
-          prepare: |
-            pkg_info > packages_before
-            pkg_add -u cmake curl gcc14 ninja-build pkgconf python313 ${{ env.PACKAGES }}
-            pkg_info > packages_after
-            diff -w packages_before packages_after | grep '^>' | sort
           sync: no
           disable-cache: true
+
+      - name: Install packages
+        run: |
+          set -e
+          pkg_info > packages_before
+          pkg_add -u ${{ env.PACKAGES }} ${{ env.SYSTEM_PACKAGES }} ${{ matrix.packages }}
+          pkg_info > packages_after
+          diff -w packages_before packages_after | grep '^>' | sort
 
       # The preinstalled `devel/capnproto` package is broken.
       # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
@@ -139,8 +159,7 @@ jobs:
           include(ctest_config.cmake)
           set(configure_opts
             "--preset dev-mode"
-            "-DCMAKE_C_COMPILER=/usr/pkg/gcc14/bin/gcc"
-            "-DCMAKE_CXX_COMPILER=/usr/pkg/gcc14/bin/g++"
+            ${{ matrix.cmake_vars }}
             "-DBUILD_GUI=OFF"
             "-DWITH_USDT=OFF"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
@@ -235,7 +254,7 @@ jobs:
     name: 'NetBSD ${{ matrix.release }}, depends, no GUI'
     runs-on: ubuntu-latest
     env:
-      PACKAGES: 'gmake perl'
+      DEP_PACKAGES: 'gmake perl'
     defaults:
       run:
         shell: netbsd {0}
@@ -243,6 +262,15 @@ jobs:
 
     steps:
       - *START_VM
+
+      - name: Install packages
+        run: |
+          set -e
+          pkg_info > packages_before
+          pkg_add -u ${{ env.PACKAGES }} ${{ env.DEP_PACKAGES }} ${{ matrix.dep_packages }}
+          pkg_info > packages_after
+          diff -w packages_before packages_after | grep '^>' | sort
+
       - *FETCH_SOURCE
 
       - name: Checkout helper actions
@@ -255,11 +283,7 @@ jobs:
         uses: ./ci/nightly/.github/actions/build-depends
         with:
           vm: netbsd
-          options: >
-            build_CC=/usr/pkg/gcc14/bin/gcc
-            build_CXX=/usr/pkg/gcc14/bin/g++
-            CC=/usr/pkg/gcc14/bin/gcc
-            CXX=/usr/pkg/gcc14/bin/g++
+          options: ${{ matrix.dep_options }}
           source-dir: /root/bitcoin
           cache-tag: netbsd-${{ matrix.release }}
 
