@@ -52,6 +52,8 @@ jobs:
             -DAPPEND_CXXFLAGS="-Wno-error=array-bounds \
               `# TODO: Drop -Wno-error=deprecated-declarations once https://github.com/bitcoin/bitcoin/issues/32361 is fixed.` \
               -Wno-error=deprecated-declarations \
+              `# This false-positive warning was introduced in https://github.com/bitcoin/bitcoin/pull/35606.` \
+              -Wno-error=maybe-uninitialized \
             " \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
 
