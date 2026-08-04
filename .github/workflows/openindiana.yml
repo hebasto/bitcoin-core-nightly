@@ -25,9 +25,9 @@ on:
     types: [requested]
     branches: [main]
 
-concurrency:
-  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+#   cancel-in-progress: true
 
 env:
   # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
@@ -43,29 +43,27 @@ jobs:
 
     steps:
       - name: Start OpenIndiana VM
-        # openindiana-vm@v1.0.9 introduces multiple regressions, including:
-        # 1. A libc thread failure in the `coins_tests_base` test.
-        # 2. Doubled build times.
-        uses: vmactions/openindiana-vm@v1.0.8
+        uses: vmactions/openindiana-vm@v1
         with:
-          # This release has `metapackages/build-essential` preinstalled.
-          release: '202510-build'
-          mem: 18432
+          release: '202604'
+          mem: 6144
           # The `pkg install` command often encounters networking issues in the CI
           # environment. To mitigate these, the following steps have been taken:
           # 1. Each package is installed individually.
-          # 2. `metapackages/build-essential` (includes git, cmake, gcc-14) and
-          #    `runtime/python-314` are already preinstalled on the VM image, so
-          #    they are skipped.
+          # 2. `runtime/python-314` is already preinstalled on the VM image, so
+          #    it is skipped.
           # 3. Installing `system/library/boost` is skipped, as it often takes
           #    more than 60 minutes and causes a job timeout.
           #    See the "Build Boost" step below.
           prepare: |
             set -e
             pkg list > packages_before
+            pkg install developer/build/cmake
+            pkg install developer/build/ninja
             pkg install developer/build/pkgconf
-            pkg install system/storage/lsof
+            pkg install developer/gcc-14
             pkg install library/c++/zeromq
+            pkg install system/storage/lsof
             pkg list > packages_after
             diff -w packages_before packages_after | grep '^>' || true
           sync: no
@@ -113,7 +111,7 @@ jobs:
           # Workaround for a bug in the FindThreads module.
           # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           export CXXFLAGS="-pthread"
-          cmake -S bitcoin -B build --preset dev-mode \
+          cmake -S bitcoin -B build -G Ninja --preset dev-mode \
             -Wno-error=dev \
             -DCMAKE_PREFIX_PATH=/usr/local \
             -DBUILD_GUI=OFF \
@@ -125,7 +123,7 @@ jobs:
 
       - name: Build
         run: |
-          cmake --build build -- -j ${{ env.CI_NCPU }}
+          cmake --build build
 
       - name: Check 'bitcoind' executable
         run: |
