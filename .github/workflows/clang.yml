@@ -87,6 +87,7 @@ jobs:
             "-DBUILD_FUZZ_BINARY=ON"
             "-DWITH_ZMQ=ON"
             "-DWITH_USDT=ON"
+            "-DAPPEND_CXXFLAGS=-Wno-error=unused-template"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
           ctest_start(APPEND)
