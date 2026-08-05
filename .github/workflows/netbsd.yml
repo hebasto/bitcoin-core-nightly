@@ -40,7 +40,7 @@ jobs:
     name: 'NetBSD ${{ matrix.release }}, system libs, no GUI'
     runs-on: ubuntu-latest
     env:
-      SYSTEM_PACKAGES: 'boost sqlite3 zeromq pkgconf'
+      SYSTEM_PACKAGES: 'boost sqlite3 pkgconf'
     defaults:
       run:
         shell: netbsd {0}
@@ -51,7 +51,12 @@ jobs:
         # See https://www.netbsd.org/releases/.
         include:
           - release: '10.1'
-            packages: 'gcc14'
+            # The default compiler GCC 10.5.0 does not meet the minimum version requirements.
+            sys_packages: 'gcc14'
+            # Workaround for the following linker warning when using the systems' `net/zeromq` package:
+            # /usr/bin/ld: warning: libstdc++.so.9, needed by /usr/pkg/lib/libzmq.so, may conflict with libstdc++.so.7
+            pkgsrc_build_zeromq: true
+            pkgsrc_compilers: 'CC="/usr/pkg/gcc14/bin/gcc" CXX="/usr/pkg/gcc14/bin/g++"'
             cmake_vars: '"-DCMAKE_C_COMPILER=/usr/pkg/gcc14/bin/gcc" "-DCMAKE_CXX_COMPILER=/usr/pkg/gcc14/bin/g++"'
             dep_packages: 'gcc14'
             dep_options: >
@@ -60,6 +65,8 @@ jobs:
               CC=/usr/pkg/gcc14/bin/gcc
               CXX=/usr/pkg/gcc14/bin/g++
           - release: '11.0'
+            sys_packages: 'zeromq'
+            pkgsrc_build_zeromq: false
             cmake_vars: '"-DAPPEND_CPPFLAGS=-DKJ_NO_EXCEPTIONS=0"' # Needed for the default GCC 12.5.0.
             dep_packages: 'gcc15'
             dep_options: >
@@ -82,7 +89,7 @@ jobs:
         run: |
           set -e
           pkg_info > packages_before
-          pkg_add -u ${{ env.PACKAGES }} ${{ env.SYSTEM_PACKAGES }} ${{ matrix.packages }}
+          pkg_add -u ${{ env.PACKAGES }} ${{ env.SYSTEM_PACKAGES }} ${{ matrix.sys_packages }}
           pkg_info > packages_after
           diff -w packages_before packages_after | grep '^>' | sort
 
@@ -100,6 +107,8 @@ jobs:
             pkgsrc/devel/libtool-base \
             pkgsrc/devel/pkgconf \
             pkgsrc/devel/zlib \
+            pkgsrc/lang/gcc14 \
+            pkgsrc/lang/gcc14-libs \
             pkgsrc/lang/gcc15 \
             pkgsrc/mk \
             pkgsrc/pkgtools \
@@ -107,7 +116,24 @@ jobs:
             pkgsrc/sysutils/install-sh/files
           cd /usr/pkgsrc/devel/capnproto
           unset PKG_PATH
-          make CPPFLAGS="-DKJ_NO_EXCEPTIONS=0" install
+          make ${{ matrix.pkgsrc_compilers }} CPPFLAGS="-DKJ_NO_EXCEPTIONS=0" CXXFLAGS="-fPIE" install
+
+      - name: Build ZeroMQ
+        if: matrix.pkgsrc_build_zeromq
+        run: |
+          set -e
+          tar -xzf pkgsrc.tar.gz -C /usr \
+            pkgsrc/net/zeromq \
+            pkgsrc/converters/libiconv \
+            pkgsrc/devel/gettext-lib \
+            pkgsrc/devel/gmake \
+            pkgsrc/lang/gcc14 \
+            pkgsrc/lang/gcc14-libs \
+            pkgsrc/lang/perl5 \
+            pkgsrc/security/libsodium
+          cd /usr/pkgsrc/net/zeromq
+          unset PKG_PATH
+          make ${{ matrix.pkgsrc_compilers }} CXXFLAGS="-fPIE" install
 
       - &FETCH_SOURCE
         name: Fetch source tarball
