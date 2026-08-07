@@ -83,10 +83,8 @@ jobs:
           set(configure_opts
             "-DCMAKE_C_COMPILER=clang-$ENV{LLVM_VERSION}"
             "-DCMAKE_CXX_COMPILER=clang++-$ENV{LLVM_VERSION}\;-stdlib=${{ matrix.stdlib }}"
-            "-DBUILD_BENCH=ON"
-            "-DBUILD_FUZZ_BINARY=ON"
-            "-DWITH_ZMQ=ON"
-            "-DWITH_USDT=ON"
+            "--preset dev-mode"
+            "-DBUILD_GUI=OFF"
             "-DAPPEND_CXXFLAGS=-Wno-error=unused-template"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
