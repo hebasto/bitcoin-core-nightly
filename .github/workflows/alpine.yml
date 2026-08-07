@@ -83,8 +83,8 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           set(configure_opts
             "--toolchain depends/x86_64-pc-linux-musl/toolchain.cmake"
-            "-DBUILD_BENCH=ON"
-            "-DBUILD_FUZZ_BINARY=ON"
+            "--preset dev-mode"
+            "-DBUILD_GUI=OFF"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
           ctest_start(APPEND)
