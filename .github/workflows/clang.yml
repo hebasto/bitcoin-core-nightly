@@ -105,6 +105,13 @@ jobs:
           ldd build/bin/bitcoind
           build/bin/bitcoind -version
 
+      - name: Fetch test data
+        run: |
+          DIR_UNIT_TEST_DATA="$(pwd)/qa-assets/unit_test_data"
+          echo "DIR_UNIT_TEST_DATA=${DIR_UNIT_TEST_DATA}" >> "$GITHUB_ENV"
+          mkdir -p "$DIR_UNIT_TEST_DATA"
+          curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
+
       - name: CDash -- Test
         shell: ctest --script {0}
         run: |
