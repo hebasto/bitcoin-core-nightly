@@ -66,6 +66,7 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           set(configure_opts
             "--preset vs2026"
+            "--toolchain $ENV{VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
             "-DBUILD_UTIL_CHAINSTATE=ON"
             "-DBUILD_BENCH=ON"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
