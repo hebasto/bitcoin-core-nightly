@@ -32,6 +32,18 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # `aws/tap` is untrusted, which causes the following warning
+          # during `brew update`:
+          # ```
+          # Warning: The following taps are not trusted:
+          # aws/tap
+          #
+          # Homebrew is currently ignoring formulae, casks and commands from these taps because tap trust is required.
+          #
+          # Untap them with:
+          # brew untap aws/tap
+          # ```
+          brew untap aws/tap || true
           brew update
           brew install git cmake pkgconf boost zeromq qt qrencode capnp
 
