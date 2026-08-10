@@ -22,6 +22,10 @@ jobs:
         shell: pwsh -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
 
     steps:
+      - name: Install dependencies
+        run: |
+          vcpkg install boost-multi-index boost-test sqlite3[core] zeromq qtbase[core,gui,network,png,testlib,widgets] qttools libqrencode
+
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v7
         with:
@@ -52,10 +56,10 @@ jobs:
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           set(configure_opts
-            "--preset vs2026"
+            "--preset dev-mode"
+            "-DWITH_USDT=OFF"
             "--toolchain $ENV{VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
-            "-DBUILD_UTIL_CHAINSTATE=ON"
-            "-DBUILD_BENCH=ON"
+            "-DVCPKG_MANIFEST_MODE=OFF"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
           ctest_start(APPEND)
