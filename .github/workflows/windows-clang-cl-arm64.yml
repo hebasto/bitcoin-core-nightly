@@ -45,18 +45,6 @@ jobs:
         # Using microsoft/setup-msbuild is not enough.
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Get tool information
-        run: |
-          cmake -version
-          Write-Host "---"
-          clang-cl --version
-          Write-Host "---"
-          Write-Host "VCToolsVersion: $env:VCToolsVersion"
-          Write-Host "---"
-          py -3 --version
-          Write-Host "---"
-          Write-Host "PowerShell version $($PSVersionTable.PSVersion.ToString())"
-
       - name: Set vcpkg build type
         run: |
           Add-Content -Path "$env:VCPKG_INSTALLATION_ROOT\triplets\arm64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
