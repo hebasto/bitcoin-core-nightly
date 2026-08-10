@@ -27,19 +27,6 @@ jobs:
         with:
           repository: bitcoin/bitcoin
 
-      - name: Configure Developer Command Prompt for Microsoft Visual C++
-        # Using microsoft/setup-msbuild is not enough.
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Get tool information
-        run: |
-          cmake -version | Tee-Object -FilePath "cmake_version"
-          Write-Output "---"
-          msbuild -version | Tee-Object -FilePath "msbuild_version"
-          $env:VCToolsVersion | Tee-Object -FilePath "toolset_version"
-          py -3 --version
-          Write-Host "PowerShell version $($PSVersionTable.PSVersion.ToString())"
-
       - name: Generate CTest configuration
         run: |
           $config = @'
@@ -66,6 +53,7 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           set(configure_opts
             "--preset vs2026"
+            "--toolchain $ENV{VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
             "-DBUILD_UTIL_CHAINSTATE=ON"
             "-DBUILD_BENCH=ON"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"

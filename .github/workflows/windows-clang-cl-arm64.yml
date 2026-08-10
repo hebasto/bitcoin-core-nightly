@@ -41,25 +41,9 @@ jobs:
           $commit = git rev-parse HEAD~1
           "commit=$commit" >> $env:GITHUB_OUTPUT
 
-      - name: Configure Developer Command Prompt for Microsoft Visual C++
-        # Using microsoft/setup-msbuild is not enough.
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Get tool information
-        run: |
-          cmake -version
-          Write-Host "---"
-          clang-cl --version
-          Write-Host "---"
-          Write-Host "VCToolsVersion: $env:VCToolsVersion"
-          Write-Host "---"
-          py -3 --version
-          Write-Host "---"
-          Write-Host "PowerShell version $($PSVersionTable.PSVersion.ToString())"
-
       - name: Set vcpkg build type
         run: |
-          Add-Content -Path "$env:VCPKG_ROOT\triplets\arm64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
+          Add-Content -Path "$env:VCPKG_INSTALLATION_ROOT\triplets\arm64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
 
       - name: Generate CTest configuration
         run: |
@@ -88,6 +72,7 @@ jobs:
           set(ENV{CXXFLAGS} "-Wno-return-type -Wno-error=conditional-uninitialized")
           set(configure_opts
             "--preset windows"
+            "--toolchain $ENV{VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
             "-DVCPKG_TARGET_TRIPLET=arm64-windows"
             "-DBUILD_UTIL_CHAINSTATE=ON"
             "-DBUILD_BENCH=ON"
