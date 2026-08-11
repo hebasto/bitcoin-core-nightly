@@ -28,6 +28,11 @@ jobs:
         shell: pwsh -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
 
     steps:
+      - name: Install dependencies
+        run: |
+          Add-Content -Path "$env:VCPKG_INSTALLATION_ROOT\triplets\arm64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
+          vcpkg install boost-multi-index boost-test sqlite3[core] zeromq qtbase[core,gui,network,png,testlib,widgets] qttools libqrencode
+
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v7
         with:
@@ -40,10 +45,6 @@ jobs:
         run: |
           $commit = git rev-parse HEAD~1
           "commit=$commit" >> $env:GITHUB_OUTPUT
-
-      - name: Set vcpkg build type
-        run: |
-          Add-Content -Path "$env:VCPKG_INSTALLATION_ROOT\triplets\arm64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
 
       - name: Generate CTest configuration
         run: |
@@ -71,11 +72,12 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           set(ENV{CXXFLAGS} "-Wno-return-type -Wno-error=conditional-uninitialized")
           set(configure_opts
-            "--preset windows"
+            "-T ClangCL"
+            "--preset dev-mode"
+            "-DWITH_USDT=OFF"
             "--toolchain $ENV{VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
+            "-DVCPKG_MANIFEST_MODE=OFF"
             "-DVCPKG_TARGET_TRIPLET=arm64-windows"
-            "-DBUILD_UTIL_CHAINSTATE=ON"
-            "-DBUILD_BENCH=ON"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
             # A workaround for a bug in CMake 4.4.0.
             # See https://gitlab.kitware.com/cmake/cmake/-/work_items/27957.
