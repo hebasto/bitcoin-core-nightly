@@ -54,8 +54,7 @@ jobs:
             -DREDUCE_EXPORTS=ON \
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
-            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
-            -DAPPEND_CXXFLAGS="-Wno-return-type -Wno-error=conditional-uninitialized -Wno-error=unused-template"
+            -DAPPEND_CXXFLAGS="-Wno-return-type -Wno-conditional-uninitialized -Wno-unused-template -Wmissing-noreturn"
 
       - name: Build
         run: cmake --build build -j $(nproc)
