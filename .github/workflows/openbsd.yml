@@ -200,6 +200,8 @@ jobs:
         run: |
           set -e
           ulimit -n 1024
+          # See https://github.com/bitcoin/bitcoin/pull/35954.
+          export QT_NO_GLIB=1
           /home/build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix /home \
             --extended \
