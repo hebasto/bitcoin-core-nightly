@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   clang:
-    name: 'Clang-SNAPSHOT, ${{ matrix.stdlib }}, system libs, no GUI'
+    name: 'Clang-SNAPSHOT, ${{ matrix.stdlib }}, depends'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -48,16 +48,20 @@ jobs:
           sudo apt-get update
           LLVM_VERSION=$(apt-cache search --names-only '^clang-[0-9]+$' | sort -V | tail -1 | cut -f1 -d" " | cut -f2 -d"-" )
           echo "LLVM_VERSION=${LLVM_VERSION}" >> "$GITHUB_ENV"
-          sudo apt-get install --no-install-recommends clang-${LLVM_VERSION} ${{ matrix.dependencies }} libboost-dev libsqlite3-dev libcapnp-dev capnproto libzmq3-dev systemtap-sdt-dev
+          sudo apt-get install --no-install-recommends clang-${LLVM_VERSION} ${{ matrix.dependencies }}
 
       - name: Clang version
         run: clang-${LLVM_VERSION} -v 2>&1 | tee clang_version.txt
+
+      - name: Build depends
+        run: |
+          gmake -C depends -j $(nproc) CC="clang-${LLVM_VERSION}" CXX="clang++-${LLVM_VERSION} -stdlib=${{ matrix.stdlib }}" LOG=1
 
       - name: Generate CTest configuration
         run: |
           cat << 'EOF' > ctest_config.cmake
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "Clang-SNAPSHOT, ${{ matrix.stdlib }}, system libs, no GUI")
+          set(CTEST_BUILD_NAME "Clang-SNAPSHOT, ${{ matrix.stdlib }}, depends")
           set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
@@ -81,10 +85,8 @@ jobs:
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           set(configure_opts
-            "-DCMAKE_C_COMPILER=clang-$ENV{LLVM_VERSION}"
-            "-DCMAKE_CXX_COMPILER=clang++-$ENV{LLVM_VERSION}\;-stdlib=${{ matrix.stdlib }}"
             "--preset dev-mode"
-            "-DBUILD_GUI=OFF"
+            "--toolchain depends/x86_64-pc-linux-gnu/toolchain.cmake"
             "-DAPPEND_CXXFLAGS=-Wno-error=unused-template"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
