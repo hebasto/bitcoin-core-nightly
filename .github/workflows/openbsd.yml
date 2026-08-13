@@ -66,7 +66,7 @@ jobs:
         name: Fetch source tarball
         run: |
           set -e
-          curl --location --fail --output source.tar.gz https://github.com/${{ inputs.repository || 'bitcoin/bitcoin' }}/archive/${{ inputs.ref || 'refs/heads/master' }}.tar.gz
+          curl --location --fail --output source.tar.gz https://github.com/hebasto/bitcoin/archive/refs/heads/260811-openbsd-gui-test.tar.gz
           mkdir /home/bitcoin
           gtar -xf source.tar.gz -C /home/bitcoin --strip-components=1
           rm -rf source.tar.gz
