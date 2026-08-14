@@ -174,7 +174,14 @@ jobs:
           include(ctest_config.cmake)
           set(ENV{DIR_UNIT_TEST_DATA} ${CTEST_SCRIPT_DIRECTORY}/qa-assets/unit_test_data)
           ctest_start(APPEND)
-          ctest_test(PARALLEL_LEVEL ${nproc})
+          ctest_test(
+            PARALLEL_LEVEL ${nproc}
+            RETURN_VALUE test_result
+            CAPTURE_CMAKE_ERROR cmake_error
+          )
+          if(NOT test_result EQUAL 0 OR NOT cmake_error EQUAL 0)
+            message(FATAL_ERROR "ctest_test() failed: RETURN_VALUE=${test_result} CAPTURE_CMAKE_ERROR=${cmake_error}")
+          endif()
           EOF
           ctest --script ctest_test.cmake
 
