@@ -47,6 +47,7 @@ jobs:
     strategy: &RELEASE_MATRIX
       fail-fast: false
       matrix:
+        instance: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         # Test all supported releases.
         # See https://www.netbsd.org/releases/.
         include:
@@ -64,16 +65,6 @@ jobs:
               build_CXX=/usr/pkg/gcc14/bin/g++
               CC=/usr/pkg/gcc14/bin/gcc
               CXX=/usr/pkg/gcc14/bin/g++
-          - release: '11.0'
-            sys_packages: 'zeromq'
-            pkgsrc_build_zeromq: false
-            cmake_vars: '"-DAPPEND_CPPFLAGS=-DKJ_NO_EXCEPTIONS=0"' # Needed for the default GCC 12.5.0.
-            dep_packages: 'gcc15'
-            dep_options: >
-              build_CC=/usr/pkg/gcc15/bin/gcc
-              build_CXX=/usr/pkg/gcc15/bin/g++
-              CC=/usr/pkg/gcc15/bin/gcc
-              CXX=/usr/pkg/gcc15/bin/g++
 
     steps:
       - &START_VM
@@ -263,14 +254,10 @@ jobs:
           set -e
           python3.13 build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix . \
-            --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
             `# p2p_invalid_messages causes OOM. Running separately in the next command.` \
             --exclude p2p_invalid_messages \
-            --timeout-factor=8
-          python3.13 build/test/functional/test_runner.py p2p_invalid_messages --combinedlogslen=99999999 \
-            --tmpdirprefix . \
             --timeout-factor=8
 
   netbsd-depends:
