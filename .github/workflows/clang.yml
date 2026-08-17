@@ -87,7 +87,6 @@ jobs:
           set(configure_opts
             "--preset dev-mode"
             "--toolchain depends/x86_64-pc-linux-gnu/toolchain.cmake"
-            "-DAPPEND_CXXFLAGS=-Wno-error=unused-template"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
           ctest_start(APPEND)
