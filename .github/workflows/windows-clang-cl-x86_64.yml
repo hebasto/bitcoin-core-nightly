@@ -70,7 +70,7 @@ jobs:
         shell: ctest --build-config Release --extra-verbose --script {0}
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
-          set(ENV{CXXFLAGS} "-Wno-return-type -Wno-error=conditional-uninitialized")
+          set(ENV{CXXFLAGS} "-Wno-error=return-type -Wno-error=conditional-uninitialized")
           set(configure_opts
             "-T ClangCL"
             "--preset dev-mode"
