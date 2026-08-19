@@ -117,11 +117,16 @@ jobs:
             -Wno-error=dev \
             -DCMAKE_PREFIX_PATH=/usr/local \
             -DBUILD_GUI=OFF \
-            -DBUILD_SHARED_LIBS=OFF \
             `# TODO: Build Cap'n Proto from source and reenable IPC.` \
             -DENABLE_IPC=OFF \
             -DWITH_USDT=OFF \
-            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
+            `# GCC does not support -pie on OpenIndiana.` \
+            `# See https://www.illumos.org/issues/15730.` \
+            `# Therefore, CMake's check_pie_supported fails and` \
+            `# enforcing -fPIC is necessary for BUILD_SHARED_LIBS=ON.` \
+            -DAPPEND_CFLAGS="-fPIC" \
+            -DAPPEND_CXXFLAGS="-fPIC"
 
       - name: Build
         run: |
