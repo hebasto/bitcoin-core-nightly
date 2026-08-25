@@ -76,6 +76,17 @@ jobs:
               CXX=/usr/pkg/gcc15/bin/g++
 
     steps:
+      - &ANNOTATE_WORKFLOW_INPUTS
+        name: Annotate with workflow inputs
+        env:
+          INPUTS_REPOSITORY: ${{ inputs.repository }}
+          INPUTS_REF: ${{ inputs.ref }}
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "::notice title=inputs::$INPUTS_REPOSITORY $INPUTS_REF"
+          fi
+
       - &START_VM
         name: Start NetBSD ${{ matrix.release }} VM
         uses: vmactions/netbsd-vm@v1
@@ -284,6 +295,7 @@ jobs:
     strategy: *RELEASE_MATRIX
 
     steps:
+      - *ANNOTATE_WORKFLOW_INPUTS
       - *START_VM
 
       - name: Install packages
