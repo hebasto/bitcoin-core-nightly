@@ -51,6 +51,17 @@ jobs:
         release: ['14.4', '15.1']
 
     steps:
+      - &ANNOTATE_WORKFLOW_INPUTS
+        name: Annotate with workflow inputs
+        env:
+          INPUTS_REPOSITORY: ${{ inputs.repository }}
+          INPUTS_REF: ${{ inputs.ref }}
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "::notice title=inputs::$INPUTS_REPOSITORY $INPUTS_REF"
+          fi
+
       - &START_VM
         name: Start FreeBSD ${{ matrix.release }} VM
         uses: vmactions/freebsd-vm@v1
@@ -208,6 +219,7 @@ jobs:
     strategy: *RELEASE_MATRIX
 
     steps:
+      - *ANNOTATE_WORKFLOW_INPUTS
       - *START_VM
       - *FETCH_SOURCE
 
