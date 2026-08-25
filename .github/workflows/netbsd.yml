@@ -59,7 +59,7 @@ jobs:
             pkgsrc_compilers: 'CC="/usr/pkg/gcc14/bin/gcc" CXX="/usr/pkg/gcc14/bin/g++"'
             cmake_vars: '"-DCMAKE_C_COMPILER=/usr/pkg/gcc14/bin/gcc" "-DCMAKE_CXX_COMPILER=/usr/pkg/gcc14/bin/g++"'
             dep_packages: 'gcc14'
-            dep_options: >
+            dep_options: >-
               build_CC=/usr/pkg/gcc14/bin/gcc
               build_CXX=/usr/pkg/gcc14/bin/g++
               CC=/usr/pkg/gcc14/bin/gcc
@@ -69,7 +69,7 @@ jobs:
             pkgsrc_build_zeromq: false
             cmake_vars: '"-DAPPEND_CPPFLAGS=-DKJ_NO_EXCEPTIONS=0"' # Needed for the default GCC 12.5.0.
             dep_packages: 'gcc15'
-            dep_options: >
+            dep_options: >-
               build_CC=/usr/pkg/gcc15/bin/gcc
               build_CXX=/usr/pkg/gcc15/bin/g++
               CC=/usr/pkg/gcc15/bin/gcc
