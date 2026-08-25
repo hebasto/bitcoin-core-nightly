@@ -42,6 +42,16 @@ jobs:
         shell: openindiana {0}
 
     steps:
+      - name: Annotate with workflow inputs
+        env:
+          INPUTS_REPOSITORY: ${{ inputs.repository }}
+          INPUTS_REF: ${{ inputs.ref }}
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "::notice title=inputs::$INPUTS_REPOSITORY $INPUTS_REF"
+          fi
+
       - name: Start OpenIndiana VM
         # openindiana-vm@v1.0.9 introduces multiple regressions, including:
         # 1. A libc thread failure in the `coins_tests_base` test.
