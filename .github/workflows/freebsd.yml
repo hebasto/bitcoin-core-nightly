@@ -12,7 +12,7 @@ on:
         default: bitcoin/bitcoin
         type: string
       ref:
-        description: 'Repository reference: refs/heads/<branch>, refs/tags/<tag>, refs/pull/<PR>/head or refs/<commit>'
+        description: 'Repository reference: refs/heads/<branch>, refs/tags/<tag>, refs/pull/<PR>/head or <commit>'
         required: true
         default: refs/heads/master
         type: string
