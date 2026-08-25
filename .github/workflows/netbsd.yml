@@ -78,14 +78,12 @@ jobs:
     steps:
       - &ANNOTATE_WORKFLOW_INPUTS
         name: Annotate with workflow inputs
+        if: github.event_name == 'workflow_dispatch'
         env:
           INPUTS_REPOSITORY: ${{ inputs.repository }}
           INPUTS_REF: ${{ inputs.ref }}
         shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "::notice title=inputs::$INPUTS_REPOSITORY $INPUTS_REF"
-          fi
+        run: echo "::notice title=inputs::$INPUTS_REPOSITORY $INPUTS_REF"
 
       - &START_VM
         name: Start NetBSD ${{ matrix.release }} VM
