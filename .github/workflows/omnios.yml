@@ -74,6 +74,7 @@ jobs:
               ooce/developer/ninja \
               ooce/file/lsof \
               database/sqlite-3 \
+              developer/pkg-config \
               runtime/python-313
             pkg list -H -o name,publisher,version > packages_after
             diff -w packages_before packages_after | grep '^>'
@@ -96,6 +97,17 @@ jobs:
             -DBUILD_TESTING=OFF \
             -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
           cmake --install build-boost
+
+      - name: Build Cap'n Proto
+        env:
+          CAPNPROTO_VERSION: '1.5.0'
+        run: |
+          set -e
+          curl --location --fail --remote-name https://capnproto.org/capnproto-c++-${{ env.CAPNPROTO_VERSION }}.tar.gz
+          tar xf capnproto-c++-${{ env.CAPNPROTO_VERSION }}.tar.gz
+          cd capnproto-c++-${{ env.CAPNPROTO_VERSION }}
+          ./configure --without-fibers
+          make -j $(nproc) install
 
       - name: Fetch source tarball
         run: |
@@ -148,8 +160,7 @@ jobs:
           # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           set(ENV{CXXFLAGS} "-pthread")
           set(configure_opts
-            # TODO: Build Cap'n Proto from source and reenable IPC.
-            "-DENABLE_IPC=OFF"
+            "-DCMAKE_PREFIX_PATH=/usr/local"
             "-DBUILD_BENCH=ON"
             "-DBUILD_FUZZ_BINARY=ON"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
