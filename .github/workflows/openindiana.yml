@@ -96,18 +96,6 @@ jobs:
             -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
           cmake --install build-boost
 
-      # The preinstalled `database/sqlite-3` package is broken.
-      # For details, see https://github.com/bitcoin/bitcoin/issues/34163.
-      - name: Build SQLite
-        run: |
-          set -e
-          curl --location --fail --output sqlite-autoconf-3460100.tar.gz https://sqlite.org/2024/sqlite-autoconf-3460100.tar.gz
-          tar xf sqlite-autoconf-3460100.tar.gz
-          cd sqlite-autoconf-3460100
-          ./configure
-          make -j ${{ env.CI_NCPU }}
-          make install
-
       - name: Fetch source tarball
         run: |
           set -e
@@ -123,7 +111,6 @@ jobs:
           export CXXFLAGS="-pthread"
           cmake -S bitcoin -B build --preset dev-mode \
             -Wno-error=dev \
-            -DCMAKE_PREFIX_PATH=/usr/local \
             -DBUILD_GUI=OFF \
             `# TODO: Build Cap'n Proto from source and reenable IPC.` \
             -DENABLE_IPC=OFF \
