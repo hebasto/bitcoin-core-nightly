@@ -160,10 +160,20 @@ jobs:
           # See https://gitlab.kitware.com/cmake/cmake/-/issues/26063.
           set(ENV{CXXFLAGS} "-pthread")
           set(configure_opts
+            "--preset dev-mode"
+            "-Wno-error=dev"
+            "-DBUILD_GUI=OFF"
+            # The default OmniOS IPS repositories do not ship a ZeroMQ package.
+            "-DWITH_ZMQ=OFF"
+            "-DWITH_USDT=OFF"
             "-DCMAKE_PREFIX_PATH=/usr/local"
-            "-DBUILD_BENCH=ON"
-            "-DBUILD_FUZZ_BINARY=ON"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+            # GCC does not support -pie on OmniOS.
+            # See https://www.illumos.org/issues/15730.
+            # Therefore, CMake's check_pie_supported fails and
+            # enforcing -fPIC is necessary for BUILD_SHARED_LIBS=ON.
+            "-DAPPEND_CFLAGS=-fPIC"
+            "-DAPPEND_CXXFLAGS=-fPIC"
           )
           ctest_start(APPEND)
           ctest_configure(OPTIONS "${configure_opts}")
