@@ -58,7 +58,6 @@ jobs:
         with:
           # This release has `metapackages/build-essential` preinstalled.
           release: '202510-build'
-          mem: 18432
           # The `pkg install` command often encounters networking issues in the CI
           # environment. To mitigate these, the following steps have been taken:
           # 1. Each package is installed individually.
@@ -96,6 +95,17 @@ jobs:
             -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
           cmake --install build-boost
 
+      - name: Build Cap'n Proto
+        env:
+          CAPNPROTO_VERSION: '1.5.0'
+        run: |
+          set -e
+          curl --location --fail --remote-name https://capnproto.org/capnproto-c++-${{ env.CAPNPROTO_VERSION }}.tar.gz
+          tar xf capnproto-c++-${{ env.CAPNPROTO_VERSION }}.tar.gz
+          cd capnproto-c++-${{ env.CAPNPROTO_VERSION }}
+          ./configure --without-fibers
+          make -j ${{ env.CI_NCPU }} install
+
       - name: Fetch source tarball
         run: |
           set -e
@@ -112,9 +122,8 @@ jobs:
           cmake -S bitcoin -B build --preset dev-mode \
             -Wno-error=dev \
             -DBUILD_GUI=OFF \
-            `# TODO: Build Cap'n Proto from source and reenable IPC.` \
-            -DENABLE_IPC=OFF \
             -DWITH_USDT=OFF \
+            -DCMAKE_PREFIX_PATH=/usr/local \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
             `# GCC does not support -pie on OpenIndiana.` \
             `# See https://www.illumos.org/issues/15730.` \
