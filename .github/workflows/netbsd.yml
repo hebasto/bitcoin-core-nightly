@@ -52,6 +52,9 @@ jobs:
           - release: '10.1'
             # The default compiler GCC 10.5.0 does not meet the minimum version requirements.
             sys_packages: 'gcc14'
+            # The preinstalled `devel/capnproto` package is broken.
+            # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
+            pkgsrc_build_capnproto: true
             # Workaround for the following linker warning when using the systems' `net/zeromq` package:
             # /usr/bin/ld: warning: libstdc++.so.9, needed by /usr/pkg/lib/libzmq.so, may conflict with libstdc++.so.7
             pkgsrc_build_zeromq: true
@@ -64,9 +67,9 @@ jobs:
               CC=/usr/pkg/gcc14/bin/gcc
               CXX=/usr/pkg/gcc14/bin/g++
           - release: '11.0'
-            sys_packages: 'zeromq'
+            sys_packages: 'capnproto zeromq'
+            pkgsrc_build_capnproto: false
             pkgsrc_build_zeromq: false
-            cmake_vars: '"-DAPPEND_CPPFLAGS=-DKJ_NO_EXCEPTIONS=0"' # Needed for the default GCC 12.5.0.
             dep_packages: 'gcc15'
             dep_options: >-
               build_CC=/usr/pkg/gcc15/bin/gcc
@@ -101,9 +104,8 @@ jobs:
           pkg_info > packages_after
           diff -w packages_before packages_after | grep '^>' | sort
 
-      # The preinstalled `devel/capnproto` package is broken.
-      # See https://github.com/bitcoin-core/libmultiprocess/pull/196.
       - name: Build Cap'n Proto
+        if: matrix.pkgsrc_build_capnproto
         run: |
           set -e
           pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
