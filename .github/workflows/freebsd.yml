@@ -194,8 +194,6 @@ jobs:
           set -e
           build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --extended \
-            `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
-            --exclude feature_reindex_init \
             `# Tests using lsof may fail due to the following warning:` \
             `# lsof: WARNING -- reading lockf list failed: Cannot allocate memory` \
             `# Run them separately in the subsequent command.` \
