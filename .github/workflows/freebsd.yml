@@ -47,7 +47,13 @@ jobs:
       matrix:
         # Test all supported releases.
         # See https://www.freebsd.org/releases/.
-        release: ['14.4', '15.1']
+        include:
+          - release: '14.4' # Uses UFS.
+          - release: '15.1' # Uses ZFS.
+            # posix_fallocate() is disabled on ZFS, and the fallback
+            # implementation of AllocateFileRange() is broken.
+            # See https://github.com/bitcoin/bitcoin/issues/33128.
+            functional_test_exclude_args: '--exclude feature_reindex_init'
 
     steps:
       - &ANNOTATE_WORKFLOW_INPUTS
@@ -194,8 +200,7 @@ jobs:
           set -e
           build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --extended \
-            `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
-            --exclude feature_reindex_init \
+            ${{ matrix.functional_test_exclude_args }} \
             `# Tests using lsof may fail due to the following warning:` \
             `# lsof: WARNING -- reading lockf list failed: Cannot allocate memory` \
             `# Run them separately in the subsequent command.` \
