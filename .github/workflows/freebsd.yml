@@ -48,7 +48,7 @@ jobs:
         # Test all supported releases.
         # See https://www.freebsd.org/releases/.
         include:
-          - release: '14.4' # Uses UFS.
+          - release: '14.5' # Uses UFS.
           - release: '15.1' # Uses ZFS.
             # posix_fallocate() is disabled on ZFS, and the fallback
             # implementation of AllocateFileRange() is broken.
