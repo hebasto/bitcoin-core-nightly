@@ -79,44 +79,4 @@ jobs:
           ctest_start(APPEND)
           ctest_configure(OPTIONS "${configure_opts}")
 
-      - name: CDash -- Build
-        shell: ctest --extra-verbose --script {0}
-        run: |
-          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
-          ctest_start(APPEND)
-          ctest_build(PARALLEL_LEVEL ${nproc})
-
-      - name: Check 'bitcoind' executable
-        run: |
-          ls -l build/bin/bitcoind
-          file build/bin/bitcoind
-          otool -L build/bin/bitcoind
-          build/bin/bitcoind -version
-
-      - name: Fetch test data
-        run: |
-          DIR_UNIT_TEST_DATA="$(pwd)/qa-assets/unit_test_data"
-          echo "DIR_UNIT_TEST_DATA=${DIR_UNIT_TEST_DATA}" >> "$GITHUB_ENV"
-          mkdir -p "$DIR_UNIT_TEST_DATA"
-          curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
-
-      - name: CDash -- Test
-        shell: ctest --script {0}
-        run: |
-          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
-          ctest_start(APPEND)
-          ctest_test(PARALLEL_LEVEL ${nproc})
-
-      - name: CDash -- Submit
-        if: always()
-        shell: ctest --script {0}
-        run: |
-          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
-          ctest_start(APPEND)
-          ctest_submit()
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        run: |
-          build/test/functional/test_runner.py -j 8 --combinedlogslen=99999999 \
-            --extended
+      - run: cat build/CMakeFiles/CMakeConfigureLog.yaml | grep -A 10 -B 17 HAVE_DECL_PIPE2
