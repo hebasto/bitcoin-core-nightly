@@ -1,8 +1,8 @@
-name: Windows, GCC, UCRT
+name: Windows, GCC
 on:
   pull_request:
     paths:
-      - '.github/workflows/windows-gcc-ucrt.yml'
+      - '.github/workflows/windows-gcc.yml'
   workflow_dispatch:
     inputs:
       skip_functional_tests:
@@ -24,7 +24,7 @@ env:
 
 jobs:
   windows-cross:
-    name: 'Windows, cross-build only, UCRT: no GUI'
+    name: 'Windows, cross-build only: no GUI'
     runs-on: ubuntu-latest
     container: fedora:latest
 
