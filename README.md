@@ -32,16 +32,21 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 | [Alpine Linux](https://alpinelinux.org) | [![Alpine](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/alpine.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/alpine.yml?query=event%3Aworkflow_run) |
 | [Chimera Linux](https://chimera-linux.org/) | [![Chimera](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/chimera.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/chimera.yml?query=event%3Aworkflow_run) |
 
-## [Windows](https://www.microsoft.com/windows/windows-11)
+## [Windows](https://www.microsoft.com/windows/windows-11), native builds
 
 | Toolchain | Status | Notes |
 |-----------|--------|-------|
-| [LLVM MinGW](https://github.com/mstorsjo/llvm-mingw), ARM64 | [![Windows, LLVM, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-arm64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-arm64.yml?query=event%3Aworkflow_run) | [LLVM 23.1.1](https://github.com/mstorsjo/llvm-mingw/releases/tag/20260908) |
-| [LLVM MinGW](https://github.com/mstorsjo/llvm-mingw), x86_64 | [![Windows, LLVM, x86_64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-x86_64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-x86_64.yml?query=event%3Aworkflow_run) | [LLVM 23.1.1](https://github.com/mstorsjo/llvm-mingw/releases/tag/20260908) |
-| GCC, [Mingw-w64](https://www.mingw-w64.org) | [![Windows, GCC](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc.yml?query=event%3Aworkflow_run) | |
 | [MSVC](https://learn.microsoft.com/en-us/cpp/), x86_64 | [![Windows, MSVC, x86_64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-msvc-x86_64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-msvc-x86_64.yml?query=event%3Aworkflow_run) | "Debug" configuration<br>No functional tests |
 | [clang-cl](https://clang.llvm.org/docs/UsersManual.html#clang-cl), ARM64 | [![Windows, clang-cl, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-arm64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-arm64.yml?query=event%3Aworkflow_run) | "Release" configuration |
 | [clang-cl](https://clang.llvm.org/docs/UsersManual.html#clang-cl), x86_64 | [![Windows, clang-cl, x86_64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-x86_64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-x86_64.yml?query=event%3Aworkflow_run) | "Release" configuration |
+
+## Windows, cross-builds
+
+| Host OS | Toolchain | Status | Notes |
+|---------|-----------|--------|-------|
+| Ubuntu | [LLVM MinGW](https://github.com/mstorsjo/llvm-mingw), ARM64 | [![Windows, LLVM, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-arm64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-arm64.yml?query=event%3Aworkflow_run) | [LLVM 23.1.1](https://github.com/mstorsjo/llvm-mingw/releases/tag/20260908) |
+| Ubuntu | [LLVM MinGW](https://github.com/mstorsjo/llvm-mingw), x86_64 | [![Windows, LLVM, x86_64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-x86_64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-x86_64.yml?query=event%3Aworkflow_run) | [LLVM 23.1.1](https://github.com/mstorsjo/llvm-mingw/releases/tag/20260908) |
+| Fedora | GCC, [Mingw-w64](https://www.mingw-w64.org) | [![Windows, GCC](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc.yml?query=event%3Aworkflow_run) | Using [`ucrt64-gcc-c++`](https://packages.fedoraproject.org/pkgs/mingw-gcc/ucrt64-gcc-c++/) package |
 
 ## [macOS](https://www.apple.com/os/macos/) with the latest [Homebrew](https://brew.sh/)
 
