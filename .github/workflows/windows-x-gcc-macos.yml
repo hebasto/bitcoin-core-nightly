@@ -1,0 +1,125 @@
+name: Windows, X-GCC, macOS
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/windows-x-gcc-macos.yml'
+  workflow_dispatch:
+    inputs:
+      skip_functional_tests:
+        description: 'Skip functional tests'
+        required: true
+        default: false
+        type: boolean
+  workflow_run:
+    workflows: ["Manager"]
+    types: [requested]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Bitcoin Core documents the UCRT triplet `x86_64-w64-mingw32ucrt` (see `depends/README.md`
+  # and `doc/build-windows.md`), but Homebrew's `mingw-w64` package installs its binaries
+  # under the plain `x86_64-w64-mingw32` name. The toolchain is still UCRT-based, as UCRT
+  # has been the Mingw-w64 default since v12.0.0.
+  CI_HOST: x86_64-w64-mingw32
+
+jobs:
+  windows-cross:
+    name: 'Windows, cross-build only: no GUI'
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v7
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Install dependencies
+        run: |
+          brew install cmake make mingw-w64
+
+      - name: Build depends
+        run: |
+          gmake -C depends -j $(sysctl -n hw.logicalcpu) HOST=${{ env.CI_HOST }} NO_QT=1 LOG=1
+
+      - name: Generate buildsystem
+        run: |
+          cmake -B build \
+            --toolchain depends/${{ env.CI_HOST }}/toolchain.cmake \
+            -DREDUCE_EXPORTS=ON \
+            -DBUILD_BENCH=ON \
+            -DBUILD_FUZZ_BINARY=ON \
+            -DAPPEND_CXXFLAGS="-Wno-error=array-bounds \
+              `# This false-positive warning was introduced in https://github.com/bitcoin/bitcoin/pull/35606.` \
+              -Wno-error=maybe-uninitialized \
+            " \
+            -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+
+      - name: Build
+        # Limit parallelism to avoid OOM.
+        run: cmake --build build -j 2
+
+      - name: Upload built executables
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.CI_HOST }}-executables-${{ github.run_id }}
+          path: |
+            build/bin/*.exe
+            build/src/**/*.exe
+            build/test/config.ini
+
+  windows-native-test:
+    name: 'Windows, test cross-built executables natively'
+    runs-on: windows-2025-vs2026
+    needs: windows-cross
+    defaults:
+      run:
+        shell: pwsh -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v7
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Download built executables
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.CI_HOST }}-executables-${{ github.run_id }}
+
+      - name: Check 'bitcoind.exe' executable
+        # https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-180#developer_command_file_locations
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64 -no_logo
+          pwsh.exe -Command "dumpbin.exe /imports bin\bitcoind.exe | Select-String -Pattern '\S+\.dll' -CaseSensitive:$false" || exit 1
+          bin\bitcoind.exe -version || exit 1
+
+      - name: Run unit tests
+        run: |
+          bin\test_bitcoin.exe -l test_suite
+          src\secp256k1\bin\exhaustive_tests.exe
+          src\secp256k1\bin\noverify_tests.exe
+          src\secp256k1\bin\tests.exe
+          src\univalue\object.exe
+          src\univalue\unitester.exe
+
+      - name: Adjust paths in test\config.ini
+        run: |
+          (Get-Content "test\config.ini") -replace '(?<=^SRCDIR=).*', '${{ github.workspace }}' -replace '(?<=^BUILDDIR=).*', '${{ github.workspace }}' -replace '(?<=^RPCAUTH=).*', '${{ github.workspace }}\share\rpcauth\rpcauth.py' | Set-Content "test\config.ini"
+          Get-Content "test\config.ini"
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        shell: bash
+        env:
+          PYTHONUTF8: 1
+        run: |
+          py -3 -m pip install pyzmq
+          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
+            --tmpdirprefix "$RUNNER_TEMP" \
+            --extended \
+            --timeout-factor=40
