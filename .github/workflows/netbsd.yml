@@ -117,7 +117,7 @@ jobs:
             pkgsrc/devel/zlib \
             pkgsrc/lang/gcc14 \
             pkgsrc/lang/gcc14-libs \
-            pkgsrc/lang/gcc15 \
+            pkgsrc/lang/gcc16 \
             pkgsrc/mk \
             pkgsrc/pkgtools \
             pkgsrc/security/openssl \
