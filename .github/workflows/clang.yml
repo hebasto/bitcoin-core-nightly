@@ -22,7 +22,7 @@ concurrency:
 jobs:
   clang:
     name: 'Clang-SNAPSHOT, ${{ matrix.stdlib }}, depends'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
@@ -41,7 +41,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
           . /etc/os-release
           REPO_NAME="deb http://apt.llvm.org/${VERSION_CODENAME} llvm-toolchain-${VERSION_CODENAME} main"
           sudo add-apt-repository -y "${REPO_NAME}"
