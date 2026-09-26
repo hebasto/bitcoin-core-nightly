@@ -49,7 +49,7 @@ jobs:
         # Test all supported releases.
         # See https://www.netbsd.org/releases/.
         include:
-          - release: '10.1'
+          - release: '10.2'
             # The default compiler GCC 10.5.0 does not meet the minimum version requirements.
             sys_packages: 'gcc14'
             # Workaround for the following linker warning when using the systems' `net/zeromq` package:
