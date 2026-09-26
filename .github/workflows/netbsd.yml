@@ -67,12 +67,12 @@ jobs:
             sys_packages: 'zeromq'
             pkgsrc_build_zeromq: false
             cmake_vars: '"-DAPPEND_CPPFLAGS=-DKJ_NO_EXCEPTIONS=0"' # Needed for the default GCC 12.5.0.
-            dep_packages: 'gcc15'
+            dep_packages: 'gcc14'
             dep_options: >-
-              build_CC=/usr/pkg/gcc15/bin/gcc
-              build_CXX=/usr/pkg/gcc15/bin/g++
-              CC=/usr/pkg/gcc15/bin/gcc
-              CXX=/usr/pkg/gcc15/bin/g++
+              build_CC=/usr/pkg/gcc14/bin/gcc
+              build_CXX=/usr/pkg/gcc14/bin/g++
+              CC=/usr/pkg/gcc14/bin/gcc
+              CXX=/usr/pkg/gcc14/bin/g++
 
     steps:
       - &ANNOTATE_WORKFLOW_INPUTS
