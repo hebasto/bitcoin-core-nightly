@@ -26,8 +26,6 @@ jobs:
 
       - name: Configure Docker
         uses: ./.github/actions/configure-docker
-        with:
-          cache-provider: gha
 
       - name: CI script
         env:
