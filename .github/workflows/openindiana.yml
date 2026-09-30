@@ -51,30 +51,35 @@ jobs:
         run: echo "::notice title=inputs::$INPUTS_REPOSITORY $INPUTS_REF"
 
       - name: Start OpenIndiana VM
-        # openindiana-vm@v1.0.9 introduces multiple regressions, including:
-        # 1. A libc thread failure in the `coins_tests_base` test.
-        # 2. Doubled build times.
-        uses: vmactions/openindiana-vm@v1.0.8
+        uses: vmactions/openindiana-vm@v1
         with:
           # This release has `metapackages/build-essential` preinstalled.
-          release: '202510-build'
+          release: '202604-build'
           # The `pkg install` command often encounters networking issues in the CI
           # environment. To mitigate these, the following steps have been taken:
           # 1. Each package is installed individually.
-          # 2. `metapackages/build-essential` (includes git, cmake, gcc-14) and
+          # 2. `metapackages/build-essential` (includes git, cmake) and
           #    `runtime/python-314` are already preinstalled on the VM image, so
           #    they are skipped.
-          # 3. Installing `system/library/boost` is skipped, as it often takes
+          # 3. The default gcc-14 compiler is unoptimized. Using gcc-13 instead.
+          #    See https://github.com/hebasto/bitcoin-core-nightly/pull/272.
+          # 4. Installing `system/library/boost` is skipped, as it often takes
           #    more than 60 minutes and causes a job timeout.
           #    See the "Build Boost" step below.
           prepare: |
             set -e
             pkg list > packages_before
             pkg install developer/build/pkgconf
-            pkg install system/storage/lsof
+            pkg install developer/gcc-13
             pkg install library/c++/zeromq
             pkg list > packages_after
             diff -w packages_before packages_after | grep '^>' || true
+          run: |
+            if gcc-13 -v 2>&1 | grep -q -- --disable-bootstrap; then
+              echo "::warning title=gcc-13::Compiler was built without bootstrap (unoptimized)."
+            else
+              echo "gcc-13 is bootstrapped."
+            fi
           sync: no
           disable-cache: true
 
@@ -103,7 +108,7 @@ jobs:
           curl --location --fail --remote-name https://capnproto.org/capnproto-c++-${{ env.CAPNPROTO_VERSION }}.tar.gz
           tar xf capnproto-c++-${{ env.CAPNPROTO_VERSION }}.tar.gz
           cd capnproto-c++-${{ env.CAPNPROTO_VERSION }}
-          ./configure --without-fibers
+          ./configure --without-fibers CC=gcc-13 CXX=g++-13
           make -j ${{ env.CI_NCPU }} install
 
       - name: Fetch source tarball
@@ -121,6 +126,8 @@ jobs:
           export CXXFLAGS="-pthread"
           cmake -S bitcoin -B build --preset dev-mode \
             -Wno-error=dev \
+            -DCMAKE_C_COMPILER=gcc-13 \
+            -DCMAKE_CXX_COMPILER=g++-13 \
             -DBUILD_GUI=OFF \
             -DWITH_USDT=OFF \
             -DCMAKE_PREFIX_PATH=/usr/local \
