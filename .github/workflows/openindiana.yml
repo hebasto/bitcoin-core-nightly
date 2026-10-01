@@ -32,6 +32,9 @@ concurrency:
 env:
   # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
+  # Workaround for libstdc++ built with `--enable-clocale=dragonfly`.
+  # See https://www.illumos.org/issues/18481.
+  LC_ALL: 'C'
 
 jobs:
   openindiana:
@@ -55,6 +58,7 @@ jobs:
         with:
           # This release has `metapackages/build-essential` preinstalled.
           release: '202604-build'
+          envs: 'LC_ALL'
           # The `pkg install` command often encounters networking issues in the CI
           # environment. To mitigate these, the following steps have been taken:
           # 1. Each package is installed individually.
