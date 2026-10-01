@@ -188,6 +188,4 @@ jobs:
             --tmpdirprefix . \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
-            `# TODO: Investigate the failure.` \
-            --exclude interface_bitcoin_cli \
             --timeout-factor=8
