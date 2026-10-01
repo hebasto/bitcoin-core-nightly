@@ -32,6 +32,9 @@ concurrency:
 env:
   # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
   CI_NCPU: 4
+  # Workaround for libstdc++ built with `--enable-clocale=dragonfly`.
+  # See https://github.com/omniosorg/omnios-build/issues/4253.
+  LC_ALL: 'C'
 
 jobs:
   omnios:
@@ -70,6 +73,7 @@ jobs:
         uses: vmactions/omnios-vm@v1
         with:
           release: ${{ matrix.release }}
+          envs: 'LC_ALL'
           mem: 12288
           prepare: |
             set -e
