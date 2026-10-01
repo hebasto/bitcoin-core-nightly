@@ -43,14 +43,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Test the "current LTS" and "current stable" releases.
+        # Bitcoin Core does not build on r151054 (current LTS). Its
+        # sys/select.h uses memset in FD_ZERO() without declaring it.
+        # Fixed in illumos-gate commit 6ffd7dd3, which is in r151056
+        # and later.
+        # Test the "old stable" and "current stable" releases.
         # See https://omnios.org/releasenotes.html.
         include:
-          - release: 'r151054'
-            name: 'r151054 LTS'
+          - release: 'r151056'
+            name: 'r151056 - old stable'
             packages: 'developer/gcc14'
           - release: 'r151058'
-            name: 'r151058 stable'
+            name: 'r151058 - current stable'
             packages: 'developer/gcc15'
 
     steps:
@@ -65,6 +69,7 @@ jobs:
       - name: Start OmniOS ${{ matrix.release }} VM
         uses: vmactions/omnios-vm@v1
         with:
+          release: ${{ matrix.release }}
           mem: 12288
           prepare: |
             set -e
