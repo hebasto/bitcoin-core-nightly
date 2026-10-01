@@ -95,7 +95,7 @@ jobs:
 
       - name: Build Boost
         env:
-          BOOST_VERSION: '1.91.0-1'
+          BOOST_VERSION: '1.92.0'
         run: |
           set -e
           curl --location --fail --output boost.tar.xz https://github.com/boostorg/boost/releases/download/boost-${{ env.BOOST_VERSION }}/boost-${{ env.BOOST_VERSION }}-cmake.tar.xz
