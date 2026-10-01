@@ -90,6 +90,9 @@ jobs:
           sync: no
           disable-cache: true
 
+      - name: GCC version
+        run: gcc -v 2>&1 | tee gcc_version.txt
+
       - name: Build Boost
         env:
           BOOST_VERSION: '1.91.0-1'
@@ -220,6 +223,7 @@ jobs:
           cat << 'EOF' > ctest_submit.cmake
           include(ctest_config.cmake)
           ctest_start(APPEND)
+          set(CTEST_NOTES_FILES gcc_version.txt)
           ctest_submit()
           EOF
           ctest --script ctest_submit.cmake
