@@ -50,6 +50,7 @@ jobs:
         # See https://www.netbsd.org/releases/.
         include:
           - release: '10.2'
+            pkgsrc_release: '10.0_2026Q2'
             # The default compiler GCC 10.5.0 does not meet the minimum version requirements.
             sys_packages: 'gcc14'
             # Workaround for the following linker warning when using the systems' `net/zeromq` package:
@@ -64,6 +65,7 @@ jobs:
               CC=/usr/pkg/gcc14/bin/gcc
               CXX=/usr/pkg/gcc14/bin/g++
           - release: '11.0'
+            pkgsrc_release: '11.0_2026Q2'
             sys_packages: 'zeromq'
             pkgsrc_build_zeromq: false
             cmake_vars: '"-DAPPEND_CPPFLAGS=-DKJ_NO_EXCEPTIONS=0"' # Needed for the default GCC 12.5.0.
@@ -96,6 +98,7 @@ jobs:
       - name: Install packages
         run: |
           set -e
+          export PKG_PATH="https://ftp.netbsd.org/pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}/All;http://ftp.fr.NetBSD.org/pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}/All;https://ftp.jaist.ac.jp/pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}/All"
           pkg_info > packages_before
           pkg_add -u ${{ env.PACKAGES }} ${{ env.SYSTEM_PACKAGES }} ${{ matrix.sys_packages }}
           pkg_info > packages_after
@@ -301,6 +304,7 @@ jobs:
       - name: Install packages
         run: |
           set -e
+          export PKG_PATH="https://ftp.netbsd.org/pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}/All;http://ftp.fr.NetBSD.org/pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}/All;https://ftp.jaist.ac.jp/pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}/All"
           pkg_info > packages_before
           pkg_add -u ${{ env.PACKAGES }} ${{ env.DEP_PACKAGES }} ${{ matrix.dep_packages }}
           pkg_info > packages_after
