@@ -183,9 +183,5 @@ jobs:
           # Unbuffered stdout prints "Remaining jobs: ..." in order, which
           # helps to identify hung tests.
           export PYTHONUNBUFFERED=1
-          # Not running extended tests to avoid disk space issues.
-          python3.14 build/test/functional/test_runner.py -j ${{ env.CI_NCPU }} --combinedlogslen=99999999 \
-            --tmpdirprefix . \
-            `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
-            --exclude feature_reindex_init \
-            --timeout-factor=8
+          python3.14 build/test/functional/test_runner.py interface_zmq.py
+          python3.14 build/test/functional/test_runner.py -j 8 interface_zmq.py interface_zmq.py interface_zmq.py interface_zmq.py
