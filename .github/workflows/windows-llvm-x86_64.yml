@@ -68,6 +68,7 @@ jobs:
             build/bin/*.exe
             build/src/**/*.exe
             build/test/config.ini
+            build/test/with_sanitizer_env.py
 
   windows-x86_64-native-test:
     name: 'Windows x86-64, test cross-built executables natively'

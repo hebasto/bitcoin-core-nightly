@@ -70,6 +70,7 @@ jobs:
             build/bin/*.exe
             build/src/**/*.exe
             build/test/config.ini
+            build/test/with_sanitizer_env.py
 
   windows-native-test:
     name: 'Windows, test cross-built executables natively'
