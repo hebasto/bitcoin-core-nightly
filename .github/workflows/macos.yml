@@ -45,14 +45,6 @@ jobs:
           # ```
           brew untap aws/tap || true
           brew update
-          # The runner image ships a linked `openssl@3`, while `qt` now depends on
-          # `openssl@4`, whose `link_overwrite` covers files owned by `openssl@3`.
-          # Installing `qt` then fails with:
-          # ```
-          # Error: qt: A `brew install ...` process has already locked /opt/homebrew/Cellar/openssl@3.
-          # ```
-          # See: https://github.com/Homebrew/brew/issues/24204.
-          brew unlink openssl@3 || true
           brew install git cmake pkgconf boost zeromq qt qrencode capnp
 
       - name: Generate CTest configuration
