@@ -93,6 +93,38 @@ jobs:
       - name: GCC version
         run: gcc -v 2>&1 | tee gcc_version.txt
 
+      - name: Check libstdc++ locale bug
+        # See https://github.com/omniosorg/omnios-build/issues/4253.
+        continue-on-error: true
+        run: |
+          set -e
+          g++ -v 2>&1 | grep -o -- '--enable-clocale=[a-z]*' || echo 'clocale model: default'
+          cat > locale_test.cpp << 'EOF'
+          #include <iostream>
+          #include <locale>
+          #include <stdexcept>
+          int main()
+          {
+              try {
+                  std::locale("");
+              } catch (const std::runtime_error& e) {
+                  std::cout << e.what() << '\n';
+              }
+          }
+          EOF
+          g++ -std=c++20 locale_test.cpp -o locale_test
+          # LC_ALL=C from the job env would mask the bug.
+          unset LC_ALL
+          set +e
+          LANG=C.UTF-8 LD_PRELOAD=libumem.so.1 UMEM_DEBUG=guards ./locale_test
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "::warning title=libstdc++ locale bug::std::locale(\"\") crashed (exit $status); LC_ALL=C workaround still needed"
+            exit 1
+          fi
+          echo "std::locale(\"\") OK; the LC_ALL=C workaround may no longer be needed"
+
       - name: Build Boost
         env:
           BOOST_VERSION: '1.92.0'
