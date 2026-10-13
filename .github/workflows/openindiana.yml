@@ -67,6 +67,7 @@ jobs:
           prepare: |
             set -e
             pkg list > packages_before
+            pkg install developer/build/ninja
             pkg install developer/build/pkgconf
             pkg install library/c++/zeromq
             pkg list > packages_after
@@ -156,7 +157,7 @@ jobs:
           set(CTEST_BUILD_NAME "OpenIndiana, no GUI")
           set(CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/bitcoin")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/build")
-          set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
+          set(CTEST_CMAKE_GENERATOR "Ninja")
           cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
           EOF
 
@@ -199,6 +200,9 @@ jobs:
             # enforcing -fPIC is necessary for BUILD_SHARED_LIBS=ON.
             "-DAPPEND_CFLAGS=-fPIC"
             "-DAPPEND_CXXFLAGS=-fPIC"
+            # Limit parallelism of linking to avoid OOM.
+            "-DCMAKE_JOB_POOLS=link=2"
+            "-DCMAKE_JOB_POOL_LINK=link"
           )
           ctest_start(APPEND)
           ctest_configure(OPTIONS "${configure_opts}")
