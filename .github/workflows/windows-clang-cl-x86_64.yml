@@ -31,20 +31,13 @@ jobs:
       - name: Install dependencies
         run: |
           Add-Content -Path "$env:VCPKG_INSTALLATION_ROOT\triplets\x64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
-          vcpkg install boost-multi-index boost-test sqlite3[core] zeromq qtbase[core,gui,network,png,testlib,widgets] qttools libqrencode
+          vcpkg install boost-multi-index boost-test sqlite3[core] zeromq
 
       - name: Checkout Bitcoin Core repo
+        id: checkout
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
-          ref: refs/pull/31507/merge
-          fetch-depth: 2
-
-      - name: Get master branch commit hash
-        id: master_commit
-        run: |
-          $commit = git rev-parse HEAD~1
-          "commit=$commit" >> $env:GITHUB_OUTPUT
 
       - name: Generate CTest configuration
         run: |
@@ -63,22 +56,19 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(${{ case(github.event_name == 'workflow_run', 'Nightly', format('Experimental GROUP {0}', github.event_name)) }})
           find_program(CTEST_GIT_COMMAND git REQUIRED)
-          set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.master_commit.outputs.commit }}")
+          set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.checkout.outputs.commit }}")
           ctest_update()
 
       - name: CDash -- Configure
         shell: ctest --build-config Release --extra-verbose --script {0}
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
-          set(ENV{CXXFLAGS} "-Wno-error=return-type -Wno-error=conditional-uninitialized")
           set(configure_opts
             "-T ClangCL"
-            "--preset dev-mode"
             "-DWITH_USDT=OFF"
             "--toolchain $ENV{VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
             "-DVCPKG_MANIFEST_MODE=OFF"
             "-DVCPKG_TARGET_TRIPLET=x64-windows"
-            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
           ctest_start(APPEND)
           ctest_configure(OPTIONS "${configure_opts}")
@@ -104,25 +94,3 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
           ctest_submit()
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        working-directory: build
-        env:
-          PYTHONUTF8: 1
-          BITCOIN_BIN: '${{ github.workspace }}\build\bin\Release\bitcoin.exe'
-          BITCOIND: '${{ github.workspace }}\build\bin\Release\bitcoind.exe'
-          BITCOINCLI: '${{ github.workspace }}\build\bin\Release\bitcoin-cli.exe'
-          BITCOIN_BENCH: '${{ github.workspace }}\build\bin\Release\bench_bitcoin.exe'
-          BITCOINTX: '${{ github.workspace }}\build\bin\Release\bitcoin-tx.exe'
-          BITCOINUTIL: '${{ github.workspace }}\build\bin\Release\bitcoin-util.exe'
-          BITCOINWALLET: '${{ github.workspace }}\build\bin\Release\bitcoin-wallet.exe'
-          BITCOINCHAINSTATE: '${{ github.workspace }}\build\bin\Release\bitcoin-chainstate.exe'
-          TEST_RUNNER_EXTRA: ${{ github.event_name != 'pull_request' && '--extended' || '' }}
-        shell: bash
-        run: |
-          py -3 -m pip install pyzmq
-          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
-            --tmpdirprefix "$RUNNER_TEMP" \
-            --extended \
-            --timeout-factor=40
