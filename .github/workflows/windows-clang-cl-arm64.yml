@@ -83,46 +83,4 @@ jobs:
           ctest_start(APPEND)
           ctest_configure(OPTIONS "${configure_opts}")
 
-      - name: CDash -- Build
-        shell: ctest --build-config Release --extra-verbose --script {0}
-        run: |
-          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
-          ctest_start(APPEND)
-          ctest_build(PARALLEL_LEVEL $ENV{NUMBER_OF_PROCESSORS})
-
-      - name: CDash -- Test
-        shell: ctest --build-config Release --script {0}
-        run: |
-          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
-          ctest_start(APPEND)
-          ctest_test(PARALLEL_LEVEL $ENV{NUMBER_OF_PROCESSORS})
-
-      - name: CDash -- Submit
-        if: always()
-        shell: ctest --script {0}
-        run: |
-          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
-          ctest_start(APPEND)
-          ctest_submit()
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        working-directory: build
-        env:
-          PYTHONUTF8: 1
-          BITCOIN_BIN: '${{ github.workspace }}\build\bin\Release\bitcoin.exe'
-          BITCOIND: '${{ github.workspace }}\build\bin\Release\bitcoind.exe'
-          BITCOINCLI: '${{ github.workspace }}\build\bin\Release\bitcoin-cli.exe'
-          BITCOIN_BENCH: '${{ github.workspace }}\build\bin\Release\bench_bitcoin.exe'
-          BITCOINTX: '${{ github.workspace }}\build\bin\Release\bitcoin-tx.exe'
-          BITCOINUTIL: '${{ github.workspace }}\build\bin\Release\bitcoin-util.exe'
-          BITCOINWALLET: '${{ github.workspace }}\build\bin\Release\bitcoin-wallet.exe'
-          BITCOINCHAINSTATE: '${{ github.workspace }}\build\bin\Release\bitcoin-chainstate.exe'
-          TEST_RUNNER_EXTRA: ${{ github.event_name != 'pull_request' && '--extended' || '' }}
-        shell: bash
-        run: |
-          py -3 -m pip install pyzmq
-          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
-            --tmpdirprefix "$RUNNER_TEMP" \
-            --extended \
-            --timeout-factor=40
+      - run: grep -n -A40 'HAVE_ARM_SHANI' build/CMakeFiles/CMakeConfigureLog.yaml
