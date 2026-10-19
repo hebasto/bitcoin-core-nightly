@@ -25,6 +25,14 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 |------------------|--------|-------|
 | Ubuntu 26.04 | [![Clang-SNAPSHOT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/clang.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/clang.yml?query=event%3Aworkflow_run) | Using libstdc++ and libc++ |
 
+## [GCC-SNAPSHOT](https://gcc.gnu.org/pub/gcc/snapshots/)
+
+The newest GCC development snapshot is built by the [GCC snapshot](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/gcc-snapshot.yml) workflow whenever a new one is published, and made available as a multi-arch image at `ghcr.io/hebasto/gcc-snapshot` (tags: `gcc-<major>-<YYYYMMDD>`, `<major>`, `latest`).
+
+| Operating System | Status | Notes |
+|------------------|--------|-------|
+| Debian stable | [![GCC-SNAPSHOT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/gcc.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/gcc.yml?query=event%3Aworkflow_run) | No GUI |
+
 ## [musl](https://musl.libc.org/)-Based Systems
 
 | Operating System | Status |
