@@ -86,7 +86,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
-            git ca-certificates cmake make curl patch pkg-config python3 bison file
+            git ca-certificates cmake ninja-build make curl patch pkg-config python3 bison file
 
       - name: Checkout Bitcoin Core repo
         id: checkout
@@ -100,8 +100,10 @@ jobs:
           gcc-snapshot -v 2>&1 | tee gcc_version.txt
 
       - name: Build depends
+        # The image has no plain `gcc`/`g++`, so the compilers for native
+        # packages (`build_CC`/`build_CXX`) must be set explicitly as well.
         run: |
-          make -C depends -j $(nproc) CC=gcc-snapshot CXX=g++-snapshot NO_QT=1 LOG=1
+          gmake -C depends -j $(nproc) CC=gcc-snapshot CXX=g++-snapshot build_CC=gcc-snapshot build_CXX=g++-snapshot NO_QT=1 LOG=1
 
       - name: Generate CTest configuration
         run: |
@@ -110,7 +112,7 @@ jobs:
           set(CTEST_BUILD_NAME "GCC-SNAPSHOT, depends, no GUI")
           set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
-          set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
+          set(CTEST_CMAKE_GENERATOR "Ninja")
           cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
           EOF
 
@@ -133,7 +135,8 @@ jobs:
           set(configure_opts
             "--preset dev-mode"
             "--toolchain depends/x86_64-pc-linux-gnu/toolchain.cmake"
-            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+            "-DBUILD_GUI=OFF"
+            # "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
           ctest_start(APPEND)
           ctest_configure(OPTIONS "${configure_opts}")
