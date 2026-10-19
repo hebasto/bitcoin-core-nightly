@@ -24,6 +24,7 @@ concurrency:
 permissions:
   contents: read
   actions: read
+  packages: read
 
 jobs:
   resolve:
@@ -44,18 +45,38 @@ jobs:
 
       - name: Pick image
         id: pick
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           if [ -f gcc-snapshot-image.txt ]; then
             image="$(cat gcc-snapshot-image.txt)"
           else
             image="ghcr.io/$(tr '[:upper:]' '[:lower:]' <<< '${{ github.repository_owner }}')/gcc-snapshot:latest"
           fi
-          echo "Using ${image}"
+
+          # Skip the build, rather than fail at container start-up, when the
+          # image has not been published yet (e.g. before the first run of the
+          # "GCC snapshot" workflow on the main branch).
+          repository="${image#ghcr.io/}"; repository="${repository%%:*}"
+          tag="${image##*:}"
+          token="$(curl --fail --silent --user "${GITHUB_ACTOR}:${GITHUB_TOKEN}" \
+            "https://ghcr.io/token?scope=repository:${repository}:pull" | jq -r .token)"
+          if curl --fail --silent --head \
+              --header "Authorization: Bearer ${token}" \
+              --header "Accept: application/vnd.oci.image.index.v1+json" \
+              "https://ghcr.io/v2/${repository}/manifests/${tag}" > /dev/null; then
+            echo "Using ${image}"
+          else
+            echo "::warning::Image ${image} is not published yet; skipping the build."
+            image=""
+          fi
           echo "image=${image}" >> "$GITHUB_OUTPUT"
 
   gcc:
     name: 'GCC-SNAPSHOT, depends, no GUI'
     needs: resolve
+    if: needs.resolve.outputs.image != ''
     runs-on: ubuntu-latest
     container: ${{ needs.resolve.outputs.image }}
 
