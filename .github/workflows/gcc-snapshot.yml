@@ -147,7 +147,7 @@ jobs:
 
       - name: Login to GHCR
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -173,9 +173,13 @@ jobs:
 
       - name: Export digest
         if: github.event_name != 'pull_request'
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        # The "sha256:" prefix is dropped, because a colon is not allowed in
+        # artifact file names.
         run: |
           mkdir -p digests
-          touch "digests/${{ steps.push.outputs.digest }}"
+          touch "digests/${DIGEST#sha256:}"
 
       - name: Upload digest
         if: github.event_name != 'pull_request'
@@ -206,7 +210,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Login to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -224,7 +228,7 @@ jobs:
             --tag "${IMAGE}:${SNAPSHOT}" \
             --tag "${IMAGE}:${MAJOR}" \
             --tag "${IMAGE}:latest" \
-            $(printf "${IMAGE}@%s " $(ls digests))
+            $(printf "${IMAGE}@sha256:%s " $(ls digests))
           docker buildx imagetools inspect "${IMAGE}:${SNAPSHOT}"
 
   handoff:
