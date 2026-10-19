@@ -1,0 +1,250 @@
+name: GCC snapshot
+# Builds the newest GCC development snapshot from https://gcc.gnu.org/pub/gcc/snapshots/
+# and publishes it as a multi-arch image at ghcr.io/<owner>/gcc-snapshot with tags:
+#   - gcc-<major>-<YYYYMMDD>  (immutable, one per snapshot)
+#   - <major>                 (moving, newest snapshot of that major)
+#   - latest                  (moving, newest snapshot of the newest major)
+#
+# The workflow is idempotent: when the newest snapshot is already published,
+# the build is skipped and the run finishes in about a minute.
+#
+# Consumers chain on this workflow with `workflow_run` and read the exact image
+# reference from the `gcc-snapshot-image` artifact (see gcc.yml).
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/gcc-snapshot.yml'
+      - 'gcc-snapshot/**'
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Rebuild even if this snapshot is already published'
+        required: true
+        default: false
+        type: boolean
+  workflow_run:
+    workflows: ["Manager"]
+    types: [requested]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name == 'pull_request' && github.ref || '' }}
+  # Never cancel a half-finished GCC build.
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/gcc-snapshot
+  # The lowest major version to look for. Newer majors are discovered automatically.
+  GCC_SNAPSHOT_MAJOR_MIN: 17
+
+jobs:
+  probe:
+    name: 'Detect the latest snapshot'
+    runs-on: ubuntu-slim
+    permissions:
+      packages: read
+    outputs:
+      major: ${{ steps.probe.outputs.major }}
+      snapshot: ${{ steps.probe.outputs.snapshot }}
+      sha512: ${{ steps.probe.outputs.sha512 }}
+      image: ${{ steps.probe.outputs.image }}
+      build: ${{ steps.probe.outputs.build }}
+
+    steps:
+      - name: Probe gcc.gnu.org and GHCR
+        id: probe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE_REBUILD: ${{ inputs.force_rebuild }}
+        run: |
+          set -euo pipefail
+          base="https://gcc.gnu.org/pub/gcc/snapshots"
+
+          # Follow the moving LATEST-<major> links upwards until one is missing.
+          major="${GCC_SNAPSHOT_MAJOR_MIN}"
+          while curl --fail --silent --head --location "${base}/LATEST-$((major + 1))/sha512.sum" > /dev/null; do
+            major=$((major + 1))
+          done
+
+          curl --fail --silent --show-error --location --output sha512.sum "${base}/LATEST-${major}/sha512.sum"
+          cat sha512.sum
+          tarball="$(awk '$2 ~ /\.tar\.xz$/ {print $2}' sha512.sum)"
+          # Expect exactly one tarball.
+          [ "$(wc -l <<< "${tarball}")" -eq 1 ]
+          snapshot="${tarball%.tar.xz}"
+          sha512="$(awk '$2 ~ /\.tar\.xz$/ {print $1}' sha512.sum)"
+
+          image="$(tr '[:upper:]' '[:lower:]' <<< "${IMAGE}")"
+          repository="${image#ghcr.io/}"
+
+          # Is this snapshot already published?
+          build=true
+          if [ "${FORCE_REBUILD}" != "true" ]; then
+            token="$(curl --fail --silent --user "${GITHUB_ACTOR}:${GITHUB_TOKEN}" \
+              "https://ghcr.io/token?scope=repository:${repository}:pull" | jq -r .token)"
+            if curl --fail --silent --head \
+                --header "Authorization: Bearer ${token}" \
+                --header "Accept: application/vnd.oci.image.index.v1+json" \
+                "https://ghcr.io/v2/${repository}/manifests/${snapshot}" > /dev/null; then
+              build=false
+            fi
+          fi
+
+          echo "Latest snapshot: ${snapshot} (build=${build})"
+          {
+            echo "major=${major}"
+            echo "snapshot=${snapshot}"
+            echo "sha512=${sha512}"
+            echo "image=${image}"
+            echo "build=${build}"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    name: 'Build ${{ needs.probe.outputs.snapshot }}, ${{ matrix.arch }}'
+    needs: probe
+    if: needs.probe.outputs.build == 'true'
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: gcc-snapshot
+          file: gcc-snapshot/Dockerfile
+          build-args: |
+            GCC_SNAPSHOT=${{ needs.probe.outputs.snapshot }}
+            GCC_SNAPSHOT_SHA512=${{ needs.probe.outputs.sha512 }}
+          platforms: linux/${{ matrix.arch }}
+          load: true
+          tags: gcc-snapshot:test
+
+      - name: Smoke test
+        run: |
+          docker run --rm gcc-snapshot:test bash -ec '
+            cat /opt/gcc-snapshot/SNAPSHOT
+            gcc-snapshot --version
+            g++-snapshot --version
+            echo "int main(void) { return 0; }" | gcc-snapshot -x c -std=c23 -Wall -Werror - -o /tmp/c && /tmp/c
+            printf "#include <vector>\nint main() { std::vector<int> v{1}; return v[0] - 1; }\n" | g++-snapshot -x c++ -std=c++23 -Wall -Werror - -o /tmp/cxx && /tmp/cxx
+          '
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image by digest
+        if: github.event_name != 'pull_request'
+        id: push
+        # Same inputs as the build step above, so the image comes from the builder's cache.
+        uses: docker/build-push-action@v7
+        with:
+          context: gcc-snapshot
+          file: gcc-snapshot/Dockerfile
+          build-args: |
+            GCC_SNAPSHOT=${{ needs.probe.outputs.snapshot }}
+            GCC_SNAPSHOT_SHA512=${{ needs.probe.outputs.sha512 }}
+          platforms: linux/${{ matrix.arch }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ needs.probe.outputs.snapshot }}
+            org.opencontainers.image.description=GCC development snapshot ${{ needs.probe.outputs.snapshot }}
+          outputs: type=image,name=${{ needs.probe.outputs.image }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p digests
+          touch "digests/${{ steps.push.outputs.digest }}"
+
+      - name: Upload digest
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: digest-${{ matrix.arch }}
+          path: digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: 'Publish multi-arch manifest'
+    needs: [probe, build]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v8
+        with:
+          pattern: digest-*
+          path: digests
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create manifest and tags
+        env:
+          IMAGE: ${{ needs.probe.outputs.image }}
+          SNAPSHOT: ${{ needs.probe.outputs.snapshot }}
+          MAJOR: ${{ needs.probe.outputs.major }}
+        run: |
+          set -euo pipefail
+          # Tag atomically, so that consumers never observe a partially published tag.
+          docker buildx imagetools create \
+            --tag "${IMAGE}:${SNAPSHOT}" \
+            --tag "${IMAGE}:${MAJOR}" \
+            --tag "${IMAGE}:latest" \
+            $(printf "${IMAGE}@%s " $(ls digests))
+          docker buildx imagetools inspect "${IMAGE}:${SNAPSHOT}"
+
+  handoff:
+    name: 'Record the snapshot image reference'
+    needs: [probe, publish]
+    # Runs whether or not a rebuild happened, so consumers can always chain on this workflow.
+    if: >-
+      always() &&
+      github.event_name != 'pull_request' &&
+      needs.probe.result == 'success' &&
+      (needs.publish.result == 'success' || needs.publish.result == 'skipped')
+    runs-on: ubuntu-slim
+
+    steps:
+      - name: Write image reference
+        run: echo "${{ needs.probe.outputs.image }}:${{ needs.probe.outputs.snapshot }}" | tee gcc-snapshot-image.txt
+
+      - name: Upload image reference
+        uses: actions/upload-artifact@v7
+        with:
+          name: gcc-snapshot-image
+          path: gcc-snapshot-image.txt
+          retention-days: 7
