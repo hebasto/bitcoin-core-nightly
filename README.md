@@ -31,7 +31,7 @@ The newest GCC development snapshot is built by the [GCC snapshot](https://githu
 
 | Operating System | Status | Notes |
 |------------------|--------|-------|
-| Debian stable | [![GCC-SNAPSHOT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/gcc.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/gcc.yml?query=event%3Aworkflow_run) | No GUI |
+| Debian stable, x86_64 and arm64 | [![GCC-SNAPSHOT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/gcc.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/gcc.yml?query=event%3Aworkflow_run) | No GUI |
 
 ## [musl](https://musl.libc.org/)-Based Systems
 
