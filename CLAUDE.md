@@ -1,0 +1,15 @@
+# Conventions for this repository
+
+## Git
+
+- Author commits as `Hennadii Stepanov <32963518+hebasto@users.noreply.github.com>`.
+- Name branches `YYMMDD-topic`, e.g. `261019-gcc-snapshot`, and base them on the current `main`.
+- Follow-ups to a merged PR go on a new branch from `main`, never on the merged branch.
+- Rewriting history on an unmerged PR branch is fine (`git push --force-with-lease`).
+
+## Workflows
+
+- Invoke GNU Make as `gmake`.
+- Pin runner labels explicitly (e.g. `ubuntu-26.04`, `ubuntu-26.04-arm`), not `*-latest`.
+- Pass `HOST=` to depends only when cross-compiling.
+- Nightly workflows chain on `Manager` via `workflow_run` and report to CDash; see `clang.yml` for the reference layout.
