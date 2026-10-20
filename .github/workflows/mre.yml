@@ -51,7 +51,7 @@ jobs:
           PY
           )
           echo "FLAGS=$flags" | tee -a "$GITHUB_ENV"
-          sh -c "$cmd -E -o ../txmempool.ii"
+          g++-snapshot $flags -E -o ../txmempool.ii ../src/txmempool.cpp
           ls -l ../txmempool.ii
 
       - name: Check the warning reproduces on the preprocessed file
