@@ -31,7 +31,7 @@ jobs:
       - name: Compile candidates
         run: |
           for f in mre/*.cpp; do
-            for flags in "-O2 -Wall" "-O2 -Wall -fno-tree-loop-distribute-patterns" "$FLAGS"; do
+            for flags in "-O2 -Wall" "-O2 -Wall -fno-tree-loop-distribute-patterns" "-O2 -Wall -fno-inline-small-functions" "-O2 -Wall -fno-inline-functions-called-once" "-O1 -Wall" "-O3 -Wall"; do
               echo "::group::$f [$flags]"
               g++-snapshot -std=c++20 $flags -isystem boost-1.92.0 -c "$f" -o /dev/null 2>&1 | grep -E 'warning:|error:' || echo "(clean)"
               echo "::endgroup::"
