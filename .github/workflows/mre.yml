@@ -4,94 +4,41 @@ on:
     branches: ['261020-gcc-mre']
 
 env:
-  STRICT: -Werror=return-type -Werror=uninitialized -Werror=maybe-uninitialized -Werror=implicit-fallthrough -Werror=sequence-point -Werror=array-bounds
+  FLAGS: -O2 -g -std=c++20 -fPIC -fno-extended-identifiers -fstack-reuse=none -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -Wstack-protector -fstack-protector-all -fcf-protection=full -fstack-clash-protection -Wall -Wextra -Wformat -Wformat-security -Wvla -Wredundant-decls -Wunused-const-variable -Wdate-time -Wduplicated-branches -Wduplicated-cond -Wlogical-op -Woverloaded-virtual -Wsuggest-override -Wimplicit-fallthrough -Wunreachable-code -Wbidi-chars=any -Wundef -Wno-unused-parameter
 
 jobs:
-  reduce:
-    name: 'Reduce txmempool.cpp at source level with cvise'
-    runs-on: ubuntu-26.04
+  candidates:
+    name: 'MRE candidates, ${{ matrix.arch }}'
+    runs-on: ${{ matrix.runner }}
     container: ghcr.io/hebasto/gcc-snapshot:17
-    timeout-minutes: 300
-    permissions:
-      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x86_64, runner: ubuntu-26.04 }
+          - { arch: arm64, runner: ubuntu-26.04-arm }
     steps:
       - name: Install dependencies
         run: |
           apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
-            git ca-certificates cmake ninja-build make curl patch pkg-config python3 bison file cvise
-          cat /opt/gcc-snapshot/SNAPSHOT
-
-      - name: Checkout scratch branch
-        uses: actions/checkout@v7
-
-      - name: Checkout Bitcoin Core
-        uses: actions/checkout@v7
-        with:
-          repository: bitcoin/bitcoin
-          path: bitcoin
-
-      - name: Build depends
+          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y git ca-certificates curl xz-utils libboost-dev
+          cat /opt/gcc-snapshot/SNAPSHOT; dpkg -s libboost-dev | grep ^Version
+      - uses: actions/checkout@v7
+      - name: Fetch Boost 1.92.0
         run: |
-          gmake -C bitcoin/depends -j $(nproc) CC=gcc-snapshot CXX=g++-snapshot build_CC=gcc-snapshot build_CXX=g++-snapshot NO_QT=1 NO_IPC=1 LOG=1
-
-      - name: Configure and derive the compile flags of txmempool.cpp
-        working-directory: bitcoin
+          curl -sSL -o boost.tar.xz https://github.com/boostorg/boost/releases/download/boost-1.92.0/boost-1.92.0-b2-nodocs.tar.xz
+          tar -xJf boost.tar.xz
+      - name: Compile candidates
         run: |
-          cmake --preset dev-mode -G Ninja --toolchain depends/x86_64-pc-linux-gnu/toolchain.cmake -DBUILD_GUI=OFF -DENABLE_IPC=OFF > /dev/null
-          cmd=$(ninja -C build_dev_mode -t commands src/CMakeFiles/bitcoin_node.dir/txmempool.cpp.o | tail -1)
-          flags=$(python3 - "$cmd" <<'PY'
-          import shlex, sys
-          t = shlex.split(sys.argv[1]); out = []; skip = False
-          for a in t[1:]:
-              if skip: skip = False; continue
-              if a in ('-o', '-MF', '-MT', '-MQ'): skip = True; continue
-              if a in ('-c', '-MD', '-MMD') or a.endswith('txmempool.cpp'): continue
-              out.append(a)
-          print(shlex.join(out))
-          PY
-          )
-          echo "FLAGS=$flags" >> "$GITHUB_ENV"
-          echo "$flags"
-
-      - name: Start from the previous result and check interestingness
-        run: |
-          mkdir -p work && cp mre/reduced_txmempool.cpp work/txmempool.cpp
-          cat > work/test.sh <<'EOF2'
-          #!/bin/sh
-          g++-snapshot $FLAGS $STRICT -c txmempool.cpp -o /dev/null > out.txt 2>&1
-          ! grep -q 'error:' out.txt && grep -q 'specified bound 18446744073709551608 exceeds maximum object size' out.txt
-          EOF2
-          chmod +x work/test.sh
-          cd work && ./test.sh && echo "interesting" || { echo "NOT interesting"; grep -E 'error:|warning:' out.txt | head; exit 1; }
-
-      - name: Inline project headers one level at a time and reduce after each
-        working-directory: work
-        run: |
-          for i in 1 2 3 4 5 6 7 8 9 10; do
-            r=$(python3 ../mre/inline_headers.py "$GITHUB_WORKSPACE/bitcoin/src" txmempool.cpp seen.txt)
-            echo "=== round $i: inline -> $r, $(wc -l < txmempool.cpp) lines"
-            [ "$r" = changed ] || break
-            ./test.sh || { echo "not interesting after inlining; stopping"; grep -E 'error:' out.txt | head; break; }
-            timeout 25m cvise --n $(nproc) --timeout 300 test.sh txmempool.cpp > cvise_$i.log 2>&1 || echo "cvise round $i stopped"
-            echo "=== round $i: reduced to $(wc -l < txmempool.cpp) lines; remaining includes:"
-            grep -n '#include' txmempool.cpp || true
+          for f in mre/*.cpp; do
+            for boost in "-isystem boost-1.92.0" ""; do
+              for flags in "-O2 -Wall" "-O2 -Wall -fno-tree-loop-distribute-patterns" "-O1 -Wall" "-O3 -Wall"; do
+                echo "::group::$f [boost: ${boost:-debian 1.83}] [$flags]"
+                g++-snapshot -std=c++20 $flags $boost -c "$f" -o /dev/null 2>&1 | grep -E 'warning:|error:' || echo "(clean)"
+                echo "::endgroup::"
+              done
+            done
           done
-          wc -lc txmempool.cpp
-          echo "::group::reduced source"
-          cat txmempool.cpp
+          echo "::group::mre/a_peeled.cpp [boost 1.92] [full Bitcoin Core flags]"
+          g++-snapshot $FLAGS -isystem boost-1.92.0 -c mre/a_peeled.cpp -o /dev/null 2>&1 | grep -E 'warning:|error:' || echo "(clean)"
           echo "::endgroup::"
-          echo "::group::diagnostics on reduced source"
-          g++-snapshot $FLAGS -c txmempool.cpp -o /dev/null 2>&1 | head -60
-          echo "::endgroup::"
-
-      - name: Commit the reduced source to the scratch branch
-        if: always()
-        run: |
-          git config --global --add safe.directory "$PWD"
-          mkdir -p mre && cp work/txmempool.cpp mre/reduced_txmempool.cpp && cp work/test.sh mre/test.sh
-          git config user.name "Hennadii Stepanov"
-          git config user.email "32963518+hebasto@users.noreply.github.com"
-          git add mre/
-          git commit -m "Scratch: header-inlined cvise result ($(wc -l < mre/reduced_txmempool.cpp) lines) [skip ci]" || echo "nothing to commit"
-          git push
