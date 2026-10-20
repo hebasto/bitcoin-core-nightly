@@ -6,7 +6,7 @@ on:
 env:
   FLAGS: -O2 -g -std=c++20 -fPIC -fno-extended-identifiers -fstack-reuse=none -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -Wstack-protector -fstack-protector-all -fcf-protection=full -fstack-clash-protection -Wall -Wextra -Wformat -Wformat-security -Wvla -Wredundant-decls -Wunused-const-variable -Wdate-time -Wduplicated-branches -Wduplicated-cond -Wlogical-op -Woverloaded-virtual -Wsuggest-override -Wimplicit-fallthrough -Wunreachable-code -Wbidi-chars=any -Wundef -Wno-unused-parameter
   # Reject reductions that introduce undefined behaviour the compiler can exploit.
-  STRICT: -Werror=return-type -Werror=uninitialized -Werror=maybe-uninitialized -Werror=implicit-fallthrough -Werror=sequence-point -Werror=array-bounds
+  STRICT: -Wsystem-headers -Werror=return-type -Werror=uninitialized -Werror=maybe-uninitialized -Werror=implicit-fallthrough -Werror=sequence-point -Werror=array-bounds
 
 jobs:
   reduce:
@@ -38,8 +38,12 @@ jobs:
       - name: Check interestingness
         working-directory: work
         run: |
+          # Line markers can mark code as a system header and silence diagnostics;
+          # remove them up front and reject any that a reduction step reintroduces.
+          sed -i '/^# [0-9]/d' txmempool.ii
           cat > test.sh <<'EOF2'
           #!/bin/sh
+          ! grep -q '^# *[0-9]' txmempool.ii || exit 1
           g++-snapshot $FLAGS $STRICT -c txmempool.ii -o /dev/null > out.txt 2>&1
           ! grep -q 'error:' out.txt && grep -q 'specified bound 18446744073709551608 exceeds maximum object size' out.txt
           EOF2
@@ -74,7 +78,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: reduced-txmempool-strict
+          name: reduced-txmempool-strict2
           path: |
             work/txmempool.ii
             work/test.sh
