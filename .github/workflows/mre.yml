@@ -4,82 +4,86 @@ on:
     branches: ['261020-gcc-mre']
 
 env:
-  FLAGS: -O2 -g -std=c++20 -fPIC -fno-extended-identifiers -fstack-reuse=none -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -Wstack-protector -fstack-protector-all -fcf-protection=full -fstack-clash-protection -Wall -Wextra -Wformat -Wformat-security -Wvla -Wredundant-decls -Wunused-const-variable -Wdate-time -Wduplicated-branches -Wduplicated-cond -Wlogical-op -Woverloaded-virtual -Wsuggest-override -Wimplicit-fallthrough -Wunreachable-code -Wbidi-chars=any -Wundef -Wno-unused-parameter
-  # Reject reductions that introduce undefined behaviour the compiler can exploit.
-  STRICT: -Wsystem-headers -Werror=return-type -Werror=uninitialized -Werror=maybe-uninitialized -Werror=implicit-fallthrough -Werror=sequence-point -Werror=array-bounds
+  STRICT: -Werror=return-type -Werror=uninitialized -Werror=maybe-uninitialized -Werror=implicit-fallthrough -Werror=sequence-point -Werror=array-bounds
 
 jobs:
   reduce:
-    name: 'Reduce txmempool.ii with cvise (strict test)'
+    name: 'Reduce txmempool.cpp at source level with cvise'
     runs-on: ubuntu-26.04
     container: ghcr.io/hebasto/gcc-snapshot:17
-    timeout-minutes: 350
+    timeout-minutes: 300
     permissions:
       contents: write
-      actions: read
     steps:
       - name: Install dependencies
         run: |
           apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y git ca-certificates cvise
+          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+            git ca-certificates cmake ninja-build make curl patch pkg-config python3 bison file cvise
           cat /opt/gcc-snapshot/SNAPSHOT
 
       - name: Checkout scratch branch
         uses: actions/checkout@v7
 
-      - name: Download the intermediate file of the first reduction (run 39402706636)
-        uses: actions/download-artifact@v8
+      - name: Checkout Bitcoin Core
+        uses: actions/checkout@v7
         with:
-          name: reduced-txmempool
-          run-id: 39402706636
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: work
+          repository: bitcoin/bitcoin
+          path: bitcoin
 
-      - name: Check interestingness
-        working-directory: work
+      - name: Build depends
         run: |
-          # Line markers can mark code as a system header and silence diagnostics;
-          # remove them up front and reject any that a reduction step reintroduces.
-          sed -i '/^# [0-9]/d' txmempool.ii
-          cat > test.sh <<'EOF2'
+          gmake -C bitcoin/depends -j $(nproc) CC=gcc-snapshot CXX=g++-snapshot build_CC=gcc-snapshot build_CXX=g++-snapshot NO_QT=1 NO_IPC=1 LOG=1
+
+      - name: Configure and derive the compile flags of txmempool.cpp
+        working-directory: bitcoin
+        run: |
+          cmake --preset dev-mode -G Ninja --toolchain depends/x86_64-pc-linux-gnu/toolchain.cmake -DBUILD_GUI=OFF -DENABLE_IPC=OFF > /dev/null
+          cmd=$(ninja -C build_dev_mode -t commands src/CMakeFiles/bitcoin_node.dir/txmempool.cpp.o | tail -1)
+          flags=$(python3 - "$cmd" <<'PY'
+          import shlex, sys
+          t = shlex.split(sys.argv[1]); out = []; skip = False
+          for a in t[1:]:
+              if skip: skip = False; continue
+              if a in ('-o', '-MF', '-MT', '-MQ'): skip = True; continue
+              if a in ('-c', '-MD', '-MMD') or a.endswith('txmempool.cpp'): continue
+              out.append(a)
+          print(shlex.join(out))
+          PY
+          )
+          echo "FLAGS=$flags" >> "$GITHUB_ENV"
+          echo "$flags"
+
+      - name: Check interestingness on the original source
+        run: |
+          mkdir -p work && cp bitcoin/src/txmempool.cpp work/txmempool.cpp
+          cat > work/test.sh <<'EOF2'
           #!/bin/sh
-          ! grep -q '^# *[0-9]' txmempool.ii || exit 1
-          g++-snapshot $FLAGS $STRICT -c txmempool.ii -o /dev/null > out.txt 2>&1
+          g++-snapshot $FLAGS $STRICT -c txmempool.cpp -o /dev/null > out.txt 2>&1
           ! grep -q 'error:' out.txt && grep -q 'specified bound 18446744073709551608 exceeds maximum object size' out.txt
           EOF2
-          chmod +x test.sh
-          wc -lc txmempool.ii
-          ./test.sh && echo "interesting" || { echo "NOT interesting"; grep -E 'error:' out.txt | head -20; exit 1; }
+          chmod +x work/test.sh
+          cd work && wc -l txmempool.cpp && ./test.sh && echo "interesting" || { echo "NOT interesting"; grep -E 'error:|warning:' out.txt | head; exit 1; }
 
-      - name: Reduce with cvise (time-boxed)
+      - name: Reduce with cvise
         working-directory: work
         run: |
-          timeout 300m cvise --n $(nproc) --timeout 300 test.sh txmempool.ii || echo "cvise stopped (timeout or error)"
-          wc -lc txmempool.ii
-          echo "::group::diagnostics on reduced file (full flags)"
-          g++-snapshot $FLAGS $STRICT -c txmempool.ii -o /dev/null 2>&1 | grep -E 'warning:|error:' | head -40
+          timeout 240m cvise --n $(nproc) --timeout 300 test.sh txmempool.cpp || echo "cvise stopped (timeout or error)"
+          wc -lc txmempool.cpp
+          echo "::group::reduced source"
+          cat txmempool.cpp
           echo "::endgroup::"
-          echo "::group::diagnostics on reduced file (-O2 -Wall only)"
-          g++-snapshot -std=c++20 -O2 -Wall -c txmempool.ii -o /dev/null 2>&1 | grep -E 'warning:|error:' | head -40
+          echo "::group::diagnostics on reduced source"
+          g++-snapshot $FLAGS -c txmempool.cpp -o /dev/null 2>&1 | head -60
           echo "::endgroup::"
 
-      - name: Commit the reduced file to the scratch branch
+      - name: Commit the reduced source to the scratch branch
         if: always()
         run: |
           git config --global --add safe.directory "$PWD"
-          mkdir -p mre && cp work/txmempool.ii mre/reduced.ii && cp work/test.sh mre/test.sh
+          mkdir -p mre && cp work/txmempool.cpp mre/reduced_txmempool.cpp && cp work/test.sh mre/test.sh
           git config user.name "Hennadii Stepanov"
           git config user.email "32963518+hebasto@users.noreply.github.com"
-          git add mre/reduced.ii mre/test.sh
-          git commit -m "Scratch: cvise result ($(wc -l < mre/reduced.ii) lines) [skip ci]" || echo "nothing to commit"
+          git add mre/
+          git commit -m "Scratch: source-level cvise result ($(wc -l < mre/reduced_txmempool.cpp) lines) [skip ci]" || echo "nothing to commit"
           git push
-
-      - name: Upload reduced file
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: reduced-txmempool-strict2
-          path: |
-            work/txmempool.ii
-            work/test.sh
-          retention-days: 7
