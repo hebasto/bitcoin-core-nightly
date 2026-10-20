@@ -1,0 +1,43 @@
+name: MRE (scratch)
+on:
+  workflow_dispatch:
+    inputs:
+      flags:
+        description: 'Extra compiler flags'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  mre:
+    name: 'MRE with GCC snapshot, ${{ matrix.arch }}'
+    runs-on: ${{ matrix.runner }}
+    container: ghcr.io/hebasto/gcc-snapshot:17
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-26.04
+          - arch: arm64
+            runner: ubuntu-26.04-arm
+    steps:
+      - name: Install dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y git ca-certificates libboost-dev
+          dpkg -s libboost-dev | grep ^Version
+          cat /opt/gcc-snapshot/SNAPSHOT
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Compile candidates
+        run: |
+          for f in mre/*.cpp; do
+            for opt in -O1 -O2 -O3; do
+              echo "::group::$f $opt ${{ inputs.flags }}"
+              g++-snapshot -std=c++20 $opt -Wall -Wextra ${{ inputs.flags }} -c "$f" -o /dev/null 2>&1 || true
+              echo "::endgroup::"
+            done
+          done
