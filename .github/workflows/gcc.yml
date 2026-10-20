@@ -149,7 +149,13 @@ jobs:
             "--preset dev-mode"
             "--toolchain depends/${{ matrix.host }}/toolchain.cmake"
             "-DBUILD_GUI=OFF"
-            # "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+            # Known false positives with gcc-17-20261018 (identical on x86_64 and arm64):
+            #  - boost/multi_index/detail/bucket_array.hpp:165: '__builtin_memset' specified bound
+            #    18446744073709551608 exceeds maximum object size (from CTxMemPool's hashed indexes)
+            #  - src/prevector.h:169: writing 65 bytes into a region of size 40
+            #    (from CreateGenesisBlock() in src/kernel/chainparams.cpp)
+            "-DAPPEND_CXXFLAGS=-Wno-error=stringop-overflow"
+            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
           ctest_start(APPEND)
           ctest_configure(OPTIONS "${configure_opts}")
