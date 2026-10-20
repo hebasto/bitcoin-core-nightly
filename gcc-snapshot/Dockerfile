@@ -39,8 +39,14 @@ COPY --from=build /opt/gcc-snapshot /opt/gcc-snapshot
 
 # Make the snapshot's libstdc++/libgcc_s the ones found at run time, so that
 # programs built with g++-snapshot run inside this image.
+#
+# ldconfig reads the files in /etc/ld.so.conf.d/ in alphabetical order, and
+# the first directory that provides a library wins. The "00-" prefix sorts
+# this file before Debian's "<triplet>.conf" on every architecture (without
+# it, "aarch64-linux-gnu.conf" is read first and the system libstdc++ is
+# picked up on arm64).
 RUN ln -s /opt/gcc-snapshot/bin/gcc-snapshot /usr/bin/gcc-snapshot && \
     ln -s /opt/gcc-snapshot/bin/g++-snapshot /usr/bin/g++-snapshot && \
-    echo "/opt/gcc-snapshot/lib64" > /etc/ld.so.conf.d/gcc-snapshot.conf && \
-    echo "/opt/gcc-snapshot/lib" >> /etc/ld.so.conf.d/gcc-snapshot.conf && \
+    echo "/opt/gcc-snapshot/lib64" > /etc/ld.so.conf.d/00-gcc-snapshot.conf && \
+    echo "/opt/gcc-snapshot/lib" >> /etc/ld.so.conf.d/00-gcc-snapshot.conf && \
     ldconfig

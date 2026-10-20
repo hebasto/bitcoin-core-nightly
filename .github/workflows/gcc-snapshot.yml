@@ -77,9 +77,10 @@ jobs:
           image="$(tr '[:upper:]' '[:lower:]' <<< "${IMAGE}")"
           repository="${image#ghcr.io/}"
 
-          # Is this snapshot already published?
+          # Is this snapshot already published? On pull requests, always build
+          # (nothing is pushed), so that changes to the Dockerfile are tested.
           build=true
-          if [ "${FORCE_REBUILD}" != "true" ]; then
+          if [ "${FORCE_REBUILD}" != "true" ] && [ "${GITHUB_EVENT_NAME}" != "pull_request" ]; then
             token="$(curl --fail --silent --user "${GITHUB_ACTOR}:${GITHUB_TOKEN}" \
               "https://ghcr.io/token?scope=repository:${repository}:pull" | jq -r .token)"
             if curl --fail --silent --head \
@@ -143,6 +144,8 @@ jobs:
             g++-snapshot --version
             echo "int main(void) { return 0; }" | gcc-snapshot -x c -std=c23 -Wall -Werror - -o /tmp/c && /tmp/c
             printf "#include <vector>\nint main() { std::vector<int> v{1}; return v[0] - 1; }\n" | g++-snapshot -x c++ -std=c++23 -Wall -Werror - -o /tmp/cxx && /tmp/cxx
+            # The libstdc++ of the snapshot must be the one found at run time.
+            ldd /tmp/cxx | tee /dev/stderr | grep -q "libstdc++.so.6 => /opt/gcc-snapshot/lib64/"
           '
 
       - name: Login to GHCR
