@@ -22,6 +22,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --no-instal
         --program-suffix=-snapshot \
         --enable-languages=c,c++ \
         --disable-bootstrap \
+        --enable-checking=release \
         --disable-multilib \
         --without-isl && \
     make -j "$(nproc)" && \
