@@ -1,12 +1,10 @@
 name: MRE (scratch)
 on:
-  workflow_dispatch:
-    inputs:
-      flags:
-        description: 'Extra compiler flags'
-        required: false
-        default: ''
-        type: string
+  push:
+    branches: ['261020-gcc-mre']
+
+env:
+  EXTRA_FLAGS: ''
 
 jobs:
   mre:
@@ -36,8 +34,8 @@ jobs:
         run: |
           for f in mre/*.cpp; do
             for opt in -O1 -O2 -O3; do
-              echo "::group::$f $opt ${{ inputs.flags }}"
-              g++-snapshot -std=c++20 $opt -Wall -Wextra ${{ inputs.flags }} -c "$f" -o /dev/null 2>&1 || true
+              echo "::group::$f $opt ${{ env.EXTRA_FLAGS }}"
+              g++-snapshot -std=c++20 $opt -Wall -Wextra ${{ env.EXTRA_FLAGS }} -c "$f" -o /dev/null 2>&1 || true
               echo "::endgroup::"
             done
           done
