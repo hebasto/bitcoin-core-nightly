@@ -30,12 +30,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Fetch Boost 1.92.0 (same as depends)
+        run: |
+          apt-get install --no-install-recommends -y curl xz-utils
+          curl -sSL -o boost.tar.xz https://github.com/boostorg/boost/releases/download/boost-1.92.0/boost-1.92.0-b2-nodocs.tar.xz
+          tar -xJf boost.tar.xz
+          ls -d boost-1.92.0
+
       - name: Compile candidates
         run: |
-          for f in mre/*.cpp; do
-            for opt in -O1 -O2 -O3; do
-              echo "::group::$f $opt ${{ env.EXTRA_FLAGS }}"
-              g++-snapshot -std=c++20 $opt -Wall -Wextra ${{ env.EXTRA_FLAGS }} -c "$f" -o /dev/null 2>&1 || true
-              echo "::endgroup::"
+          HARDEN="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -fstack-protector-all -fcf-protection=full -fstack-clash-protection -fPIE"
+          for inc in "-I boost-1.92.0" ""; do
+            for f in mre/*.cpp; do
+              for flags in "-O2" "-O2 -g" "-O2 -g $HARDEN" "-O3 -g $HARDEN" "-O2 -D_FORTIFY_SOURCE=3"; do
+                echo "::group::[boost: ${inc:-debian}] $f $flags"
+                g++-snapshot -std=c++20 $inc $flags -Wall -Wextra ${{ env.EXTRA_FLAGS }} -c "$f" -o /dev/null 2>&1 | grep -E 'warning:|error:' || echo "(clean)"
+                echo "::endgroup::"
+              done
             done
           done
