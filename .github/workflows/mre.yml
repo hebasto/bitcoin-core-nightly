@@ -54,21 +54,29 @@ jobs:
           echo "FLAGS=$flags" >> "$GITHUB_ENV"
           echo "$flags"
 
-      - name: Check interestingness on the original source
+      - name: Start from the previous result and check interestingness
         run: |
-          mkdir -p work && cp bitcoin/src/txmempool.cpp work/txmempool.cpp
+          mkdir -p work && cp mre/reduced_txmempool.cpp work/txmempool.cpp
           cat > work/test.sh <<'EOF2'
           #!/bin/sh
           g++-snapshot $FLAGS $STRICT -c txmempool.cpp -o /dev/null > out.txt 2>&1
           ! grep -q 'error:' out.txt && grep -q 'specified bound 18446744073709551608 exceeds maximum object size' out.txt
           EOF2
           chmod +x work/test.sh
-          cd work && wc -l txmempool.cpp && ./test.sh && echo "interesting" || { echo "NOT interesting"; grep -E 'error:|warning:' out.txt | head; exit 1; }
+          cd work && ./test.sh && echo "interesting" || { echo "NOT interesting"; grep -E 'error:|warning:' out.txt | head; exit 1; }
 
-      - name: Reduce with cvise
+      - name: Inline project headers one level at a time and reduce after each
         working-directory: work
         run: |
-          timeout 240m cvise --n $(nproc) --timeout 300 test.sh txmempool.cpp || echo "cvise stopped (timeout or error)"
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            r=$(python3 ../mre/inline_headers.py "$GITHUB_WORKSPACE/bitcoin/src" txmempool.cpp seen.txt)
+            echo "=== round $i: inline -> $r, $(wc -l < txmempool.cpp) lines"
+            [ "$r" = changed ] || break
+            ./test.sh || { echo "not interesting after inlining; stopping"; grep -E 'error:' out.txt | head; break; }
+            timeout 25m cvise --n $(nproc) --timeout 300 test.sh txmempool.cpp > cvise_$i.log 2>&1 || echo "cvise round $i stopped"
+            echo "=== round $i: reduced to $(wc -l < txmempool.cpp) lines; remaining includes:"
+            grep -n '#include' txmempool.cpp || true
+          done
           wc -lc txmempool.cpp
           echo "::group::reduced source"
           cat txmempool.cpp
@@ -85,5 +93,5 @@ jobs:
           git config user.name "Hennadii Stepanov"
           git config user.email "32963518+hebasto@users.noreply.github.com"
           git add mre/
-          git commit -m "Scratch: source-level cvise result ($(wc -l < mre/reduced_txmempool.cpp) lines) [skip ci]" || echo "nothing to commit"
+          git commit -m "Scratch: header-inlined cvise result ($(wc -l < mre/reduced_txmempool.cpp) lines) [skip ci]" || echo "nothing to commit"
           git push
