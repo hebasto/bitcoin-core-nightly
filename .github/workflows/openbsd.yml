@@ -49,7 +49,7 @@ jobs:
         # From https://www.openbsd.org/faq/faq5.html:
         # > Only the two most recent OpenBSD releases receive
         # > security and reliability fixes for the base system.
-        release: ['7.8', '7.9']
+        release: ['7.9', '8.0']
 
     steps:
       - &ANNOTATE_WORKFLOW_INPUTS
