@@ -168,6 +168,9 @@ jobs:
             GCC_SNAPSHOT=${{ needs.probe.outputs.snapshot }}
             GCC_SNAPSHOT_SHA512=${{ needs.probe.outputs.sha512 }}
           platforms: linux/${{ matrix.arch }}
+          # No provenance attestation: nothing consumes it, and it shows up as
+          # an "unknown/unknown" platform and extra untagged versions on GHCR.
+          provenance: false
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ needs.probe.outputs.snapshot }}
