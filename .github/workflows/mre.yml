@@ -5,35 +5,77 @@ on:
 
 env:
   FLAGS: -O2 -g -std=c++20 -fPIC -fno-extended-identifiers -fstack-reuse=none -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3 -Wstack-protector -fstack-protector-all -fcf-protection=full -fstack-clash-protection -Wall -Wextra -Wformat -Wformat-security -Wvla -Wredundant-decls -Wunused-const-variable -Wdate-time -Wduplicated-branches -Wduplicated-cond -Wlogical-op -Woverloaded-virtual -Wsuggest-override -Wimplicit-fallthrough -Wunreachable-code -Wbidi-chars=any -Wundef -Wno-unused-parameter
+  # Reject reductions that introduce undefined behaviour the compiler can exploit.
+  STRICT: -Werror=return-type -Werror=uninitialized -Werror=maybe-uninitialized -Werror=implicit-fallthrough -Werror=sequence-point -Werror=array-bounds
 
 jobs:
-  candidates:
-    name: 'MRE candidates, ${{ matrix.arch }}'
-    runs-on: ${{ matrix.runner }}
+  reduce:
+    name: 'Reduce txmempool.ii with cvise (strict test)'
+    runs-on: ubuntu-26.04
     container: ghcr.io/hebasto/gcc-snapshot:17
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { arch: x86_64, runner: ubuntu-26.04 }
-          - { arch: arm64, runner: ubuntu-26.04-arm }
+    timeout-minutes: 350
+    permissions:
+      contents: write
+      actions: read
     steps:
       - name: Install dependencies
         run: |
           apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y git ca-certificates curl xz-utils
+          DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y git ca-certificates cvise
           cat /opt/gcc-snapshot/SNAPSHOT
-      - uses: actions/checkout@v7
-      - name: Fetch Boost 1.92.0
+
+      - name: Checkout scratch branch
+        uses: actions/checkout@v7
+
+      - name: Download the intermediate file of the first reduction (run 39402706636)
+        uses: actions/download-artifact@v8
+        with:
+          name: reduced-txmempool
+          run-id: 39402706636
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: work
+
+      - name: Check interestingness
+        working-directory: work
         run: |
-          curl -sSL -o boost.tar.xz https://github.com/boostorg/boost/releases/download/boost-1.92.0/boost-1.92.0-b2-nodocs.tar.xz
-          tar -xJf boost.tar.xz
-      - name: Compile candidates
+          cat > test.sh <<'EOF2'
+          #!/bin/sh
+          g++-snapshot $FLAGS $STRICT -c txmempool.ii -o /dev/null > out.txt 2>&1
+          ! grep -q 'error:' out.txt && grep -q 'specified bound 18446744073709551608 exceeds maximum object size' out.txt
+          EOF2
+          chmod +x test.sh
+          wc -lc txmempool.ii
+          ./test.sh && echo "interesting" || { echo "NOT interesting"; grep -E 'error:' out.txt | head -20; exit 1; }
+
+      - name: Reduce with cvise (time-boxed)
+        working-directory: work
         run: |
-          for f in mre/*.cpp; do
-            for flags in "-O2 -Wall" "-O2 -Wall -fno-tree-loop-distribute-patterns" "-O2 -Wall -fno-inline-small-functions" "-O2 -Wall -fno-inline-functions-called-once" "-O1 -Wall" "-O3 -Wall"; do
-              echo "::group::$f [$flags]"
-              g++-snapshot -std=c++20 $flags -isystem boost-1.92.0 -c "$f" -o /dev/null 2>&1 | grep -E 'warning:|error:' || echo "(clean)"
-              echo "::endgroup::"
-            done
-          done
+          timeout 300m cvise --n $(nproc) --timeout 300 test.sh txmempool.ii || echo "cvise stopped (timeout or error)"
+          wc -lc txmempool.ii
+          echo "::group::diagnostics on reduced file (full flags)"
+          g++-snapshot $FLAGS $STRICT -c txmempool.ii -o /dev/null 2>&1 | grep -E 'warning:|error:' | head -40
+          echo "::endgroup::"
+          echo "::group::diagnostics on reduced file (-O2 -Wall only)"
+          g++-snapshot -std=c++20 -O2 -Wall -c txmempool.ii -o /dev/null 2>&1 | grep -E 'warning:|error:' | head -40
+          echo "::endgroup::"
+
+      - name: Commit the reduced file to the scratch branch
+        if: always()
+        run: |
+          git config --global --add safe.directory "$PWD"
+          mkdir -p mre && cp work/txmempool.ii mre/reduced.ii && cp work/test.sh mre/test.sh
+          git config user.name "Hennadii Stepanov"
+          git config user.email "32963518+hebasto@users.noreply.github.com"
+          git add mre/reduced.ii mre/test.sh
+          git commit -m "Scratch: cvise result ($(wc -l < mre/reduced.ii) lines) [skip ci]" || echo "nothing to commit"
+          git push
+
+      - name: Upload reduced file
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reduced-txmempool-strict
+          path: |
+            work/txmempool.ii
+            work/test.sh
+          retention-days: 7
