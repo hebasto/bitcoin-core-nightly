@@ -31,7 +31,7 @@ jobs:
       - name: Configure and compile txmempool.cpp
         working-directory: bitcoin
         run: |
-          cmake --preset dev-mode --toolchain depends/x86_64-pc-linux-gnu/toolchain.cmake -DBUILD_GUI=OFF -DENABLE_IPC=OFF > /dev/null
+          cmake --preset dev-mode -G Ninja --toolchain depends/x86_64-pc-linux-gnu/toolchain.cmake -DBUILD_GUI=OFF -DENABLE_IPC=OFF > /dev/null
           cmd=$(ninja -C build_dev_mode -t commands src/CMakeFiles/bitcoin_node.dir/txmempool.cpp.o | tail -1)
           echo "COMMAND: $cmd"
           cd build_dev_mode
