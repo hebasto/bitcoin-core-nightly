@@ -6,6 +6,7 @@
 - Name branches `YYMMDD-topic`, e.g. `261019-gcc-snapshot`, and base them on the current `main`.
 - Follow-ups to a merged PR go on a new branch from `main`, never on the merged branch.
 - Rewriting history on an unmerged PR branch is fine (`git push --force-with-lease`).
+- Fold small follow-ups (review fixes, tweaks on the same lines) into the commit they belong to instead of adding new commits; a new commit is for a distinct change.
 
 ## Workflows
 
