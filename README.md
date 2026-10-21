@@ -8,22 +8,22 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 
 | Operating System | Releases | Status | Build with System Libs | Build with Depends |
 |------------------|:--------:|--------|------------------------|--------------------|
-| [FreeBSD](https://www.freebsd.org/) | 14.5, 15.1 | [![FreeBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml?query=event%3Aworkflow_run) | USDT - N/A | Release |
-| [OpenBSD](https://www.openbsd.org/) | 7.9, 8.0 | [![OpenBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml?query=event%3Aworkflow_run) | USDT - N/A | Release |
-| [NetBSD](https://netbsd.org/) | 10.2, 11.0 | [![NetBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml?query=event%3Aworkflow_run) | Qt - not installed <br> USDT - N/A | Release |
+| [FreeBSD](https://www.freebsd.org/) | 14.5, 15.1 | [![FreeBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml?query=event%3Aworkflow_run) | USDT - N/A | Release |
+| [OpenBSD](https://www.openbsd.org/) | 7.9, 8.0 | [![OpenBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml?query=event%3Aworkflow_run) | USDT - N/A | Release |
+| [NetBSD](https://netbsd.org/) | 10.2, 11.0 | [![NetBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml?query=event%3Aworkflow_run) | Qt - not installed <br> USDT - N/A | Release |
 
 ## [illumos](https://illumos.org/)-Based Systems
 
 | Operating System | Releases |Status | Notes |
 |------------------|:--------:|-------|-------|
-| [OmniOS](https://omnios.org/) | r151056, r151058 | [![OmniOS](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/omnios.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/omnios.yml?query=event%3Aworkflow_run) | Qt - not installed <br> ZeroMQ - N/A <br> USDT - N/A |
-| [OpenIndiana](https://www.openindiana.org/) | Snapshot 2026.04 | [![OpenIndiana](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openindiana.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openindiana.yml?query=event%3Aworkflow_run) | No IPC, no GUI |
+| [OmniOS](https://omnios.org/) | r151056, r151058 | [![OmniOS](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/omnios.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/omnios.yml?query=event%3Aworkflow_run) | Qt - not installed <br> ZeroMQ - N/A <br> USDT - N/A |
+| [OpenIndiana](https://www.openindiana.org/) | Snapshot 2026.04 | [![OpenIndiana](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openindiana.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openindiana.yml?query=event%3Aworkflow_run) | No IPC, no GUI |
 
 ## [Clang-SNAPSHOT](https://apt.llvm.org/)
 
 | Operating System | Status | Notes |
 |------------------|--------|-------|
-| Ubuntu 26.04 | [![Clang-SNAPSHOT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/clang.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/clang.yml?query=event%3Aworkflow_run) | Using libstdc++ and libc++ |
+| Ubuntu 26.04 | [![Clang-SNAPSHOT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/clang.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/clang.yml?query=event%3Aworkflow_run) | Using libstdc++ and libc++ |
 
 ## [GCC-SNAPSHOT](https://gcc.gnu.org/pub/gcc/snapshots/)
 
@@ -31,37 +31,37 @@ The newest GCC development snapshot is built by the [GCC snapshot](https://githu
 
 | Operating System | Status | Notes |
 |------------------|--------|-------|
-| Debian stable, x86_64 and arm64 | [![GCC-SNAPSHOT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/gcc.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/gcc.yml?query=event%3Aworkflow_run) | No GUI |
+| Debian stable, x86_64 and arm64 | [![GCC-SNAPSHOT](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/gcc.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/gcc.yml?query=event%3Aworkflow_run) | No GUI |
 
 ## [musl](https://musl.libc.org/)-Based Systems
 
 | Operating System | Status |
 |------------------|--------|
-| [Alpine Linux](https://alpinelinux.org) | [![Alpine](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/alpine.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/alpine.yml?query=event%3Aworkflow_run) |
-| [Chimera Linux](https://chimera-linux.org/) | [![Chimera](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/chimera.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/chimera.yml?query=event%3Aworkflow_run) |
+| [Alpine Linux](https://alpinelinux.org) | [![Alpine](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/alpine.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/alpine.yml?query=event%3Aworkflow_run) |
+| [Chimera Linux](https://chimera-linux.org/) | [![Chimera](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/chimera.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/chimera.yml?query=event%3Aworkflow_run) |
 
 ## [Windows](https://www.microsoft.com/windows/windows-11), native builds
 
 | Toolchain | Status | Notes |
 |-----------|--------|-------|
-| [MSVC](https://learn.microsoft.com/en-us/cpp/), x86_64 | [![Windows, MSVC, x86_64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-msvc-x86_64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-msvc-x86_64.yml?query=event%3Aworkflow_run) | "Debug" configuration<br>No functional tests |
-| [clang-cl](https://clang.llvm.org/docs/UsersManual.html#clang-cl), ARM64 | [![Windows, clang-cl, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-arm64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-arm64.yml?query=event%3Aworkflow_run) | "Release" configuration |
-| [clang-cl](https://clang.llvm.org/docs/UsersManual.html#clang-cl), x86_64 | [![Windows, clang-cl, x86_64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-x86_64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-x86_64.yml?query=event%3Aworkflow_run) | "Release" configuration |
+| [MSVC](https://learn.microsoft.com/en-us/cpp/), x86_64 | [![Windows, MSVC, x86_64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-msvc-x86_64.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-msvc-x86_64.yml?query=event%3Aworkflow_run) | "Debug" configuration<br>No functional tests |
+| [clang-cl](https://clang.llvm.org/docs/UsersManual.html#clang-cl), ARM64 | [![Windows, clang-cl, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-arm64.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-arm64.yml?query=event%3Aworkflow_run) | "Release" configuration |
+| [clang-cl](https://clang.llvm.org/docs/UsersManual.html#clang-cl), x86_64 | [![Windows, clang-cl, x86_64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-x86_64.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-clang-cl-x86_64.yml?query=event%3Aworkflow_run) | "Release" configuration |
 
 ## Windows, cross-builds
 
 | Host OS | Toolchain | Status | Notes |
 |---------|-----------|--------|-------|
-| Ubuntu | [LLVM MinGW](https://github.com/mstorsjo/llvm-mingw), ARM64 | [![Windows, LLVM, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-arm64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-arm64.yml?query=event%3Aworkflow_run) | [LLVM 23.1.4](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261020) |
-| Ubuntu | [LLVM MinGW](https://github.com/mstorsjo/llvm-mingw), x86_64 | [![Windows, LLVM, x86_64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-x86_64.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-x86_64.yml?query=event%3Aworkflow_run) | [LLVM 23.1.4](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261020) |
-| Fedora | GCC, [Mingw-w64](https://www.mingw-w64.org) | [![Windows, GCC](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc.yml?query=event%3Aworkflow_run) | Using [`ucrt64-gcc-c++`](https://packages.fedoraproject.org/pkgs/mingw-gcc/ucrt64-gcc-c++/) package |
-| macOS | GCC, [Mingw-w64](https://www.mingw-w64.org) | [![Windows, X-GCC, macOS](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-x-gcc-macos.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-x-gcc-macos.yml?query=event%3Aworkflow_run) | Using [`mingw-w64`](https://formulae.brew.sh/formula/mingw-w64) Homebrew package |
+| Ubuntu | [LLVM MinGW](https://github.com/mstorsjo/llvm-mingw), ARM64 | [![Windows, LLVM, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-arm64.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-arm64.yml?query=event%3Aworkflow_run) | [LLVM 23.1.4](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261020) |
+| Ubuntu | [LLVM MinGW](https://github.com/mstorsjo/llvm-mingw), x86_64 | [![Windows, LLVM, x86_64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-x86_64.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-llvm-x86_64.yml?query=event%3Aworkflow_run) | [LLVM 23.1.4](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261020) |
+| Fedora | GCC, [Mingw-w64](https://www.mingw-w64.org) | [![Windows, GCC](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-gcc.yml?query=event%3Aworkflow_run) | Using [`ucrt64-gcc-c++`](https://packages.fedoraproject.org/pkgs/mingw-gcc/ucrt64-gcc-c++/) package |
+| macOS | GCC, [Mingw-w64](https://www.mingw-w64.org) | [![Windows, X-GCC, macOS](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-x-gcc-macos.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/windows-x-gcc-macos.yml?query=event%3Aworkflow_run) | Using [`mingw-w64`](https://formulae.brew.sh/formula/mingw-w64) Homebrew package |
 
 ## [macOS](https://www.apple.com/os/macos/) with the latest [Homebrew](https://brew.sh/)
 
 | Operating System | Status | Notes |
 |------------------|--------|-------|
-| macOS ARM64, Xcode 27 | [![macOS, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos.yml?query=event%3Aworkflow_run) | No depends |
+| macOS ARM64, Xcode 27 | [![macOS, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos.yml?query=event%3Aworkflow_run) | No depends |
 
 ## [openSUSE](https://www.opensuse.org/)
 
@@ -69,4 +69,4 @@ Releases: [Leap 16.0](https://get.opensuse.org/leap/) and [Tumbleweed](https://g
 
 | Status | Notes |
 |--------|-------|
-| [![openSUSE](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/opensuse.yml/badge.svg)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/opensuse.yml?query=event%3Aworkflow_run) | No depends |
+| [![openSUSE](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/opensuse.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/opensuse.yml?query=event%3Aworkflow_run) | No depends |
