@@ -4,6 +4,7 @@
 
 - Author commits as `Hennadii Stepanov <32963518+hebasto@users.noreply.github.com>`.
 - Name branches `YYMMDD-topic`, e.g. `261019-gcc-snapshot`, and base them on the current `main`.
+- Push to the `YYMMDD-topic` branch and open the PR from it, even when the session assigns a `claude/...` branch; this convention wins over the session default.
 - Follow-ups to a merged PR go on a new branch from `main`, never on the merged branch.
 - Rewriting history on an unmerged PR branch is fine (`git push --force-with-lease`).
 - Fold small follow-ups (review fixes, tweaks on the same lines) into the commit they belong to instead of adding new commits; a new commit is for a distinct change.
