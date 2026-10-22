@@ -83,6 +83,44 @@ jobs:
           mkdir -p "$DIR_UNIT_TEST_DATA"
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
 
+      - &PATCH_FUNCTIONAL_TESTS
+        name: Patch functional tests
+        run: |
+          # Diagnostic for the intermittent failures in the p2p_private_broadcast*
+          # tests: a single connection proxied through the Python SOCKS5 server
+          # stalls, and the proxy's handler thread never finishes. Dump the
+          # stacks of all threads when a wait_until() times out, so the next
+          # failure shows where that thread is blocked.
+          # See https://github.com/bitcoin/bitcoin/issues/36099.
+          cat << 'EOF' > patch_functional_tests.py
+          import pathlib
+          import sys
+
+          root = pathlib.Path("/home/bitcoin/test/functional")
+
+          def replace(relpath, old, new, count=1):
+              path = root / relpath
+              text = path.read_text()
+              if text.count(old) != count:
+                  sys.exit(f"{path}: expected {count} occurrence(s) of {old!r}, found {text.count(old)}")
+              path.write_text(text.replace(old, new))
+              print(f"patched {path}")
+
+          replace("test_framework/util.py",
+                  "import hashlib\n",
+                  "import faulthandler\nimport hashlib\n")
+          replace("test_framework/util.py",
+                  '    logger.error("wait_until() failed. Predicate: {}".format(predicate_source))\n',
+                  '    logger.error("wait_until() failed. Predicate: {}".format(predicate_source))\n'
+                  '    sys.stderr.write("wait_until() timed out, dumping the stacks of all threads:\\n")\n'
+                  '    sys.stderr.flush()\n'
+                  '    faulthandler.dump_traceback(all_threads=True)\n')
+          replace("test_framework/util.py",
+                  "import shlex\n",
+                  "import shlex\nimport sys\n")
+          EOF
+          python3 patch_functional_tests.py
+
       - name: Generate CTest configuration
         run: |
           cat << 'EOF' > ctest_config.cmake
@@ -232,6 +270,7 @@ jobs:
       - *ANNOTATE_WORKFLOW_INPUTS
       - *START_VM
       - *FETCH_SOURCE
+      - *PATCH_FUNCTIONAL_TESTS
 
       - name: Build depends
         uses: hebasto/bitcoin-core-nightly/.github/actions/build-depends@main
