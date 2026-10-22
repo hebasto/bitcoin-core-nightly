@@ -34,6 +34,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
+          ref: refs/pull/36600/head
 
       - name: Install LLVM MinGW toolchain
         run: |
@@ -83,6 +84,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
+          ref: refs/pull/36600/head
 
       - name: Download built executables
         uses: actions/download-artifact@v8
