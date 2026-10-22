@@ -55,7 +55,13 @@ jobs:
             -DBUILD_BENCH=ON \
             -DBUILD_FUZZ_BINARY=ON \
             -DCMAKE_COMPILE_WARNING_AS_ERROR=ON \
-            -DAPPEND_CXXFLAGS="-Wno-error=return-type -Wno-error=conditional-uninitialized"
+            -DAPPEND_CXXFLAGS="-Wno-error=return-type -Wno-error=conditional-uninitialized \
+              `# Boost.Test references BOOST_TEST_DISABLE_ALT_STACK only in its sigaction-based` \
+              `# signal handling, which is not selected on MinGW targets, so Clang reports the` \
+              `# macro defined in src/test/main.cpp as unused. Revert this once Boost.Test is` \
+              `# removed from Bitcoin Core: https://github.com/bitcoin/bitcoin/pull/35713` \
+              -Wno-error=unused-macros \
+            "
 
       - name: Build
         run: cmake --build build -j $(nproc)
