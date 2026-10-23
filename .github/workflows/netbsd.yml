@@ -159,6 +159,31 @@ jobs:
           mkdir -p "$DIR_UNIT_TEST_DATA"
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
 
+      - &PATCH_SOURCE
+        # The `interface_ipc*` functional tests fail on NetBSD because `-ipcbind`
+        # reserves 1 listening socket plus `ipc::DEFAULT_MAX_CONNECTIONS` (16)
+        # client slots on top of the `maxconnections=76` that the test framework
+        # budgets for FD_SETSIZE (256). bitcoind then prints the
+        # "Reducing -maxconnections ..." warning on stderr, which the framework
+        # treats as a failure.
+        # This is a minimal version of https://github.com/bitcoin/bitcoin/pull/36587.
+        # TODO: Drop this step once that PR is merged.
+        name: Patch functional test framework
+        run: |
+          set -e
+          cat << 'EOF' > ipc-maxconnections.patch
+          --- a/test/functional/test_framework/test_node.py
+          +++ b/test/functional/test_framework/test_node.py
+          @@ -157,5 +157,6 @@ class TestNode():
+                   self.ipc_tmp_dir = None
+                   if ipcbind:
+          +            self.args.append("-maxconnections=59")
+                       self.ipc_socket_path = self.chain_path / "node.sock"
+                       if len(os.fsencode(self.ipc_socket_path)) < UNIX_PATH_MAX:
+                           self.args.append("-ipcbind=unix")
+          EOF
+          patch -d bitcoin -p1 -N < ipc-maxconnections.patch
+
       - name: Generate CTest configuration
         run: |
           cat << 'EOF' > ctest_config.cmake
@@ -311,6 +336,7 @@ jobs:
           diff -w packages_before packages_after | grep '^>' | sort
 
       - *FETCH_SOURCE
+      - *PATCH_SOURCE
 
       - name: Build depends
         uses: hebasto/bitcoin-core-nightly/.github/actions/build-depends@main
