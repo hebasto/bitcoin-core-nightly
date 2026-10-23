@@ -70,7 +70,12 @@ jobs:
         shell: ctest --build-config Release --extra-verbose --script {0}
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
-          set(ENV{CXXFLAGS} "-Wno-error=return-type -Wno-error=conditional-uninitialized")
+          # Boost.Test references BOOST_TEST_DISABLE_ALT_STACK only in its sigaction-based
+          # signal handling, which is not selected on Windows targets, so Clang reports the
+          # macro defined in src/test/main.cpp and src/test/kernel/test_kernel.cpp as unused.
+          # Revert -Wno-error=unused-macros once Boost.Test is removed from Bitcoin Core:
+          # https://github.com/bitcoin/bitcoin/pull/35713
+          set(ENV{CXXFLAGS} "-Wno-error=return-type -Wno-error=conditional-uninitialized -Wno-error=unused-macros")
           set(configure_opts
             "-T ClangCL"
             "--preset dev-mode"
