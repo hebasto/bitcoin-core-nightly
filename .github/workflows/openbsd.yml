@@ -83,6 +83,29 @@ jobs:
           mkdir -p "$DIR_UNIT_TEST_DATA"
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
 
+      - &PATCH_SOURCE
+        # `p2p_private_broadcast_retry_v1.py` fails intermittently on OpenBSD:
+        # one of the `addnode onetry` connections through the Python SOCKS5
+        # proxy never completes its handshake and, with the framework's
+        # `peertimeout=999999999`, bitcoind never drops it nor retries that
+        # address, so the test waits until its own timeout.
+        # See https://github.com/bitcoin/bitcoin/issues/36099.
+        # TODO: Drop this step once the fix is merged upstream.
+        name: Patch functional tests
+        run: |
+          set -e
+          cat << 'EOF' > private-broadcast-peertimeout.patch
+          --- a/test/functional/p2p_private_broadcast_retry_v1.py
+          +++ b/test/functional/p2p_private_broadcast_retry_v1.py
+          @@ -144,4 +144,5 @@ class P2PPrivateBroadcastRetryV1(BitcoinTestFramework):
+                           "-test=addrman",
+                           "-v2transport=0",
+          +                f"-peertimeout={int(10 * self.options.timeout_factor)}",
+                       ],
+                   ]
+          EOF
+          patch -d /home/bitcoin -p1 -N < private-broadcast-peertimeout.patch
+
       - name: Generate CTest configuration
         run: |
           cat << 'EOF' > ctest_config.cmake
@@ -232,6 +255,7 @@ jobs:
       - *ANNOTATE_WORKFLOW_INPUTS
       - *START_VM
       - *FETCH_SOURCE
+      - *PATCH_SOURCE
 
       - name: Build depends
         uses: hebasto/bitcoin-core-nightly/.github/actions/build-depends@main
