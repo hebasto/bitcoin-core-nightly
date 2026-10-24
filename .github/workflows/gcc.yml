@@ -86,17 +86,21 @@ jobs:
 
     steps:
       - name: Install dependencies
-        # Before the checkout, so that actions/checkout finds git.
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
-            git ca-certificates cmake ninja-build make curl patch pkg-config python3 bison file
+            ca-certificates cmake ninja-build make curl patch pkg-config python3 bison file
 
       - name: Checkout Bitcoin Core repo
-        id: checkout
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
+
+      - name: Get master branch commit hash
+        id: master_commit
+        # Without git available, the previous `actions/checkout` step downloaded
+        # the repository using the GitHub REST API instead of cloning it.
+        run: echo "commit=$(awk -F '"' '/^#define GIT_COMMIT_ID/ {print $2}' src/clientversion.cpp)" >> "$GITHUB_OUTPUT"
 
       - name: GCC version
         run: |
@@ -128,11 +132,10 @@ jobs:
           # workflow, so look at that run's own trigger: only a chain started
           # by "Manager" is a nightly run; a manual rebuild of the image is not.
           ctest_start(${{ case(github.event_name == 'workflow_run' && github.event.workflow_run.event == 'workflow_run', 'Nightly', format('Experimental GROUP {0}', github.event.workflow_run.event || github.event_name)) }})
-          set(CTEST_UPDATE_TYPE git)
-          # This command may be redundant once the following MR is merged:
-          # https://gitlab.kitware.com/cmake/cmake/-/merge_requests/12038
-          set(CTEST_UPDATE_COMMAND "${CMAKE_COMMAND} -E true")
-          set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.checkout.outputs.commit }}")
+          # CTest infers the VCS type from the update command's name. With
+          # CTEST_UPDATE_VERSION_OVERRIDE set, the command itself is never run.
+          set(CTEST_UPDATE_COMMAND git)
+          set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.master_commit.outputs.commit }}")
           ctest_update()
 
       - name: CDash -- Configure
