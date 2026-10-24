@@ -200,7 +200,7 @@ jobs:
         run: |
           COMMIT="$(awk -F '"' '/^#define GIT_COMMIT_ID/ {print $2}' bitcoin/src/clientversion.cpp)"
           echo "set(CTEST_UPDATE_VERSION_OVERRIDE $COMMIT)" >> ctest_update_version_override.cmake
-          cat << 'EOF' > ctest_start_upate.cmake
+          cat << 'EOF' > ctest_start_update.cmake
           include(ctest_config.cmake)
           ctest_start(${{ case(github.event_name == 'workflow_run', 'Nightly', format('Experimental GROUP {0}', github.event_name)) }})
           set(CTEST_UPDATE_TYPE git)
@@ -210,7 +210,7 @@ jobs:
           include(ctest_update_version_override.cmake)
           ctest_update()
           EOF
-          ctest --script ctest_start_upate.cmake
+          ctest --script ctest_start_update.cmake
           # A hack to work around the broken CTEST_UPDATE_VERSION_OVERRIDE.
           sed -i 's/\([[:blank:]]*\)<UpdateType>Unknown<\/UpdateType>/\1<UpdateType>GIT<\/UpdateType>\
             \1<Revision>'"$COMMIT"'<\/Revision>/' "build/Testing/$(head -1 build/Testing/TAG)/Update.xml"
