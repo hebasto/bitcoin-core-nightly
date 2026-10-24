@@ -72,6 +72,13 @@ jobs:
           ctest_start(APPEND)
           ctest_build(PARALLEL_LEVEL $ENV{NUMBER_OF_PROCESSORS})
 
+      - name: Fetch test data
+        run: |
+          $dir = "$env:GITHUB_WORKSPACE\qa-assets\unit_test_data"
+          "DIR_UNIT_TEST_DATA=$dir" >> $env:GITHUB_ENV
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          curl.exe --location --fail --output "$dir\script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
+
       - name: CDash -- Test
         shell: ctest --build-config Debug --script {0}
         run: |
