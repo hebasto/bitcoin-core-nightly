@@ -273,6 +273,12 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: df -h "$PWD"
 
+      - name: Check VM memory
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          prtconf | grep 'Memory size'
+          swap -sh
+
       - name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
