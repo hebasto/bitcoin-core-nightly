@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   windows-native:
-    name: 'Windows x86_64, clang-cl'
+    name: 'Windows x86_64, clang-cl, no IPC'
     runs-on: windows-2025-vs2026
     defaults:
       run:
@@ -50,7 +50,7 @@ jobs:
         run: |
           $config = @'
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "Windows x86_64, clang-cl")
+          set(CTEST_BUILD_NAME "Windows x86_64, clang-cl, no IPC")
           set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Visual Studio 18 2026")

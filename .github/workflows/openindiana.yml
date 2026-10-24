@@ -35,7 +35,7 @@ env:
 
 jobs:
   openindiana:
-    name: 'OpenIndiana: system libs, no GUI'
+    name: 'OpenIndiana, no GUI'
     runs-on: ubuntu-latest
     defaults:
       run:
