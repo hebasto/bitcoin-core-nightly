@@ -13,6 +13,6 @@
 ## Workflows
 
 - Invoke GNU Make as `gmake`.
-- Pin runner labels explicitly (e.g. `ubuntu-26.04`, `ubuntu-26.04-arm`), not `*-latest`.
+- Pin runner labels explicitly (e.g. `ubuntu-26.04`, `ubuntu-26.04-arm`) for jobs that build on the host. Jobs that run in a `container:` or boot a VM via vmactions use `ubuntu-latest`, since the host image does not affect the build.
 - Pass `HOST=` to depends only when cross-compiling.
 - Nightly workflows chain on `Manager` via `workflow_run` and report to CDash; see `clang.yml` for the reference layout.
