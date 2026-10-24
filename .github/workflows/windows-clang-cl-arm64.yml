@@ -54,6 +54,7 @@ jobs:
           set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Visual Studio 18 2026")
+          cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
           '@
           Set-Content -Path "ctest_config.cmake" -Value $config -Encoding utf8
 
@@ -93,7 +94,7 @@ jobs:
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
-          ctest_build(PARALLEL_LEVEL $ENV{NUMBER_OF_PROCESSORS})
+          ctest_build(PARALLEL_LEVEL ${nproc})
 
       - name: Fetch test data
         run: |
@@ -108,7 +109,7 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
           ctest_test(
-            PARALLEL_LEVEL $ENV{NUMBER_OF_PROCESSORS}
+            PARALLEL_LEVEL ${nproc}
             RETURN_VALUE test_result
           )
           # ctest_test() does not fail the script when tests fail.
