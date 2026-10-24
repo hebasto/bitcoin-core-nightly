@@ -79,8 +79,8 @@ jobs:
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           set(configure_opts
-            "--preset dev-mode"
             "--toolchain depends/x86_64-pc-linux-gnu/toolchain.cmake"
+            "--preset dev-mode"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
           ctest_start(APPEND)

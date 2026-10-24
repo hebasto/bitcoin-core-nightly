@@ -140,8 +140,8 @@ jobs:
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           set(configure_opts
-            "--preset dev-mode"
             "--toolchain depends/${{ matrix.host }}/toolchain.cmake"
+            "--preset dev-mode"
             "-DBUILD_GUI=OFF"
             # Known false positives with gcc-17-20261018 (identical on x86_64 and arm64):
             #  - boost/multi_index/detail/bucket_array.hpp:165: '__builtin_memset' specified bound
