@@ -118,7 +118,15 @@ jobs:
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
-          ctest_test(PARALLEL_LEVEL ${nproc})
+          ctest_test(
+            PARALLEL_LEVEL ${nproc}
+            RETURN_VALUE test_result
+          )
+          # ctest_test() does not fail the script when tests fail.
+          # The only signal is RETURN_VALUE (0 == all tests passed).
+          if(NOT test_result EQUAL 0)
+            message(FATAL_ERROR "Tests failed: RETURN_VALUE=${test_result}")
+          endif()
 
       - name: CDash -- Submit
         if: always()
