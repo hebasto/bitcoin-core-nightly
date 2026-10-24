@@ -35,7 +35,7 @@ env:
 
 jobs:
   omnios:
-    name: 'OmniOS ${{ matrix.name }}'
+    name: 'OmniOS ${{ matrix.name }}, no GUI, no ZMQ'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -166,7 +166,7 @@ jobs:
         run: |
           cat << 'EOF' > ctest_config.cmake
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "OmniOS ${{ matrix.name }}, no GUI")
+          set(CTEST_BUILD_NAME "OmniOS ${{ matrix.name }}, no GUI, no ZMQ")
           set(CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/bitcoin")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Ninja")
