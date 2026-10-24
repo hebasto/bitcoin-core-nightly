@@ -4,12 +4,6 @@ on:
     paths:
       - '.github/workflows/gcc.yml'
   workflow_dispatch:
-    inputs:
-      skip_functional_tests:
-        description: 'Skip functional tests'
-        required: true
-        default: false
-        type: boolean
   workflow_run:
     # Chained on the "GCC snapshot" workflow (which itself follows "Manager"),
     # so that the freshly published snapshot image is used.
