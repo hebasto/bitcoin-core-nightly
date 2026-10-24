@@ -78,7 +78,7 @@ jobs:
               developer/pkg-config \
               runtime/python-313
             pkg list -H -o name,publisher,version > packages_after
-            diff -w packages_before packages_after | grep '^>'
+            diff -w packages_before packages_after | grep '^>' || true
           sync: no
           disable-cache: true
 
