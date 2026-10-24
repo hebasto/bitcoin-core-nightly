@@ -43,6 +43,9 @@ jobs:
         run: |
           zypper --non-interactive install --allow-downgrade gawk boost-devel sqlite3-devel libcapnp-devel capnproto zeromq-devel systemtap-sdt-devel qt6-base-devel qt6-tools-devel qt6-linguist-devel qrencode-devel cmake ninja clang llvm
 
+      - name: Clang version
+        run: clang -v 2>&1 | tee clang_version.txt
+
       - name: Get master branch commit hash
         id: master_commit
         # Without git available, the previous `actions/checkout` step downloaded
@@ -134,6 +137,7 @@ jobs:
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
+          set(CTEST_NOTES_FILES "$ENV{GITHUB_WORKSPACE}/clang_version.txt")
           ctest_submit()
 
       - name: Run functional tests

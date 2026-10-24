@@ -16,3 +16,4 @@
 - Pin runner labels explicitly (e.g. `ubuntu-26.04`, `ubuntu-26.04-arm`) for jobs that build on the host. Jobs that run in a `container:` or boot a VM via vmactions use `ubuntu-latest`, since the host image does not affect the build.
 - Pass `HOST=` to depends only when cross-compiling.
 - Nightly workflows chain on `Manager` via `workflow_run` and report to CDash; see `clang.yml` for the reference layout.
+- Attach the compiler's `-v` output as a CDash note (`CTEST_NOTES_FILES`) only where the toolchain is not fixed by the build name: compiler snapshots, rolling releases, and compilers from third-party package repositories. For pinned OS releases, CMake's compiler identification in the configure output is enough.
