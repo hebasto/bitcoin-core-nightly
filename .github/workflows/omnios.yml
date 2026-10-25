@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   omnios:
-    name: 'OmniOS ${{ matrix.name }}, no GUI, no ZMQ'
+    name: 'OmniOS ${{ matrix.name }}, no GUI'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -145,6 +145,32 @@ jobs:
           ./configure --without-fibers
           make -j $(getconf NPROCESSORS_ONLN) install
 
+      # The OmniOS IPS repositories do not ship a ZeroMQ package.
+      - name: Build ZeroMQ
+        env:
+          ZEROMQ_VERSION: '4.3.5'
+        run: |
+          set -e
+          curl --location --fail --remote-name https://github.com/zeromq/libzmq/releases/download/v${{ env.ZEROMQ_VERSION }}/zeromq-${{ env.ZEROMQ_VERSION }}.tar.gz
+          tar xf zeromq-${{ env.ZEROMQ_VERSION }}.tar.gz
+          cmake -S zeromq-${{ env.ZEROMQ_VERSION }} -B build-zeromq -G Ninja \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.16 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DWITH_DOCS=OFF \
+            -DWITH_LIBSODIUM=OFF \
+            -DENABLE_CURVE=OFF \
+            -DENABLE_DRAFTS=OFF \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_STATIC=OFF \
+            -DWITH_PERF_TOOL=OFF \
+            `# libzmq's CMake build does not link the Solaris networking libraries.` \
+            -DCMAKE_SHARED_LINKER_FLAGS="-lsocket -lnsl"
+          cmake --build build-zeromq -j $(getconf NPROCESSORS_ONLN)
+          cmake --install build-zeromq
+          # The 64-bit runtime linker does not search /usr/local/lib by
+          # default, and pyzmq loads libzmq.so from there.
+          crle -64 -u -l /usr/local/lib
+
       - name: Fetch source tarball
         run: |
           set -e
@@ -162,7 +188,7 @@ jobs:
         run: |
           cat << 'EOF' > ctest_config.cmake
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "OmniOS ${{ matrix.name }}, no GUI, no ZMQ")
+          set(CTEST_BUILD_NAME "OmniOS ${{ matrix.name }}, no GUI")
           set(CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/bitcoin")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Ninja")
@@ -195,8 +221,6 @@ jobs:
             "--preset dev-mode"
             "-Wno-error=dev"
             "-DBUILD_GUI=OFF"
-            # The default OmniOS IPS repositories do not ship a ZeroMQ package.
-            "-DWITH_ZMQ=OFF"
             "-DWITH_USDT=OFF"
             "-DCMAKE_PREFIX_PATH=/usr/local"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
@@ -257,6 +281,16 @@ jobs:
           ctest_submit()
           EOF
           ctest --script ctest_submit.cmake
+
+      - name: Install Python packages for functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          set -e
+          export PIP_ROOT_USER_ACTION=ignore
+          python3.13 -m ensurepip
+          python3.13 -m pip install setuptools wheel
+          python3.13 -m pip install pyzmq
+          python3.13 -c "import zmq; print(f'pyzmq {zmq.__version__} / libzmq {zmq.zmq_version()}')"
 
       - name: Check host disk space
         if: ${{ ! inputs.skip_functional_tests }}
