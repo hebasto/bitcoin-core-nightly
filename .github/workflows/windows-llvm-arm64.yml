@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/windows-llvm-arm64.yml'
+      - 'patches/windows-arm64-zeromq.patch'
   workflow_dispatch:
     inputs:
       skip_functional_tests:
@@ -35,6 +36,18 @@ jobs:
         with:
           repository: bitcoin/bitcoin
 
+      - name: Checkout this repo
+        uses: actions/checkout@v7
+        with:
+          path: nightly
+
+      # libzmq 4.3.5 does not build for aarch64-w64-mingw32 with a
+      # GCC-compatible compiler. The fix is in libzmq master but not in any
+      # release, and is carried here rather than upstream because Bitcoin
+      # Core neither builds nor tests this platform.
+      - name: Patch depends
+        run: git apply --verbose nightly/patches/windows-arm64-zeromq.patch
+
       - name: Install LLVM MinGW toolchain
         run: |
           curl -L -o llvm_mingw_toolchain.tar.gz ${{ env.CI_LLVM_MINGW_URL }}
@@ -45,7 +58,7 @@ jobs:
 
       - name: Build depends
         run: |
-          gmake -C depends -j $(nproc) HOST=${{ env.CI_HOST }} CC=${{ env.CI_HOST }}-clang CXX=${{ env.CI_HOST }}-clang++ NO_QT=1 NO_ZMQ=1 LOG=1
+          gmake -C depends -j $(nproc) HOST=${{ env.CI_HOST }} CC=${{ env.CI_HOST }}-clang CXX=${{ env.CI_HOST }}-clang++ NO_QT=1 LOG=1
 
       - name: Generate buildsystem
         run: |
