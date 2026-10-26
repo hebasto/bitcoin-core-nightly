@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/windows-llvm-x86_64.yml'
+      - 'patches/windows-fopen-noinherit.patch'
   workflow_dispatch:
     inputs:
       skip_functional_tests:
@@ -34,6 +35,19 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
+
+      - name: Checkout this repo
+        uses: actions/checkout@v7
+        with:
+          path: nightly
+
+      # Files opened via fsbridge::fopen() are inherited by the -*notify child
+      # processes, which can keep debug.log open after bitcoind has exited and
+      # make the functional test framework's cleanup fail with WinError 32.
+      # Temporary until https://github.com/bitcoin/bitcoin/issues/36668 is
+      # resolved upstream.
+      - name: Patch Bitcoin Core
+        run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
 
       - name: Install LLVM MinGW toolchain
         run: |
