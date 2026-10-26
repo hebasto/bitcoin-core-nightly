@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/windows-clang-cl-arm64.yml'
+      - 'patches/windows-fopen-noinherit.patch'
   workflow_dispatch:
     inputs:
       skip_functional_tests:
@@ -39,6 +40,19 @@ jobs:
           repository: bitcoin/bitcoin
           ref: refs/pull/31507/merge
           fetch-depth: 2
+
+      - name: Checkout this repo
+        uses: actions/checkout@v7
+        with:
+          path: nightly
+
+      # Files opened via fsbridge::fopen() are inherited by the -*notify child
+      # processes, which can keep debug.log open after bitcoind has exited and
+      # make the functional test framework's cleanup fail with WinError 32.
+      # Temporary until https://github.com/bitcoin/bitcoin/issues/36668 is
+      # resolved upstream.
+      - name: Patch Bitcoin Core
+        run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
 
       - name: Get master branch commit hash
         id: master_commit

@@ -1,0 +1,17 @@
+diff --git a/src/util/fs.cpp b/src/util/fs.cpp
+index 88966ab..41eefcb 100644
+--- a/src/util/fs.cpp
++++ b/src/util/fs.cpp
+@@ -25,7 +25,11 @@ FILE *fopen(const fs::path& p, const char *mode)
+ #ifndef WIN32
+     return ::fopen(p.c_str(), mode);
+ #else
+-    return ::fopen(p.utf8string().c_str(), mode);
++    // Open files non-inheritable, so that child processes (the -*notify
++    // commands, the external signer) do not receive copies of the node's open
++    // files and keep them open after the node has exited.
++    // See https://github.com/bitcoin/bitcoin/issues/36668.
++    return ::fopen(p.utf8string().c_str(), (std::string{mode} + 'N').c_str());
+ #endif
+ }
+ 
