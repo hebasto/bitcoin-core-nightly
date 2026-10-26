@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/windows-llvm-arm64.yml'
+      - 'patches/windows-alertnotify-debug-log-lock.patch'
       - 'patches/windows-arm64-zeromq.patch'
   workflow_dispatch:
     inputs:
@@ -103,6 +104,18 @@ jobs:
         with:
           repository: bitcoin/bitcoin
 
+      - name: Checkout this repo
+        uses: actions/checkout@v7
+        with:
+          path: nightly
+
+      # Reproducer for the intermittent cleanup failure seen in the nightly
+      # run of 2026-10-26: the -alertnotify child outlives bitcoind and holds
+      # the inherited debug.log handle, so shutil.rmtree() fails with
+      # WinError 32. The test is expected to FAIL while this patch is applied.
+      - name: Patch the functional test
+        run: git apply --verbose nightly/patches/windows-alertnotify-debug-log-lock.patch
+
       - name: Download built executables
         uses: actions/download-artifact@v8
         with:
@@ -137,9 +150,7 @@ jobs:
           PYTHONUTF8: 1
         run: |
           py -3 -m pip install pyzmq
-          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
+          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=4000 \
             --tmpdirprefix "$RUNNER_TEMP" \
-            --extended \
-            `# See https://github.com/hebasto/bitcoin-core-nightly/issues/213.` \
-            --exclude wallet_multiwallet \
+            feature_versionbits_warning.py \
             --timeout-factor=40

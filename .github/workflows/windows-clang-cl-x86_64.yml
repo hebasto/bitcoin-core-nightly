@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/windows-clang-cl-x86_64.yml'
+      - 'patches/windows-alertnotify-debug-log-lock.patch'
   workflow_dispatch:
     inputs:
       skip_functional_tests:
@@ -21,7 +22,7 @@ concurrency:
 
 jobs:
   windows-native:
-    name: 'Windows x86_64, clang-cl, no IPC'
+    name: 'Windows x86_64, clang-cl, no GUI, no IPC'
     runs-on: windows-2025-vs2026
     defaults:
       run:
@@ -31,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           Add-Content -Path "$env:VCPKG_INSTALLATION_ROOT\triplets\x64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
-          vcpkg install boost-multi-index boost-test sqlite3[core] zeromq qtbase[core,gui,network,png,testlib,widgets] qttools libqrencode
+          vcpkg install boost-multi-index boost-test sqlite3[core] zeromq
 
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v7
@@ -39,6 +40,18 @@ jobs:
           repository: bitcoin/bitcoin
           ref: refs/pull/31507/merge
           fetch-depth: 2
+
+      - name: Checkout this repo
+        uses: actions/checkout@v7
+        with:
+          path: nightly
+
+      # Reproducer for the intermittent cleanup failure seen in the nightly
+      # run of 2026-10-26: the -alertnotify child outlives bitcoind and holds
+      # the inherited debug.log handle, so shutil.rmtree() fails with
+      # WinError 32. The test is expected to FAIL while this patch is applied.
+      - name: Patch the functional test
+        run: git apply --verbose nightly/patches/windows-alertnotify-debug-log-lock.patch
 
       - name: Get master branch commit hash
         id: master_commit
@@ -50,7 +63,7 @@ jobs:
         run: |
           $config = @'
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "Windows x86_64, clang-cl, no IPC")
+          set(CTEST_BUILD_NAME "Windows x86_64, clang-cl, no GUI, no IPC")
           set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Visual Studio 18 2026")
@@ -80,6 +93,7 @@ jobs:
           set(configure_opts
             "-T ClangCL"
             "--preset dev-mode"
+            "-DBUILD_GUI=OFF"
             "-DWITH_USDT=OFF"
             "--toolchain $ENV{VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
             "-DVCPKG_MANIFEST_MODE=OFF"
@@ -142,7 +156,7 @@ jobs:
         shell: bash
         run: |
           py -3 -m pip install pyzmq
-          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
+          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=4000 \
             --tmpdirprefix "$RUNNER_TEMP" \
-            --extended \
+            feature_versionbits_warning.py \
             --timeout-factor=40

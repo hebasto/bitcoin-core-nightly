@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/windows-msvc-x86_64.yml'
+      - 'patches/windows-alertnotify-debug-log-lock.patch'
   workflow_dispatch:
   workflow_run:
     workflows: ["Manager"]
@@ -15,7 +16,7 @@ concurrency:
 
 jobs:
   windows-native:
-    name: 'Windows x86_64, MSVC, no IPC, Debug'
+    name: 'Windows x86_64, MSVC, no GUI, no IPC, Debug'
     runs-on: windows-2025-vs2026
     defaults:
       run:
@@ -24,18 +25,30 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          vcpkg install boost-multi-index boost-test sqlite3[core] zeromq qtbase[core,gui,network,png,testlib,widgets] qttools libqrencode
+          vcpkg install boost-multi-index boost-test sqlite3[core] zeromq
 
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
 
+      - name: Checkout this repo
+        uses: actions/checkout@v7
+        with:
+          path: nightly
+
+      # Reproducer for the intermittent cleanup failure seen in the nightly
+      # run of 2026-10-26: the -alertnotify child outlives bitcoind and holds
+      # the inherited debug.log handle, so shutil.rmtree() fails with
+      # WinError 32. The test is expected to FAIL while this patch is applied.
+      - name: Patch the functional test
+        run: git apply --verbose nightly/patches/windows-alertnotify-debug-log-lock.patch
+
       - name: Generate CTest configuration
         run: |
           $config = @'
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "Windows x86_64, MSVC, no IPC, Debug")
+          set(CTEST_BUILD_NAME "Windows x86_64, MSVC, no GUI, no IPC, Debug")
           set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Visual Studio 18 2026")
@@ -58,6 +71,7 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           set(configure_opts
             "--preset dev-mode"
+            "-DBUILD_GUI=OFF"
             "-DWITH_USDT=OFF"
             "--toolchain $ENV{VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
             "-DVCPKG_MANIFEST_MODE=OFF"
@@ -102,3 +116,23 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
           ctest_submit()
+
+      - name: Run functional tests
+        working-directory: build
+        env:
+          PYTHONUTF8: 1
+          BITCOIN_BIN: '${{ github.workspace }}\build\bin\Debug\bitcoin.exe'
+          BITCOIND: '${{ github.workspace }}\build\bin\Debug\bitcoind.exe'
+          BITCOINCLI: '${{ github.workspace }}\build\bin\Debug\bitcoin-cli.exe'
+          BITCOIN_BENCH: '${{ github.workspace }}\build\bin\Debug\bench_bitcoin.exe'
+          BITCOINTX: '${{ github.workspace }}\build\bin\Debug\bitcoin-tx.exe'
+          BITCOINUTIL: '${{ github.workspace }}\build\bin\Debug\bitcoin-util.exe'
+          BITCOINWALLET: '${{ github.workspace }}\build\bin\Debug\bitcoin-wallet.exe'
+          BITCOINCHAINSTATE: '${{ github.workspace }}\build\bin\Debug\bitcoin-chainstate.exe'
+        shell: bash
+        run: |
+          py -3 -m pip install pyzmq
+          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=4000 \
+            --tmpdirprefix "$RUNNER_TEMP" \
+            feature_versionbits_warning.py \
+            --timeout-factor=40
