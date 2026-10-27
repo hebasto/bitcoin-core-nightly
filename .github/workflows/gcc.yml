@@ -133,8 +133,12 @@ jobs:
           # by "Manager" is a nightly run; a manual rebuild of the image is not.
           ctest_start(${{ case(github.event_name == 'workflow_run' && github.event.workflow_run.event == 'workflow_run', 'Nightly', format('Experimental GROUP {0}', github.event.workflow_run.event || github.event_name)) }})
           # CTest infers the VCS type from the update command's name. With
-          # CTEST_UPDATE_VERSION_OVERRIDE set, the command itself is never run.
-          set(CTEST_UPDATE_COMMAND git)
+          # CTEST_UPDATE_VERSION_OVERRIDE set no update runs, but CTest still
+          # invokes the command to list local modifications and reports any as
+          # an update error. The command deliberately does not exist, so that
+          # check is skipped on every runner, whether or not git is installed
+          # and whether or not the tree has been patched.
+          set(CTEST_UPDATE_COMMAND not-run/git)
           set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.master_commit.outputs.commit }}")
           ctest_update()
 
