@@ -84,27 +84,44 @@ jobs:
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
 
       - &PATCH_SOURCE
-        # `p2p_private_broadcast_retry_v1.py` fails intermittently on OpenBSD:
-        # one of the `addnode onetry` connections through the Python SOCKS5
-        # proxy never completes its handshake and, with the framework's
-        # `peertimeout=999999999`, bitcoind never drops it nor retries that
-        # address, so the test waits until its own timeout.
-        # See https://github.com/bitcoin/bitcoin/issues/36099.
+        # Revert bitcoin/bitcoin@59ebf558f3458bbc9038c7bf2958f2f224485ee1,
+        # which makes port-0 listeners request `IP_PORTRANGE_HIGH`
+        # (49152-65535) on OpenBSD. The functional tests are run with
+        # `TEST_RUNNER_PORT_MIN=49152` below, so the framework's static
+        # ports live in that high range and the helper would steer the
+        # dynamic listeners straight into them. See the "Run functional
+        # tests" step.
         # TODO: Drop this step once the fix is merged upstream.
         name: Patch functional tests
         run: |
           set -e
-          cat << 'EOF' > private-broadcast-peertimeout.patch
-          --- a/test/functional/p2p_private_broadcast_retry_v1.py
-          +++ b/test/functional/p2p_private_broadcast_retry_v1.py
-          @@ -144,4 +144,5 @@ class P2PPrivateBroadcastRetryV1(BitcoinTestFramework):
-                           "-test=addrman",
-                           "-v2transport=0",
-          +                f"-peertimeout={int(10 * self.options.timeout_factor)}",
-                       ],
-                   ]
+          cat << 'EOF' > revert-openbsd-ip-portrange-high.patch
+          --- a/test/functional/test_framework/netutil.py
+          +++ b/test/functional/test_framework/netutil.py
+          @@ -236,16 +236,15 @@ def format_sock(sock, *, local):
+           
+           
+           def set_ephemeral_port_range(sock):
+          -    '''On FreeBSD and OpenBSD, set socket to use the high ephemeral port range (49152-65535).
+          +    '''On FreeBSD, set socket to use the high ephemeral port range (49152-65535).
+           
+          -    The default ephemeral port ranges on FreeBSD (10000-65535) and
+          -    OpenBSD (1024-49151) overlap with the test framework's static port
+          -    range starting at TEST_RUNNER_PORT_MIN (default=11000).
+          +    FreeBSD's default ephemeral port range (10000-65535) overlaps with the test
+          +    framework's static port range starting at TEST_RUNNER_PORT_MIN (default=11000).
+               Using IP_PORTRANGE_HIGH avoids this overlap when binding to port 0 for dynamic
+               port allocation.
+               '''
+          -    if sys.platform.startswith(("freebsd", "openbsd")):
+          -        # Constants from FreeBSD/OpenBSD's netinet/in.h and netinet6/in6.h
+          +    if sys.platform.startswith('freebsd'):
+          +        # Constants from FreeBSD's netinet/in.h and netinet6/in6.h
+                   IP_PORTRANGE = 19
+                   IPV6_PORTRANGE = 14
+                   IP_PORTRANGE_HIGH = 1  # Same value for both IPv4 and IPv6
           EOF
-          patch -d /home/bitcoin -p1 -N < private-broadcast-peertimeout.patch
+          patch -d /home/bitcoin -p1 -N < revert-openbsd-ip-portrange-high.patch
 
       - name: Generate CTest configuration
         run: |
@@ -242,6 +259,15 @@ jobs:
           # Unbuffered stdout prints "Remaining jobs: ..." in order, which
           # helps to identify hung tests.
           export PYTHONUNBUFFERED=1
+          # OpenBSD hands out ephemeral ports from 1024-49151 by default, which
+          # overlaps with the framework's static port range (three blocks of
+          # 5000 ports starting at TEST_RUNNER_PORT_MIN, default 11000). Any
+          # kernel-chosen local port, including bitcoind's own outbound
+          # connections, can then collide with a node's fixed P2P/RPC/Tor
+          # port and fail a later bind with "Address already in use".
+          # Move the static range above the ephemeral one: 49152-64151 fits
+          # below 65535.
+          export TEST_RUNNER_PORT_MIN=49152
           /home/build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
             --tmpdirprefix /home \
             --extended \
