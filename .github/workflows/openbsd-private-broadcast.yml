@@ -1,0 +1,176 @@
+name: OpenBSD private broadcast diagnostics
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/openbsd-private-broadcast.yml'
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: 'How many times to run the private broadcast tests'
+        required: true
+        default: 30
+        type: number
+      timeout_factor:
+        description: 'Functional test --timeout-factor'
+        required: true
+        default: 8
+        type: number
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI_NCPU: 4
+
+jobs:
+  diag:
+    name: 'OpenBSD ${{ matrix.release }}, private broadcast diagnostics'
+    runs-on: ubuntu-latest
+    env:
+      PACKAGES: 'boost'
+    defaults:
+      run:
+        shell: openbsd {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        release: ['7.9', '8.0']
+
+    steps:
+      - name: Start OpenBSD ${{ matrix.release }} VM
+        uses: vmactions/openbsd-vm@v1
+        with:
+          release: ${{ matrix.release }}
+          prepare: pkg_add -U -v curl gtar-- cmake-core ninja python%3 ${{ env.PACKAGES }}
+          sync: no
+          disable-cache: true
+
+      - name: Fetch source tarball
+        run: |
+          set -e
+          curl --location --fail --output source.tar.gz https://github.com/bitcoin/bitcoin/archive/refs/heads/master.tar.gz
+          mkdir /home/bitcoin
+          gtar -xf source.tar.gz -C /home/bitcoin --strip-components=1
+          rm -rf source.tar.gz
+          awk -F '"' '/^#define GIT_COMMIT_ID/ {print "::notice title=bitcoin/bitcoin::" $2}' /home/bitcoin/src/clientversion.cpp
+
+      # Instrument the functional test framework to capture, at the moment a
+      # wait_until() times out, the state of every party that can hold the
+      # bytes of a stalled connection proxied through the Python SOCKS5 server:
+      #  - the stacks of all Python threads (proxy handler threads included);
+      #  - `netstat -an -p tcp`, i.e. the receive and send queues of every TCP
+      #    socket in the VM, to see whether unread bytes sit in bitcoind's
+      #    socket to the proxy, in the proxy's socket to the Python listener,
+      #    or nowhere;
+      #  - `fstat`, to map sockets to processes and file descriptors;
+      #  - `ps -H` with the kernel wait channel of every thread, to see which
+      #    syscall a stuck thread sleeps in;
+      #  - `getpeerinfo` of every node, for bytessent/bytesrecv per peer.
+      # See https://github.com/bitcoin/bitcoin/issues/36099.
+      - name: Instrument functional tests
+        run: |
+          set -e
+          cat << 'EOF' > instrument.py
+          import pathlib
+          import sys
+
+          root = pathlib.Path("/home/bitcoin/test/functional")
+
+          def replace(relpath, old, new, count=1):
+              path = root / relpath
+              text = path.read_text()
+              if text.count(old) != count:
+                  sys.exit(f"{path}: expected {count} occurrence(s) of {old!r}, found {text.count(old)}")
+              path.write_text(text.replace(old, new))
+              print(f"patched {path}")
+
+          replace("test_framework/util.py",
+                  "import hashlib\n",
+                  "import faulthandler\nimport hashlib\nimport subprocess\nimport tempfile\n")
+          replace("test_framework/util.py",
+                  '    logger.error("wait_until() failed. Predicate: {}".format(predicate_source))\n',
+                  '    logger.error("wait_until() failed. Predicate: {}".format(predicate_source))\n'
+                  '    dump_diagnostics()\n')
+          replace("test_framework/util.py",
+                  "def wait_until_helper_internal(",
+                  'def dump_diagnostics():\n'
+                  '    """Log the state of all Python threads and of all TCP sockets in the system."""\n'
+                  '    try:\n'
+                  '        with tempfile.TemporaryFile(mode="w+") as f:\n'
+                  '            faulthandler.dump_traceback(file=f, all_threads=True)\n'
+                  '            f.seek(0)\n'
+                  '            logger.error("DIAG python threads (pid %d):\\n%s", os.getpid(), f.read())\n'
+                  '    except Exception as e:\n'
+                  '        logger.error("DIAG python threads failed: %s", e)\n'
+                  '    for cmd in (["netstat", "-an", "-p", "tcp"], ["fstat"], ["ps", "-axH", "-o", "pid,tid,wchan,state,command"]):\n'
+                  '        try:\n'
+                  '            out = subprocess.run(cmd, capture_output=True, text=True, timeout=60).stdout\n'
+                  '            if cmd[0] == "fstat":\n'
+                  '                out = "\\n".join(l for l in out.splitlines() if "internet" in l or "USER" in l)\n'
+                  '            elif cmd[0] == "ps":\n'
+                  '                out = "\\n".join(l for l in out.splitlines() if "python" in l or "bitcoind" in l or "WCHAN" in l)\n'
+                  '            logger.error("DIAG %s:\\n%s", " ".join(cmd), out)\n'
+                  '        except Exception as e:\n'
+                  '            logger.error("DIAG %s failed: %s", " ".join(cmd), e)\n'
+                  '\n\n'
+                  'def wait_until_helper_internal(')
+          replace("test_framework/test_framework.py",
+                  '            self.log.exception("Unexpected exception:")\n'
+                  '            self.success = TestStatus.FAILED\n',
+                  '            self.log.exception("Unexpected exception:")\n'
+                  '            self.success = TestStatus.FAILED\n'
+                  '            for node in self.nodes:\n'
+                  '                try:\n'
+                  '                    self.log.error("DIAG node%d pid %d getpeerinfo: %s", node.index, node.process.pid,\n'
+                  '                                   json.dumps(node.getpeerinfo(), indent=1, default=str))\n'
+                  '                except Exception as e:\n'
+                  '                    self.log.error("DIAG node%d getpeerinfo failed: %s", node.index, e)\n')
+          replace("test_framework/test_framework.py",
+                  "import configparser\n",
+                  "import configparser\nimport json\n")
+          EOF
+          python3 instrument.py
+
+      - name: Configure and build
+        run: |
+          set -e
+          # Only bitcoind and bitcoin-cli are needed by the two tests.
+          cmake -S /home/bitcoin -B /home/build -G Ninja \
+            -DENABLE_WALLET=OFF -DENABLE_IPC=OFF -DBUILD_TESTS=OFF -DBUILD_TX=OFF -DBUILD_UTIL=OFF
+          cmake --build /home/build -j ${{ env.CI_NCPU }}
+          /home/build/bin/bitcoind -version | head -1
+
+      - name: Run private broadcast tests in a loop
+        run: |
+          set +e
+          ulimit -n 1024
+          export PYTHONUNBUFFERED=1
+          iterations=${{ inputs.iterations || 30 }}
+          timeout_factor=${{ inputs.timeout_factor || 8 }}
+          i=0
+          status=0
+          while [ "$i" -lt "$iterations" ]; do
+            i=$((i + 1))
+            echo "::group::Iteration $i of $iterations"
+            /home/build/test/functional/test_runner.py p2p_private_broadcast.py p2p_private_broadcast_retry_v1.py \
+              -j 2 --combinedlogslen=0 --tmpdirprefix /home --timeout-factor="$timeout_factor"
+            status=$?
+            echo "::endgroup::"
+            if [ "$status" -ne 0 ]; then
+              echo "::error::Iteration $i failed"
+              break
+            fi
+            rm -rf /home/test_runner_*
+          done
+          if [ "$status" -ne 0 ]; then
+            # The combined log minus the categories that drown the network events.
+            for d in /home/test_runner_*/p2p_private_broadcast*; do
+              [ -d "$d" ] || continue
+              echo "::group::Combined log of $d (filtered)"
+              python3 /home/bitcoin/test/functional/combine_logs.py "$d" | \
+                grep -v -E '\[(http|rpc|addrman|leveldb|bench|coindb|validation|mempool|estimatefee)\]|\[http\.[0-9]+\]|ThreadRPCServer'
+              echo "::endgroup::"
+            done
+          fi
+          exit "$status"
