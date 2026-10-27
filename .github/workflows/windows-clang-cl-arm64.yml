@@ -46,14 +46,6 @@ jobs:
         with:
           path: nightly
 
-      # Files opened via fsbridge::fopen() are inherited by the -*notify child
-      # processes, which can keep debug.log open after bitcoind has exited and
-      # make the functional test framework's cleanup fail with WinError 32.
-      # Temporary until https://github.com/bitcoin/bitcoin/issues/36668 is
-      # resolved upstream.
-      - name: Patch Bitcoin Core
-        run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
-
       - name: Get master branch commit hash
         id: master_commit
         run: |
@@ -80,6 +72,15 @@ jobs:
           find_program(CTEST_GIT_COMMAND git REQUIRED)
           set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.master_commit.outputs.commit }}")
           ctest_update()
+
+      # Files opened via fsbridge::fopen() are inherited by the -*notify child
+      # processes, which can keep debug.log open after bitcoind has exited and
+      # make the functional test framework's cleanup fail with WinError 32.
+      # Temporary until https://github.com/bitcoin/bitcoin/issues/36668 is
+      # resolved upstream. Applied after ctest_update(), which would otherwise
+      # report the patched file as a modification to CDash.
+      - name: Patch Bitcoin Core
+        run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
 
       - name: CDash -- Configure
         shell: ctest --build-config Release --extra-verbose --script {0}
