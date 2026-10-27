@@ -84,17 +84,29 @@ jobs:
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
 
       - &PATCH_SOURCE
-        # `p2p_private_broadcast_retry_v1.py` fails intermittently on OpenBSD:
-        # one of the `addnode onetry` connections through the Python SOCKS5
-        # proxy never completes its handshake and, with the framework's
+        # The `p2p_private_broadcast*` tests fail intermittently on OpenBSD:
+        # one of the connections through the Python SOCKS5 proxy never
+        # completes its handshake and, with the framework's
         # `peertimeout=999999999`, bitcoind never drops it nor retries that
-        # address, so the test waits until its own timeout.
-        # See https://github.com/bitcoin/bitcoin/issues/36099.
-        # TODO: Drop this step once the fix is merged upstream.
+        # address, so the test waits until its own timeout. Starting bitcoind
+        # with a short `-peertimeout` hides that symptom; the cause is not
+        # understood yet. See https://github.com/bitcoin/bitcoin/issues/36099.
+        # `p2p_private_broadcast.py` cannot take the same patch: it advances
+        # mocktime by 20 minutes, which makes a short timeout disconnect the
+        # peers the test still needs.
+        # TODO: Drop this step once the issue is resolved upstream.
         name: Patch functional tests
         run: |
           set -e
           cat << 'EOF' > private-broadcast-peertimeout.patch
+          --- a/test/functional/p2p_private_broadcast_completion.py
+          +++ b/test/functional/p2p_private_broadcast_completion.py
+          @@ -45,4 +45,5 @@ class PrivateBroadcastCompletionTest(BitcoinTestFramework):
+                       "-privatebroadcast",
+                       f"-proxy={self.proxy.conf.addr[0]}:{self.proxy.conf.addr[1]}",
+          +            f"-peertimeout={int(10 * self.options.timeout_factor)}",
+                   ]]
+                   super().setup_nodes()
           --- a/test/functional/p2p_private_broadcast_retry_v1.py
           +++ b/test/functional/p2p_private_broadcast_retry_v1.py
           @@ -144,4 +144,5 @@ class P2PPrivateBroadcastRetryV1(BitcoinTestFramework):
