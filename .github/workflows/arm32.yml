@@ -1,0 +1,138 @@
+name: ARM32
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/arm32.yml'
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Manager"]
+    types: [requested]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  arm32:
+    # Cross-compiled on x86_64 and run under QEMU user-mode emulation, because
+    # GitHub's Arm runners no longer reliably provide a 32-bit execution mode
+    # (see bitcoin/bitcoin#36602 and bitcoin/bitcoin#36701). Slow, but
+    # deterministic.
+    name: 'ARM32, depends, qemu-user, no GUI'
+    runs-on: ubuntu-26.04
+    env:
+      HOST: arm-linux-gnueabihf
+      # Tells qemu-arm where the armhf dynamic loader and shared libraries
+      # live, so that the binfmt_misc handler can run the built executables
+      # transparently.
+      QEMU_LD_PREFIX: /usr/arm-linux-gnueabihf
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        id: checkout
+        uses: actions/checkout@v7
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Install dependencies
+        # qemu-user-binfmt registers the binfmt_misc handler for ARM binaries.
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends g++-arm-linux-gnueabihf qemu-user-binfmt
+
+      - name: Toolchain versions
+        run: |
+          ${HOST}-g++ --version
+          qemu-arm --version
+          cat /proc/sys/fs/binfmt_misc/qemu-arm
+
+      - name: Build depends
+        run: |
+          gmake -C depends -j $(nproc) HOST=${HOST} NO_QT=1 LOG=1
+
+      - name: Generate CTest configuration
+        run: |
+          cat << 'EOF' > ctest_config.cmake
+          set(CTEST_SITE "${{ github.repository }}")
+          set(CTEST_BUILD_NAME "ARM32, depends, qemu-user, no GUI")
+          set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
+          set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
+          set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
+          cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
+          EOF
+
+      - name: CDash -- Start & Update
+        shell: ctest --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(${{ case(github.event_name == 'workflow_run', 'Nightly', format('Experimental GROUP {0}', github.event_name)) }})
+          # CTest infers the VCS type from the update command's name. With
+          # CTEST_UPDATE_VERSION_OVERRIDE set no update runs, but CTest still
+          # invokes the command to list local modifications and reports any as
+          # an update error. The command deliberately does not exist, so that
+          # check is skipped on every runner, whether or not git is installed
+          # and whether or not the tree has been patched.
+          set(CTEST_UPDATE_COMMAND not-run/git)
+          set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.checkout.outputs.commit }}")
+          ctest_update()
+
+      - name: CDash -- Configure
+        shell: ctest --extra-verbose --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          # The compiler flags mirror the "32 bit ARM" job in bitcoin/bitcoin's
+          # ci/test/00_setup_env_arm.sh.
+          set(configure_opts
+            "--preset dev-mode"
+            "--toolchain depends/$ENV{HOST}/toolchain.cmake"
+            "-DBUILD_GUI=OFF"
+            "-DREDUCE_EXPORTS=ON"
+            "-DCMAKE_CXX_FLAGS=-Wno-psabi -Wno-error=maybe-uninitialized"
+            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+          )
+          ctest_start(APPEND)
+          ctest_configure(OPTIONS "${configure_opts}")
+
+      - name: CDash -- Build
+        shell: ctest --extra-verbose --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_build(PARALLEL_LEVEL ${nproc})
+
+      - name: Check 'bitcoind' executable
+        run: |
+          ls -l build/bin/bitcoind
+          file build/bin/bitcoind
+          build/bin/bitcoind -version
+
+      - name: Fetch test data
+        run: |
+          DIR_UNIT_TEST_DATA="$(pwd)/qa-assets/unit_test_data"
+          echo "DIR_UNIT_TEST_DATA=${DIR_UNIT_TEST_DATA}" >> "$GITHUB_ENV"
+          mkdir -p "$DIR_UNIT_TEST_DATA"
+          curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
+
+      - name: CDash -- Test
+        shell: ctest --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_test(
+            PARALLEL_LEVEL ${nproc}
+            RETURN_VALUE test_result
+          )
+          # ctest_test() does not fail the script when tests fail.
+          # The only signal is RETURN_VALUE (0 == all tests passed).
+          if(NOT test_result EQUAL 0)
+            message(FATAL_ERROR "Tests failed: RETURN_VALUE=${test_result}")
+          endif()
+
+      - name: CDash -- Submit
+        if: always()
+        shell: ctest --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_submit()
