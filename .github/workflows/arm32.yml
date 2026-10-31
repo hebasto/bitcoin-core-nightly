@@ -4,6 +4,12 @@ on:
     paths:
       - '.github/workflows/arm32.yml'
   workflow_dispatch:
+    inputs:
+      skip_functional_tests:
+        description: 'Skip functional tests'
+        required: true
+        default: false
+        type: boolean
   workflow_run:
     workflows: ["Manager"]
     types: [requested]
@@ -136,3 +142,19 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
           ctest_submit()
+
+      - name: Install functional test dependencies
+        if: ${{ ! inputs.skip_functional_tests }}
+        run: |
+          sudo apt-get install --no-install-recommends python3-zmq
+          pip install --break-system-packages pycapnp
+          python3 -c "import capnp; print(f'pycapnp {capnp.__version__} / libcapnp {capnp.version.LIBCAPNP_VERSION_MAJOR}.{capnp.version.LIBCAPNP_VERSION_MINOR}.{capnp.version.LIBCAPNP_VERSION_MICRO}')"
+          python3 -c "import zmq; print(f'pyzmq {zmq.__version__} / libzmq {zmq.zmq_version()}')"
+
+      - name: Run functional tests
+        if: ${{ ! inputs.skip_functional_tests }}
+        # The nodes run under emulation, hence the large timeout factor.
+        run: |
+          build/test/functional/test_runner.py -j $(($(nproc) * 2)) --combinedlogslen=99999999 \
+            --tmpdirprefix . \
+            --timeout-factor=40
