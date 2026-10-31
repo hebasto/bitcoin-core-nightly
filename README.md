@@ -37,7 +37,7 @@ The newest GCC development snapshot is built by the [GCC snapshot](https://githu
 
 | Host OS | Toolchain | Status | Notes |
 |---------|-----------|--------|-------|
-| Ubuntu 26.04, x86_64 | GCC, [`g++-arm-linux-gnueabihf`](https://packages.ubuntu.com/g++-arm-linux-gnueabihf) | [![ARM32](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/arm32.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/arm32.yml?query=event%3Aworkflow_run) | No GUI<br>Tests run under [QEMU](https://www.qemu.org/) user-mode emulation<br>No functional tests |
+| Ubuntu 26.04, x86_64 | GCC, [`g++-arm-linux-gnueabihf`](https://packages.ubuntu.com/g++-arm-linux-gnueabihf) | [![ARM32](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/arm32.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/arm32.yml?query=event%3Aworkflow_run) | No GUI<br>Tests run under [QEMU](https://www.qemu.org/) user-mode emulation |
 
 ## [musl](https://musl.libc.org/)-Based Systems
 
