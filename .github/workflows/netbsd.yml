@@ -303,6 +303,13 @@ jobs:
         shell: bash
         run: df -h
 
+      - &CHECK_VM_DISK_SPACE
+        name: Check VM disk space
+        if: ${{ ! inputs.skip_functional_tests }}
+        # The test datadirs go under the working directory (--tmpdirprefix),
+        # the initial chain cache under the default temporary directory.
+        run: df -h "$PWD" /tmp
+
       - &RUN_FUNCTIONAL_TESTS
         name: Run functional tests
         if: ${{ ! inputs.skip_functional_tests }}
@@ -312,7 +319,7 @@ jobs:
           # helps to identify hung tests.
           export PYTHONUNBUFFERED=1
           python3.13 build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
-            --tmpdirprefix . \
+            --tmpdirprefix "$PWD" \
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
@@ -320,7 +327,7 @@ jobs:
             --exclude p2p_invalid_messages \
             --timeout-factor=8
           python3.13 build/test/functional/test_runner.py p2p_invalid_messages --combinedlogslen=99999999 \
-            --tmpdirprefix . \
+            --tmpdirprefix "$PWD" \
             --timeout-factor=8
 
   netbsd-depends:
@@ -392,4 +399,5 @@ jobs:
       - *CDASH_SUBMIT
       - *FUNCTIONAL_TESTS_DEPS
       - *CHECK_HOST_DISK_SPACE
+      - *CHECK_VM_DISK_SPACE
       - *RUN_FUNCTIONAL_TESTS
