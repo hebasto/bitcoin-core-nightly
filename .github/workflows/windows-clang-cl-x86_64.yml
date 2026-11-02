@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/windows-clang-cl-x86_64.yml'
       - 'patches/windows-fopen-noinherit.patch'
+      - 'patches/windows-msvc-werror-flag.patch'
   workflow_dispatch:
   workflow_run:
     workflows: ["Manager"]
@@ -48,8 +49,13 @@ jobs:
       - name: Patch Bitcoin Core
         run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
 
-      - name: Adjust working_compiler_werror_flag
-        run: (Get-Content cmake/module/TryAppendCXXFlags.cmake -Raw) -replace 'try_append_cxx_flags\("/WX"', 'try_append_cxx_flags("/WX /options:strict"' | Set-Content cmake/module/TryAppendCXXFlags.cmake -NoNewline
+      # PR31507 drops MSVC support and tests compiler flags with -Werror only.
+      # cl.exe merely warns about an unknown option, so with -Werror every
+      # flag check passes and every Clang/GCC warning flag gets appended. With
+      # "/WX /options:strict", unknown options are errors and the checks work.
+      - name: Patch Bitcoin Core for cl.exe
+        run: |
+          git apply --verbose nightly/patches/windows-msvc-werror-flag.patch
 
       - name: Get master branch commit hash
         id: master_commit
