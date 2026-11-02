@@ -5,6 +5,7 @@ on:
       - '.github/workflows/windows-clang-cl-x86_64.yml'
       - 'patches/windows-fopen-noinherit.patch'
       - 'patches/windows-msvc-werror-flag.patch'
+      - 'patches/windows-msvc-not-null-static-assert.patch'
   workflow_dispatch:
   workflow_run:
     workflows: ["Manager"]
@@ -27,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           Add-Content -Path "$env:VCPKG_INSTALLATION_ROOT\triplets\x64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
-          vcpkg install boost-multi-index sqlite3[core] zeromq
+          vcpkg install boost-multi-index boost-test sqlite3[core] zeromq
 
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v7
@@ -53,9 +54,14 @@ jobs:
       # cl.exe merely warns about an unknown option, so with -Werror every
       # flag check passes and every Clang/GCC warning flag gets appended. With
       # "/WX /options:strict", unknown options are errors and the checks work.
+      #
+      # MSVC does not reject a failed constant evaluation in a requires-expression
+      # (https://github.com/bitcoin/bitcoin/issues/36153), which trips two
+      # static_asserts in src/test/util_not_null_tests.cpp, so they are removed.
       - name: Patch Bitcoin Core for cl.exe
         run: |
           git apply --verbose nightly/patches/windows-msvc-werror-flag.patch
+          git apply --verbose nightly/patches/windows-msvc-not-null-static-assert.patch
 
       - name: Get master branch commit hash
         id: master_commit
@@ -96,7 +102,6 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           set(ENV{CXXFLAGS} "/utf-8 /Zc:__cplusplus /wd4018 /wd4065 /wd4146 /wd4244 /wd4267 /wd4715 /wd4722 /wd4805")
           set(configure_opts
-            "-DBUILD_TESTS=OFF"  # MSVC triggers static_assert in src/test/util_not_null_tests.cpp.
             "-DWITH_ZMQ=ON"
             "--toolchain $ENV{VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
             "-DVCPKG_MANIFEST_MODE=OFF"
@@ -112,6 +117,28 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
           ctest_build(PARALLEL_LEVEL ${nproc})
+
+      - name: Fetch test data
+        run: |
+          $dir = "$env:GITHUB_WORKSPACE\qa-assets\unit_test_data"
+          "DIR_UNIT_TEST_DATA=$dir" >> $env:GITHUB_ENV
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          curl.exe --location --fail --output "$dir\script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
+
+      - name: CDash -- Test
+        shell: ctest --build-config Release --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_test(
+            PARALLEL_LEVEL ${nproc}
+            RETURN_VALUE test_result
+          )
+          # ctest_test() does not fail the script when tests fail.
+          # The only signal is RETURN_VALUE (0 == all tests passed).
+          if(NOT test_result EQUAL 0)
+            message(FATAL_ERROR "Tests failed: RETURN_VALUE=${test_result}")
+          endif()
 
       - name: CDash -- Submit
         if: always()
