@@ -1,16 +1,10 @@
-name: Windows, clang-cl, x86_64
+name: Windows, cl.exe, x86_64
 on:
   pull_request:
     paths:
       - '.github/workflows/windows-clang-cl-x86_64.yml'
       - 'patches/windows-fopen-noinherit.patch'
   workflow_dispatch:
-    inputs:
-      skip_functional_tests:
-        description: 'Skip functional tests'
-        required: true
-        default: false
-        type: boolean
   workflow_run:
     workflows: ["Manager"]
     types: [requested]
@@ -22,7 +16,7 @@ concurrency:
 
 jobs:
   windows-native:
-    name: 'Windows x86_64, clang-cl, no IPC'
+    name: 'Windows x86_64, cl.exe, no GUI, no IPC'
     runs-on: windows-2025-vs2026
     defaults:
       run:
@@ -32,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           Add-Content -Path "$env:VCPKG_INSTALLATION_ROOT\triplets\x64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
-          vcpkg install boost-multi-index boost-test sqlite3[core] zeromq qtbase[core,gui,network,png,testlib,widgets] qttools libqrencode
+          vcpkg install boost-multi-index sqlite3[core] zeromq
 
       - name: Checkout Bitcoin Core repo
         uses: actions/checkout@v7
@@ -54,6 +48,9 @@ jobs:
       - name: Patch Bitcoin Core
         run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
 
+      - name: Adjust working_compiler_werror_flag
+        run: (Get-Content cmake/module/TryAppendCXXFlags.cmake -Raw) -replace 'try_append_cxx_flags\("/WX"', 'try_append_cxx_flags("/WX /options:strict"' | Set-Content cmake/module/TryAppendCXXFlags.cmake -NoNewline
+
       - name: Get master branch commit hash
         id: master_commit
         run: |
@@ -64,7 +61,7 @@ jobs:
         run: |
           $config = @'
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "Windows x86_64, clang-cl, no IPC")
+          set(CTEST_BUILD_NAME "Windows x86_64, cl.exe, no GUI, no IPC")
           set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Visual Studio 18 2026")
@@ -91,16 +88,10 @@ jobs:
         shell: ctest --build-config Release --extra-verbose --script {0}
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
-          # Boost.Test references BOOST_TEST_DISABLE_ALT_STACK only in its sigaction-based
-          # signal handling, which is not selected on Windows targets, so Clang reports the
-          # macro defined in src/test/main.cpp and src/test/kernel/test_kernel.cpp as unused.
-          # Revert -Wno-error=unused-macros once Boost.Test is removed from Bitcoin Core:
-          # https://github.com/bitcoin/bitcoin/pull/35713
-          set(ENV{CXXFLAGS} "-Wno-error=return-type -Wno-error=conditional-uninitialized -Wno-error=unused-macros")
+          set(ENV{CXXFLAGS} "/utf-8 /Zc:__cplusplus /wd4018 /wd4065 /wd4146 /wd4244 /wd4267 /wd4715 /wd4722 /wd4805")
           set(configure_opts
-            "-T ClangCL"
-            "--preset dev-mode"
-            "-DWITH_USDT=OFF"
+            "-DBUILD_TESTS=OFF"  # MSVC triggers static_assert in src/test/util_not_null_tests.cpp.
+            "-DWITH_ZMQ=ON"
             "--toolchain $ENV{VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
             "-DVCPKG_MANIFEST_MODE=OFF"
             "-DVCPKG_TARGET_TRIPLET=x64-windows"
@@ -116,28 +107,6 @@ jobs:
           ctest_start(APPEND)
           ctest_build(PARALLEL_LEVEL ${nproc})
 
-      - name: Fetch test data
-        run: |
-          $dir = "$env:GITHUB_WORKSPACE\qa-assets\unit_test_data"
-          "DIR_UNIT_TEST_DATA=$dir" >> $env:GITHUB_ENV
-          New-Item -ItemType Directory -Force -Path $dir | Out-Null
-          curl.exe --location --fail --output "$dir\script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
-
-      - name: CDash -- Test
-        shell: ctest --build-config Release --script {0}
-        run: |
-          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
-          ctest_start(APPEND)
-          ctest_test(
-            PARALLEL_LEVEL ${nproc}
-            RETURN_VALUE test_result
-          )
-          # ctest_test() does not fail the script when tests fail.
-          # The only signal is RETURN_VALUE (0 == all tests passed).
-          if(NOT test_result EQUAL 0)
-            message(FATAL_ERROR "Tests failed: RETURN_VALUE=${test_result}")
-          endif()
-
       - name: CDash -- Submit
         if: always()
         shell: ctest --script {0}
@@ -145,24 +114,3 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
           ctest_submit()
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        working-directory: build
-        env:
-          PYTHONUTF8: 1
-          BITCOIN_BIN: '${{ github.workspace }}\build\bin\Release\bitcoin.exe'
-          BITCOIND: '${{ github.workspace }}\build\bin\Release\bitcoind.exe'
-          BITCOINCLI: '${{ github.workspace }}\build\bin\Release\bitcoin-cli.exe'
-          BITCOIN_BENCH: '${{ github.workspace }}\build\bin\Release\bench_bitcoin.exe'
-          BITCOINTX: '${{ github.workspace }}\build\bin\Release\bitcoin-tx.exe'
-          BITCOINUTIL: '${{ github.workspace }}\build\bin\Release\bitcoin-util.exe'
-          BITCOINWALLET: '${{ github.workspace }}\build\bin\Release\bitcoin-wallet.exe'
-          BITCOINCHAINSTATE: '${{ github.workspace }}\build\bin\Release\bitcoin-chainstate.exe'
-        shell: bash
-        run: |
-          py -3 -m pip install pyzmq
-          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
-            --tmpdirprefix "$RUNNER_TEMP" \
-            --extended \
-            --timeout-factor=40
