@@ -267,7 +267,9 @@ jobs:
 
       - name: Check VM disk space
         if: ${{ ! inputs.skip_functional_tests }}
-        run: df -h "$PWD"
+        # The test datadirs go under the working directory (--tmpdirprefix),
+        # the initial chain cache under the default temporary directory.
+        run: df -h "$PWD" /tmp
 
       - name: Check VM memory
         if: ${{ ! inputs.skip_functional_tests }}
