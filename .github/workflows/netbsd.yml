@@ -319,7 +319,7 @@ jobs:
           # helps to identify hung tests.
           export PYTHONUNBUFFERED=1
           python3.13 build/test/functional/test_runner.py -j $((${{ env.CI_NCPU }} * 2)) --combinedlogslen=99999999 \
-            --tmpdirprefix . \
+            --tmpdirprefix "$PWD" \
             --extended \
             `# See https://github.com/bitcoin/bitcoin/issues/33128.` \
             --exclude feature_reindex_init \
@@ -327,7 +327,7 @@ jobs:
             --exclude p2p_invalid_messages \
             --timeout-factor=8
           python3.13 build/test/functional/test_runner.py p2p_invalid_messages --combinedlogslen=99999999 \
-            --tmpdirprefix . \
+            --tmpdirprefix "$PWD" \
             --timeout-factor=8
 
   netbsd-depends:

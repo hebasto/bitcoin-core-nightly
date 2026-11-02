@@ -141,6 +141,6 @@ jobs:
         if: ${{ ! inputs.skip_functional_tests }}
         run: |
           build/test/functional/test_runner.py -j $(($(nproc) * 2)) --combinedlogslen=99999999 \
-            --tmpdirprefix . \
+            --tmpdirprefix "$PWD" \
             --extended \
             --timeout-factor=8
