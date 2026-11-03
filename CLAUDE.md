@@ -23,4 +23,5 @@
   - the submit step runs with `if: always()`;
   - unit tests get `DIR_UNIT_TEST_DATA` pointing at `script_assets_test.json` from bitcoin-core/qa-assets;
   - the job name and `CTEST_BUILD_NAME` are identical and name disabled features (`no GUI`, `no IPC`, `no ZMQ`).
+- `README.md` mirrors the workflows: the releases column lists the matrix entries, the notes column names what a job does not build or test (`No GUI`, `USDT - N/A`), and toolchain versions appear where the notes pin them. A change to any of those in a workflow updates the matching README row in the same commit; dropping a feature from a job name or `CTEST_BUILD_NAME` drops it from the README too.
 - Attach the compiler's `-v` output as a CDash note (`CTEST_NOTES_FILES`) only where the toolchain is not fixed by the build name: compiler snapshots, rolling releases, and compilers from third-party package repositories. For pinned OS releases, CMake's compiler identification in the configure output is enough.
