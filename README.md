@@ -17,7 +17,7 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 | Operating System | Releases |Status | Notes |
 |------------------|:--------:|-------|-------|
 | [OmniOS](https://omnios.org/) | r151058, r151060 | [![OmniOS](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/omnios.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/omnios.yml?query=event%3Aworkflow_run) | Qt - not installed <br> USDT - N/A |
-| [OpenIndiana](https://www.openindiana.org/) | Snapshot 2026.10 | [![OpenIndiana](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openindiana.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openindiana.yml?query=event%3Aworkflow_run) | No IPC, no GUI |
+| [OpenIndiana](https://www.openindiana.org/) | Snapshot 2026.10 | [![OpenIndiana](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openindiana.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openindiana.yml?query=event%3Aworkflow_run) | No GUI |
 
 ## [Clang-SNAPSHOT](https://apt.llvm.org/)
 
