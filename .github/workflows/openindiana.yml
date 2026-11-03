@@ -50,7 +50,7 @@ jobs:
         uses: vmactions/openindiana-vm@v1
         with:
           # This release has `metapackages/build-essential` preinstalled.
-          release: '202604-build'
+          release: '202610-build'
           # The `pkg install` command often encounters networking issues in the CI
           # environment. To mitigate these, the following steps have been taken:
           # 1. Each package is installed individually.
