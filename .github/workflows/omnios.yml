@@ -46,11 +46,11 @@ jobs:
         # Test the "old stable" and "current stable" releases.
         # See https://omnios.org/releasenotes.html.
         include:
-          - release: 'r151056'
-            name: 'r151056 - old stable'
-            packages: 'developer/gcc14'
           - release: 'r151058'
-            name: 'r151058 - current stable'
+            name: 'r151058 - old stable'
+            packages: 'developer/gcc15'
+          - release: 'r151060'
+            name: 'r151060 - current stable'
             packages: 'developer/gcc15'
 
     steps:
