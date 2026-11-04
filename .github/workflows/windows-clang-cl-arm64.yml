@@ -28,11 +28,40 @@ jobs:
       run:
         shell: pwsh -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
 
+    env:
+      VCPKG_PACKAGES: boost-multi-index boost-test sqlite3[core] zeromq qtbase[core,gui,network,png,testlib,widgets] qttools libqrencode
+
     steps:
+      # vcpkg stores every package it builds in its binary cache and reuses an
+      # archive only when the package ABI (triplet, compiler, port, features)
+      # matches, so the cache key does not have to track those. It changes with
+      # the runner image and with the package list, so a new image starts a
+      # cache of its own instead of growing the old one with every rebuild.
+      - name: Generate vcpkg cache key
+        id: vcpkg-cache-key
+        run: |
+          Set-Content -Path vcpkg-packages.txt -Value $env:VCPKG_PACKAGES
+          "image-version=$env:ImageVersion" >> $env:GITHUB_OUTPUT
+
+      - name: Restore vcpkg binary cache
+        id: vcpkg-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: clang-cl-arm64-vcpkg-${{ steps.vcpkg-cache-key.outputs.image-version }}-${{ hashFiles('vcpkg-packages.txt') }}
+          restore-keys: clang-cl-arm64-vcpkg-${{ steps.vcpkg-cache-key.outputs.image-version }}-
+
       - name: Install dependencies
         run: |
           Add-Content -Path "$env:VCPKG_INSTALLATION_ROOT\triplets\arm64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
-          vcpkg install boost-multi-index boost-test sqlite3[core] zeromq qtbase[core,gui,network,png,testlib,widgets] qttools libqrencode
+          vcpkg install ${{ env.VCPKG_PACKAGES }}
+
+      - name: Save vcpkg binary cache
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
 
       - name: Checkout Bitcoin Core repo
         id: checkout
