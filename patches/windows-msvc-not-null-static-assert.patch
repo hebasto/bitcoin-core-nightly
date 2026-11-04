@@ -1,0 +1,18 @@
+diff --git a/src/test/util_not_null_tests.cpp b/src/test/util_not_null_tests.cpp
+index 53dce02..b5b7d58 100644
+--- a/src/test/util_not_null_tests.cpp
++++ b/src/test/util_not_null_tests.cpp
+@@ -109,8 +109,11 @@ BOOST_AUTO_TEST_CASE(check_cross_type_conversion)
+     };
+ 
+     // Assume checks failed conversions during constant evaluation.
+-    static_assert(!NotNullCopyConvertible<NullPtr, SomePtr>);
+-    static_assert(!NotNullMoveConvertible<NullPtr, SomePtr>);
++    // MSVC does not reject this failed constant evaluation in a requires-expression,
++    // see https://github.com/bitcoin/bitcoin/issues/36153, and fails to evaluate the
++    // concepts at all ("invalid template argument for 'std::bool_constant'"), so the
++    // two static_asserts are removed rather than inverted, as discussed with Marco
++    // (maflcko) in https://github.com/hebasto/bitcoin-core-nightly/pull/395#discussion_r4454751230.
+ }
+ 
+ BOOST_AUTO_TEST_CASE(check_null_smart_pointer)
