@@ -50,7 +50,7 @@ jobs:
         # See https://www.netbsd.org/releases/.
         include:
           - release: '10.2'
-            pkgsrc_release: '10.0_2026Q2'
+            pkgsrc_release: '10.0_2026Q3'
             # The default compiler GCC 10.5.0 does not meet the minimum version requirements.
             sys_packages: 'gcc14'
             # Workaround for the following linker warning when using the systems' `net/zeromq` package:
@@ -65,7 +65,7 @@ jobs:
               CC=/usr/pkg/gcc14/bin/gcc
               CXX=/usr/pkg/gcc14/bin/g++
           - release: '11.0'
-            pkgsrc_release: '11.0_2026Q2'
+            pkgsrc_release: '11.0_2026Q3'
             sys_packages: 'zeromq'
             pkgsrc_build_zeromq: false
             cmake_vars: '"-DAPPEND_CPPFLAGS=-DKJ_NO_EXCEPTIONS=0"' # Needed for the default GCC 12.5.0.
