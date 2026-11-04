@@ -1,0 +1,142 @@
+name: Windows, cl.exe, x86_64
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/windows-cl-x86_64.yml'
+      - 'patches/windows-fopen-noinherit.patch'
+      - 'patches/windows-msvc-werror-flag.patch'
+      - 'patches/windows-msvc-not-null-static-assert.patch'
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Manager"]
+    types: [requested]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-native:
+    name: 'Windows x86_64, cl.exe, no GUI, no IPC'
+    runs-on: windows-2025-vs2026
+    defaults:
+      run:
+        shell: pwsh -Command "$PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
+
+    steps:
+      - name: Install dependencies
+        run: |
+          Add-Content -Path "$env:VCPKG_INSTALLATION_ROOT\triplets\x64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
+          vcpkg install boost-multi-index boost-test sqlite3[core] zeromq
+
+      - name: Checkout Bitcoin Core repo
+        id: checkout
+        uses: actions/checkout@v7
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Checkout this repo
+        uses: actions/checkout@v7
+        with:
+          path: nightly
+
+      # Files opened via fsbridge::fopen() are inherited by the -*notify child
+      # processes, which can keep debug.log open after bitcoind has exited and
+      # make the functional test framework's cleanup fail with WinError 32.
+      # Temporary until https://github.com/bitcoin/bitcoin/issues/36668 is
+      # resolved upstream.
+      - name: Patch Bitcoin Core
+        run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
+
+      # bitcoin/bitcoin#31507 dropped MSVC support and tests compiler flags with
+      # -Werror only. cl.exe merely warns about an unknown option, so with -Werror
+      # every flag check passes and every Clang/GCC warning flag gets appended.
+      # With "/WX /options:strict", unknown options are errors and the checks work.
+      #
+      # MSVC does not reject a failed constant evaluation in a requires-expression
+      # (https://github.com/bitcoin/bitcoin/issues/36153), which trips two
+      # static_asserts in src/test/util_not_null_tests.cpp, so they are removed.
+      - name: Patch Bitcoin Core for cl.exe
+        run: |
+          git apply --verbose nightly/patches/windows-msvc-werror-flag.patch
+          git apply --verbose nightly/patches/windows-msvc-not-null-static-assert.patch
+
+      - name: Generate CTest configuration
+        run: |
+          $config = @'
+          set(CTEST_SITE "${{ github.repository }}")
+          set(CTEST_BUILD_NAME "Windows x86_64, cl.exe, no GUI, no IPC")
+          set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
+          set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
+          set(CTEST_CMAKE_GENERATOR "Visual Studio 18 2026")
+          cmake_host_system_information(RESULT nproc QUERY NUMBER_OF_LOGICAL_CORES)
+          '@
+          Set-Content -Path "ctest_config.cmake" -Value $config -Encoding utf8
+
+      - name: CDash -- Start & Update
+        shell: ctest --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(${{ case(github.event_name == 'workflow_run', 'Nightly', format('Experimental GROUP {0}', github.event_name)) }})
+          # CTest infers the VCS type from the update command's name. With
+          # CTEST_UPDATE_VERSION_OVERRIDE set no update runs, but CTest still
+          # invokes the command to list local modifications and reports any as
+          # an update error. The command deliberately does not exist, so that
+          # check is skipped on every runner, whether or not git is installed
+          # and whether or not the tree has been patched.
+          set(CTEST_UPDATE_COMMAND not-run/git)
+          set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.checkout.outputs.commit }}")
+          ctest_update()
+
+      - name: CDash -- Configure
+        shell: ctest --build-config Release --extra-verbose --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          set(ENV{CXXFLAGS} "/utf-8 /Zc:__cplusplus /wd4018 /wd4065 /wd4146 /wd4244 /wd4267 /wd4715 /wd4722 /wd4805")
+          set(configure_opts
+            "-DWITH_ZMQ=ON"
+            "--toolchain $ENV{VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
+            "-DVCPKG_MANIFEST_MODE=OFF"
+            "-DVCPKG_TARGET_TRIPLET=x64-windows"
+            "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+          )
+          ctest_start(APPEND)
+          ctest_configure(OPTIONS "${configure_opts}")
+
+      - name: CDash -- Build
+        shell: ctest --build-config Release --extra-verbose --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_build(PARALLEL_LEVEL ${nproc})
+
+      - name: Fetch test data
+        run: |
+          $dir = "$env:GITHUB_WORKSPACE\qa-assets\unit_test_data"
+          "DIR_UNIT_TEST_DATA=$dir" >> $env:GITHUB_ENV
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          curl.exe --location --fail --output "$dir\script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
+
+      - name: CDash -- Test
+        shell: ctest --build-config Release --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_test(
+            PARALLEL_LEVEL ${nproc}
+            RETURN_VALUE test_result
+          )
+          # ctest_test() does not fail the script when tests fail.
+          # The only signal is RETURN_VALUE (0 == all tests passed).
+          if(NOT test_result EQUAL 0)
+            message(FATAL_ERROR "Tests failed: RETURN_VALUE=${test_result}")
+          endif()
+
+      - name: CDash -- Submit
+        if: always()
+        shell: ctest --script {0}
+        run: |
+          include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
+          ctest_start(APPEND)
+          ctest_submit()

@@ -1,0 +1,10 @@
+diff --git a/cmake/module/TryAppendCXXFlags.cmake b/cmake/module/TryAppendCXXFlags.cmake
+index c23735c..d4c2f87 100644
+--- a/cmake/module/TryAppendCXXFlags.cmake
++++ b/cmake/module/TryAppendCXXFlags.cmake
+@@ -119,4 +119,4 @@ function(try_append_cxx_flags flags)
+   endif()
+ endfunction()
+ 
+-try_append_cxx_flags("-Werror" VAR working_compiler_werror_flag SKIP_LINK)
++try_append_cxx_flags("/WX /options:strict" VAR working_compiler_werror_flag SKIP_LINK)
