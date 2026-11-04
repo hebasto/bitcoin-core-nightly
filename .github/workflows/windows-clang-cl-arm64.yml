@@ -35,11 +35,10 @@ jobs:
           vcpkg install boost-multi-index boost-test sqlite3[core] zeromq qtbase[core,gui,network,png,testlib,widgets] qttools libqrencode
 
       - name: Checkout Bitcoin Core repo
+        id: checkout
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
-          ref: refs/pull/31507/merge
-          fetch-depth: 2
 
       - name: Checkout this repo
         uses: actions/checkout@v7
@@ -53,12 +52,6 @@ jobs:
       # resolved upstream.
       - name: Patch Bitcoin Core
         run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
-
-      - name: Get master branch commit hash
-        id: master_commit
-        run: |
-          $commit = git rev-parse HEAD~1
-          "commit=$commit" >> $env:GITHUB_OUTPUT
 
       - name: Generate CTest configuration
         run: |
@@ -84,7 +77,7 @@ jobs:
           # check is skipped on every runner, whether or not git is installed
           # and whether or not the tree has been patched.
           set(CTEST_UPDATE_COMMAND not-run/git)
-          set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.master_commit.outputs.commit }}")
+          set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.checkout.outputs.commit }}")
           ctest_update()
 
       - name: CDash -- Configure
