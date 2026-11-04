@@ -64,7 +64,7 @@ jobs:
               build_CXX=/usr/pkg/gcc14/bin/g++
               CC=/usr/pkg/gcc14/bin/gcc
               CXX=/usr/pkg/gcc14/bin/g++
-          - release: '11.0'
+          - release: '11.1'
             pkgsrc_release: '11.0_2026Q2'
             sys_packages: 'zeromq'
             pkgsrc_build_zeromq: false

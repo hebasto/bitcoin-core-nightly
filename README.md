@@ -10,7 +10,7 @@ For another repository with nightly builds of Bitcoin Core, see [maflcko/b-c-nig
 |------------------|:--------:|--------|------------------------|--------------------|
 | [FreeBSD](https://www.freebsd.org/) | 14.5, 15.1 | [![FreeBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/freebsd.yml?query=event%3Aworkflow_run) | USDT - N/A | Release |
 | [OpenBSD](https://www.openbsd.org/) | 7.9, 8.0 | [![OpenBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/openbsd.yml?query=event%3Aworkflow_run) | USDT - N/A | Release |
-| [NetBSD](https://netbsd.org/) | 10.2, 11.0 | [![NetBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml?query=event%3Aworkflow_run) | Qt - not installed <br> USDT - N/A | Release |
+| [NetBSD](https://netbsd.org/) | 10.2, 11.1 | [![NetBSD](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/netbsd.yml?query=event%3Aworkflow_run) | Qt - not installed <br> USDT - N/A | Release |
 
 ## [illumos](https://illumos.org/)-Based Systems
 
