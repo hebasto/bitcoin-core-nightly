@@ -16,7 +16,7 @@
 - Pin runner labels explicitly (e.g. `ubuntu-26.04`, `ubuntu-26.04-arm`) for jobs that build on the host. Jobs that run in a `container:` or boot a VM via vmactions use `ubuntu-latest`, since the host image does not affect the build.
 - Pass `HOST=` to depends only when cross-compiling.
 - Nightly workflows chain on `Manager` via `workflow_run` and report to CDash. `clang.yml` is a convenient starting point for a new workflow, but layout may differ per platform; what every CDash job must satisfy is:
-  - it builds `bitcoin/bitcoin` master, or a PR merge ref while a platform fix is pending upstream (the clang-cl jobs and bitcoin/bitcoin#31507), and reports the underlying master commit to CDash via `ctest_update()`;
+  - it builds `bitcoin/bitcoin` master, or a PR merge ref while a platform fix is pending upstream, and reports the underlying master commit to CDash via `ctest_update()`;
   - its `ctest_update()` uses the shared form, `set(CTEST_UPDATE_COMMAND not-run/git)` plus `CTEST_UPDATE_VERSION_OVERRIDE`, never `CTEST_GIT_COMMAND` or `CTEST_UPDATE_VERSION_ONLY`: a real git would list local modifications and report a patched tree as an update error;
   - it starts the `Nightly` group only when chained from `Manager`, and `Experimental` otherwise;
   - configure, build, and test failures each fail the job (`ctest_test()` needs the `RETURN_VALUE` check);

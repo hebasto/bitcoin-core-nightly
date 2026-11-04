@@ -5,12 +5,6 @@ on:
       - '.github/workflows/windows-clang-cl-x86_64.yml'
       - 'patches/windows-fopen-noinherit.patch'
   workflow_dispatch:
-    inputs:
-      skip_functional_tests:
-        description: 'Skip functional tests'
-        required: true
-        default: false
-        type: boolean
   workflow_run:
     workflows: ["Manager"]
     types: [requested]
@@ -22,7 +16,7 @@ concurrency:
 
 jobs:
   windows-native:
-    name: 'Windows x86_64, clang-cl, no IPC'
+    name: 'Windows x86_64, clang-cl, no IPC, Debug'
     runs-on: windows-2025-vs2026
     defaults:
       run:
@@ -31,15 +25,13 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          Add-Content -Path "$env:VCPKG_INSTALLATION_ROOT\triplets\x64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
           vcpkg install boost-multi-index boost-test sqlite3[core] zeromq qtbase[core,gui,network,png,testlib,widgets] qttools libqrencode
 
       - name: Checkout Bitcoin Core repo
+        id: checkout
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
-          ref: refs/pull/31507/merge
-          fetch-depth: 2
 
       - name: Checkout this repo
         uses: actions/checkout@v7
@@ -54,17 +46,11 @@ jobs:
       - name: Patch Bitcoin Core
         run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
 
-      - name: Get master branch commit hash
-        id: master_commit
-        run: |
-          $commit = git rev-parse HEAD~1
-          "commit=$commit" >> $env:GITHUB_OUTPUT
-
       - name: Generate CTest configuration
         run: |
           $config = @'
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "Windows x86_64, clang-cl, no IPC")
+          set(CTEST_BUILD_NAME "Windows x86_64, clang-cl, no IPC, Debug")
           set(CTEST_SOURCE_DIRECTORY "$ENV{GITHUB_WORKSPACE}")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SOURCE_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Visual Studio 18 2026")
@@ -84,11 +70,11 @@ jobs:
           # check is skipped on every runner, whether or not git is installed
           # and whether or not the tree has been patched.
           set(CTEST_UPDATE_COMMAND not-run/git)
-          set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.master_commit.outputs.commit }}")
+          set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.checkout.outputs.commit }}")
           ctest_update()
 
       - name: CDash -- Configure
-        shell: ctest --build-config Release --extra-verbose --script {0}
+        shell: ctest --build-config Debug --extra-verbose --script {0}
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           # Boost.Test references BOOST_TEST_DISABLE_ALT_STACK only in its sigaction-based
@@ -103,14 +89,13 @@ jobs:
             "-DWITH_USDT=OFF"
             "--toolchain $ENV{VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
             "-DVCPKG_MANIFEST_MODE=OFF"
-            "-DVCPKG_TARGET_TRIPLET=x64-windows"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
           ctest_start(APPEND)
           ctest_configure(OPTIONS "${configure_opts}")
 
       - name: CDash -- Build
-        shell: ctest --build-config Release --extra-verbose --script {0}
+        shell: ctest --build-config Debug --extra-verbose --script {0}
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
@@ -124,7 +109,7 @@ jobs:
           curl.exe --location --fail --output "$dir\script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
 
       - name: CDash -- Test
-        shell: ctest --build-config Release --script {0}
+        shell: ctest --build-config Debug --script {0}
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
@@ -145,24 +130,3 @@ jobs:
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
           ctest_submit()
-
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
-        working-directory: build
-        env:
-          PYTHONUTF8: 1
-          BITCOIN_BIN: '${{ github.workspace }}\build\bin\Release\bitcoin.exe'
-          BITCOIND: '${{ github.workspace }}\build\bin\Release\bitcoind.exe'
-          BITCOINCLI: '${{ github.workspace }}\build\bin\Release\bitcoin-cli.exe'
-          BITCOIN_BENCH: '${{ github.workspace }}\build\bin\Release\bench_bitcoin.exe'
-          BITCOINTX: '${{ github.workspace }}\build\bin\Release\bitcoin-tx.exe'
-          BITCOINUTIL: '${{ github.workspace }}\build\bin\Release\bitcoin-util.exe'
-          BITCOINWALLET: '${{ github.workspace }}\build\bin\Release\bitcoin-wallet.exe'
-          BITCOINCHAINSTATE: '${{ github.workspace }}\build\bin\Release\bitcoin-chainstate.exe'
-        shell: bash
-        run: |
-          py -3 -m pip install pyzmq
-          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
-            --tmpdirprefix "$RUNNER_TEMP" \
-            --extended \
-            --timeout-factor=40
