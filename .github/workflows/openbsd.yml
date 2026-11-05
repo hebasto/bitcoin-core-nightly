@@ -153,6 +153,7 @@ jobs:
 
       - &CDASH_BUILD
         name: CDash -- Build
+        id: cdash-build
         run: |
           cat << 'EOF' > ctest_build.cmake
           include(ctest_config.cmake)
@@ -199,6 +200,41 @@ jobs:
           ctest_submit()
           EOF
           ctest --script ctest_submit.cmake
+
+      - &DEBUG_GUI_TESTS_MALLOC_S
+        # The 2026-11-05 "OpenBSD 8.0, depends" job aborted in
+        # `test_bitcoin-qt` during process teardown, after every suite had
+        # passed, with:
+        #   in free(): write to free mem 0xb5935add000[2568..2575]@4096
+        # OpenBSD's default junk level only samples four words per freed
+        # page and checks them when the page is later evicted from the
+        # free-page cache, so the writer is unknown and the report is rare.
+        # `MALLOC_OPTIONS=S` junks and validates everything and keeps no
+        # free-page cache, so a stale write faults at the writing
+        # instruction. Repeat the test until it fails and print the
+        # backtrace of every thread from the core.
+        # TODO: Drop this step once the writer is found.
+        name: Debug GUI tests with MALLOC_OPTIONS=S
+        if: ${{ !cancelled() && steps.cdash-build.outcome == 'success' }}
+        timeout-minutes: 30
+        run: |
+          set -e
+          ulimit -c unlimited
+          # CTest runs the test from its build directory, so the core lands there.
+          core_dir=/home/build/src/qt/test
+          rm -f "$core_dir"/*.core
+          status=0
+          MALLOC_OPTIONS=S ctest --test-dir /home/build \
+            --tests-regex '^test_bitcoin-qt$' \
+            --repeat until-fail:50 \
+            --output-on-failure \
+            --timeout 900 || status=$?
+          for core in "$core_dir"/*.core; do
+            [ -f "$core" ] || continue
+            pkg_add -v gdb
+            egdb -batch -ex 'thread apply all bt full' /home/build/bin/test_bitcoin-qt "$core"
+          done
+          exit $status
 
       - &FUNCTIONAL_TESTS_DEPS
         name: Install functional test dependencies
@@ -311,6 +347,7 @@ jobs:
       - *CHECK_BITCOIND
       - *CDASH_TEST
       - *CDASH_SUBMIT
+      - *DEBUG_GUI_TESTS_MALLOC_S
       - *FUNCTIONAL_TESTS_DEPS
       - *CHECK_HOST_DISK_SPACE
       - *CHECK_VM_DISK_SPACE
