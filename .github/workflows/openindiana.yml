@@ -170,6 +170,29 @@ jobs:
           mkdir -p "$DIR_UNIT_TEST_DATA"
           curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
 
+      - name: Patch libmultiprocess tests
+        # The "has OS thread name" tests are compiled whenever
+        # pthread_getname_np() exists, but SetOsThreadName() has no branch for
+        # illumos, so the names are never set and the tests fail.
+        # TODO: Drop this step once bitcoin-core/libmultiprocess#392 reaches
+        # the Bitcoin Core subtree.
+        run: |
+          set -e
+          cat << 'PATCH' > thread-name-tests.patch
+          --- a/test/mp/test/test.cpp
+          +++ b/test/mp/test/test.cpp
+          @@ -668,7 +668,7 @@ KJ_TEST("Call async IPC method dispatched to pool thread")
+               }
+           }
+           
+          -#ifdef HAVE_PTHREAD_GETNAME_NP
+          +#if 0
+           KJ_TEST("Worker thread has OS thread name")
+           {
+               TestSetup setup;
+          PATCH
+          patch -d bitcoin/src/ipc/libmultiprocess -p1 -N < thread-name-tests.patch
+
       - name: Generate CTest configuration
         run: |
           cat << 'EOF' > ctest_config.cmake
