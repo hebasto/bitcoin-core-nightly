@@ -142,6 +142,30 @@ jobs:
           curl --location --fail --remote-name https://capnproto.org/capnproto-c++-${{ env.CAPNPROTO_VERSION }}.tar.gz
           tar xf capnproto-c++-${{ env.CAPNPROTO_VERSION }}.tar.gz
           cd capnproto-c++-${{ env.CAPNPROTO_VERSION }}
+          # Cap'n Proto sets TCP_NODELAY on every accepted socket and tolerates
+          # the resulting EINVAL only on FreeBSD. On illumos setsockopt() also
+          # returns EINVAL for a Unix socket whose peer closed before accept(),
+          # so accept() throws and the IPC listener stops for good. This is the
+          # illumos variant of bitcoin-core/libmultiprocess#319, which Bitcoin
+          # Core patches for macOS in depends/patches/capnp/.
+          # TODO: Drop this patch once Cap'n Proto handles illumos upstream.
+          cat << 'PATCH' > illumos-accept-dead-socket.patch
+          --- a/src/kj/async-io-unix.c++
+          +++ b/src/kj/async-io-unix.c++
+          @@ -1357,8 +1357,9 @@
+                         ownFd.get(), IPPROTO_TCP, TCP_NODELAY, (char*)&one, sizeof(one))) {
+                     case EOPNOTSUPP:
+                     case ENOPROTOOPT: // (returned for AF_UNIX in cygwin)
+          -#if __FreeBSD__
+          -          case EINVAL: // (returned for AF_UNIX in FreeBSD)
+          +#if __FreeBSD__ || __illumos__
+          +          case EINVAL: // (returned for AF_UNIX in FreeBSD, and on illumos for a Unix
+          +                       // socket whose peer has already closed)
+           #endif
+                       break;
+                     default:
+          PATCH
+          patch -p1 -N < illumos-accept-dead-socket.patch
           ./configure --without-fibers
           make -j $(getconf NPROCESSORS_ONLN) install
 
