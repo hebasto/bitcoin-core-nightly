@@ -187,8 +187,8 @@ jobs:
             -DBUILD_TESTS=OFF \
             -DBUILD_STATIC=OFF \
             -DWITH_PERF_TOOL=OFF \
-            `# libzmq's CMake build does not link the Solaris networking libraries.` \
-            -DCMAKE_SHARED_LINKER_FLAGS="-lsocket -lnsl"
+            `# libzmq's CMake build does not link libsocket, which holds the socket API on illumos.` \
+            -DCMAKE_SHARED_LINKER_FLAGS="-lsocket"
           cmake --build build-zeromq -j $(getconf NPROCESSORS_ONLN)
           cmake --install build-zeromq
           # The 64-bit runtime linker does not search /usr/local/lib by
