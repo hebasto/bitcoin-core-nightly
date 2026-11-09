@@ -59,7 +59,7 @@ jobs:
 
       - name: Install LLVM MinGW toolchain
         run: |
-          curl -L -o llvm_mingw_toolchain.tar.gz ${{ env.CI_LLVM_MINGW_URL }}
+          curl --location --fail --retry 5 --retry-delay 30 --retry-all-errors --output llvm_mingw_toolchain.tar.gz ${{ env.CI_LLVM_MINGW_URL }}
           echo "${{ env.CI_LLVM_MINGW_HASH }}  llvm_mingw_toolchain.tar.gz" | sha256sum --check
           mkdir llvm_mingw_toolchain
           tar -xf llvm_mingw_toolchain.tar.gz -C llvm_mingw_toolchain --strip-components=1

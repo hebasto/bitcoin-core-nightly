@@ -150,14 +150,14 @@ jobs:
         name: Fetch source tarball
         run: |
           set -e
-          curl --location --fail --output source.tar.gz https://github.com/${{ inputs.repository || 'bitcoin/bitcoin' }}/archive/${{ inputs.ref || 'refs/heads/master' }}.tar.gz
+          curl --location --fail --retry 5 --retry-delay 30 --retry-all-errors --output source.tar.gz https://github.com/${{ inputs.repository || 'bitcoin/bitcoin' }}/archive/${{ inputs.ref || 'refs/heads/master' }}.tar.gz
           mkdir bitcoin
           tar -xf source.tar.gz -C bitcoin --strip-components=1
           rm -rf source.tar.gz
           # Test data.
           DIR_UNIT_TEST_DATA="$(pwd)/qa-assets/unit_test_data"
           mkdir -p "$DIR_UNIT_TEST_DATA"
-          curl --location --fail --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
+          curl --location --fail --retry 5 --retry-delay 30 --retry-all-errors --output "${DIR_UNIT_TEST_DATA}/script_assets_test.json" https://github.com/bitcoin-core/qa-assets/raw/main/unit_test_data/script_assets_test.json
 
       - &PATCH_SOURCE
         # The `interface_ipc*` functional tests fail on NetBSD because `-ipcbind`
