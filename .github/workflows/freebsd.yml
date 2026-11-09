@@ -35,7 +35,7 @@ env:
 
 jobs:
   freebsd-syslibs:
-    name: 'FreeBSD ${{ matrix.release }}, system libs'
+    name: 'FreeBSD ${{ matrix.release }}, ${{ matrix.filesystem }}, system libs'
     runs-on: ubuntu-latest
     env:
       PACKAGES: 'boost-libs sqlite3 capnproto libzmq4 qt6-base qt6-tools libqrencode'
@@ -47,9 +47,21 @@ jobs:
       matrix:
         # Test all supported releases.
         # See https://www.freebsd.org/releases/.
+        #
+        # `image` is the vmactions/freebsd-vm release name. Since v1.6.0 of
+        # the action, every plain release image uses UFS, and a ZFS variant
+        # is available as '<release>-zfs' for the 15.x releases.
+        # See https://github.com/vmactions/freebsd-vm/releases/tag/v1.6.0.
         include:
-          - release: '14.5' # Uses UFS.
-          - release: '15.1' # Uses ZFS.
+          - release: '14.5'
+            filesystem: 'UFS'
+            image: '14.5'
+          - release: '15.1'
+            filesystem: 'UFS'
+            image: '15.1'
+          - release: '15.1'
+            filesystem: 'ZFS'
+            image: '15.1-zfs'
             # posix_fallocate() is disabled on ZFS, and the fallback
             # implementation of AllocateFileRange() is broken.
             # See https://github.com/bitcoin/bitcoin/issues/33128.
@@ -66,10 +78,10 @@ jobs:
         run: echo "::notice title=inputs::$INPUTS_REPOSITORY $INPUTS_REF"
 
       - &START_VM
-        name: Start FreeBSD ${{ matrix.release }} VM
+        name: Start FreeBSD ${{ matrix.release }} (${{ matrix.filesystem }}) VM
         uses: vmactions/freebsd-vm@v1
         with:
-          release: ${{ matrix.release }}
+          release: ${{ matrix.image }}
           prepare: |
             pkg update
             pkg install -y curl cmake-core ninja pkgconf python3 ${{ env.PACKAGES }}
@@ -92,7 +104,7 @@ jobs:
         run: |
           cat << 'EOF' > ctest_config.cmake
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "FreeBSD ${{ matrix.release }}, system libs")
+          set(CTEST_BUILD_NAME "FreeBSD ${{ matrix.release }}, ${{ matrix.filesystem }}, system libs")
           set(CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/bitcoin")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Ninja")
@@ -228,7 +240,7 @@ jobs:
             --timeout-factor=8
 
   freebsd-depends:
-    name: 'FreeBSD ${{ matrix.release }}, depends'
+    name: 'FreeBSD ${{ matrix.release }}, ${{ matrix.filesystem }}, depends'
     runs-on: ubuntu-latest
     env:
       PACKAGES: 'bash gmake bison'
@@ -253,7 +265,7 @@ jobs:
         run: |
           cat << 'EOF' > ctest_config.cmake
           set(CTEST_SITE "${{ github.repository }}")
-          set(CTEST_BUILD_NAME "FreeBSD ${{ matrix.release }}, depends")
+          set(CTEST_BUILD_NAME "FreeBSD ${{ matrix.release }}, ${{ matrix.filesystem }}, depends")
           set(CTEST_SOURCE_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/bitcoin")
           set(CTEST_BINARY_DIRECTORY "${CTEST_SCRIPT_DIRECTORY}/build")
           set(CTEST_CMAKE_GENERATOR "Ninja")
