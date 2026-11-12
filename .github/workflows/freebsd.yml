@@ -239,6 +239,14 @@ jobs:
           build/test/functional/test_runner.py feature_bind_extra rpc_bind -j 1 --combinedlogslen=99999999 \
             --timeout-factor=8
 
+      - &SHOW_KERNEL_MESSAGES
+        name: Show kernel messages
+        # When bitcoind dies from a signal, its own logs do not say which
+        # one. The kernel logs "exited on signal N" for a crash and
+        # "was killed" for an out-of-memory kill.
+        if: ${{ failure() && ! inputs.skip_functional_tests }}
+        run: dmesg
+
   freebsd-depends:
     name: 'FreeBSD ${{ matrix.release }}, ${{ matrix.filesystem }}, depends'
     runs-on: ubuntu-latest
@@ -297,3 +305,4 @@ jobs:
       - *CHECK_HOST_DISK_SPACE
       - *CHECK_VM_DISK_SPACE
       - *RUN_FUNCTIONAL_TESTS
+      - *SHOW_KERNEL_MESSAGES
