@@ -82,6 +82,13 @@ jobs:
             "--preset dev-mode"
             "-DWITH_USDT=OFF"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+            # Temporary: CMake 4.5 reports directory-scoped directives
+            # (include_directories(), add_compile_options(), etc.) under the
+            # new "non-target-directive" dev warning category, which the
+            # dev-mode preset makes fatal. Bitcoin Core and its secp256k1
+            # subtree still use them. Remove once fixed upstream; see
+            # https://github.com/bitcoin-core/secp256k1/pull/1996.
+            "-Wno-non-target-directive"
           )
           ctest_start(APPEND)
           ctest_configure(OPTIONS "${configure_opts}")
