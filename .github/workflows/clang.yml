@@ -85,6 +85,10 @@ jobs:
           set(configure_opts
             "--preset dev-mode"
             "--toolchain depends/x86_64-pc-linux-gnu/toolchain.cmake"
+            # Revert once https://github.com/bitcoin-core/secp256k1/pull/1998 reaches Bitcoin Core:
+            "-DAPPEND_CFLAGS=-Wno-error=unsequenced"
+            # Revert once https://github.com/bitcoin/bitcoin/pull/36869 is merged:
+            "-DAPPEND_CXXFLAGS=-Wno-error=unused-private-field"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
           ctest_start(APPEND)
