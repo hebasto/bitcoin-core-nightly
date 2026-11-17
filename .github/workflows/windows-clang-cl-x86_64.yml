@@ -67,11 +67,7 @@ jobs:
         with:
           path: nightly
 
-      # Files opened via fsbridge::fopen() are inherited by the -*notify child
-      # processes, which can keep debug.log open after bitcoind has exited and
-      # make the functional test framework's cleanup fail with WinError 32.
-      # Temporary until https://github.com/bitcoin/bitcoin/issues/36668 is
-      # resolved upstream.
+      # Keep child processes from inheriting open files; see the patch header.
       - name: Patch Bitcoin Core
         run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
 

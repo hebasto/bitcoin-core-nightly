@@ -1,3 +1,12 @@
+node: Move a local NotNull when returning it as a std::unique_ptr
+
+MSVC does not treat a returned local variable as an rvalue when the
+return type is reached through a conversion function, so returning a
+local util::NotNullUniquePtr as a std::unique_ptr fails with C2440 since
+bitcoin/bitcoin#36451. The two returns get an explicit std::move().
+
+Applied by .github/workflows/windows-cl-x86_64.yml.
+
 diff --git a/src/node/block_template_manager.cpp b/src/node/block_template_manager.cpp
 index 4336cfd..f32c182 100644
 --- a/src/node/block_template_manager.cpp
