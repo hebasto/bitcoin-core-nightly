@@ -39,7 +39,7 @@ jobs:
     name: 'NetBSD ${{ matrix.release }}, system libs, no GUI'
     runs-on: ubuntu-latest
     env:
-      SYSTEM_PACKAGES: 'boost sqlite3 pkgconf'
+      SYSTEM_PACKAGES: 'sqlite3 pkgconf'
     defaults:
       run:
         shell: netbsd {0}
@@ -50,9 +50,11 @@ jobs:
         # See https://www.netbsd.org/releases/.
         include:
           - release: '10.2'
-            pkgsrc_release: '10.0_2026Q2'
+            pkgsrc_release: '10.0_2026Q3'
             # The default compiler GCC 10.5.0 does not meet the minimum version requirements.
-            sys_packages: 'gcc14'
+            # The `boost` meta-package is not among the 10.0_2026Q3 binary packages;
+            # `boost-libs` provides the CMake package configuration files.
+            sys_packages: 'gcc14 boost-headers boost-libs'
             # Workaround for the following linker warning when using the systems' `net/zeromq` package:
             # /usr/bin/ld: warning: libstdc++.so.9, needed by /usr/pkg/lib/libzmq.so, may conflict with libstdc++.so.7
             pkgsrc_build_zeromq: true
@@ -65,8 +67,8 @@ jobs:
               CC=/usr/pkg/gcc14/bin/gcc
               CXX=/usr/pkg/gcc14/bin/g++
           - release: '11.1'
-            pkgsrc_release: '11.0_2026Q2'
-            sys_packages: 'zeromq'
+            pkgsrc_release: '11.0_2026Q3'
+            sys_packages: 'boost zeromq'
             pkgsrc_build_zeromq: false
             cmake_vars: '"-DAPPEND_CPPFLAGS=-DKJ_NO_EXCEPTIONS=0"' # Needed for the default GCC 12.5.0.
             dep_packages: 'gcc15'
