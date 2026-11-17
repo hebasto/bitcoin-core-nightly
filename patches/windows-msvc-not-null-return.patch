@@ -1,0 +1,22 @@
+diff --git a/src/node/block_template_manager.cpp b/src/node/block_template_manager.cpp
+index 4336cfd..f32c182 100644
+--- a/src/node/block_template_manager.cpp
++++ b/src/node/block_template_manager.cpp
+@@ -168,7 +168,7 @@ std::unique_ptr<CBlockTemplate> BlockTemplateManager::WaitAndCreateNewBlock(
+             auto new_tmpl{CreateNewTemplate(create_options)};
+ 
+             // If the tip changed, return the new template regardless of its fees.
+-            if (tip_changed) return new_tmpl;
++            if (tip_changed) return std::move(new_tmpl);
+ 
+             // Calculate the original template total fees if we haven't already
+             if (current_fees == -1) {
+@@ -178,7 +178,7 @@ std::unique_ptr<CBlockTemplate> BlockTemplateManager::WaitAndCreateNewBlock(
+             // Check if fees increased enough to return the new template
+             const CAmount new_fees = std::accumulate(new_tmpl->vTxFees.begin(), new_tmpl->vTxFees.end(), CAmount{0});
+             Assume(wait_options.fee_threshold != MAX_MONEY);
+-            if (new_fees >= current_fees + wait_options.fee_threshold) return new_tmpl;
++            if (new_fees >= current_fees + wait_options.fee_threshold) return std::move(new_tmpl);
+         }
+ 
+         now = NodeClock::now();

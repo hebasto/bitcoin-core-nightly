@@ -6,6 +6,7 @@ on:
       - 'patches/windows-fopen-noinherit.patch'
       - 'patches/windows-msvc-werror-flag.patch'
       - 'patches/windows-msvc-not-null-static-assert.patch'
+      - 'patches/windows-msvc-not-null-return.patch'
   workflow_dispatch:
   workflow_run:
     workflows: ["Manager"]
@@ -86,10 +87,16 @@ jobs:
       # MSVC does not reject a failed constant evaluation in a requires-expression
       # (https://github.com/bitcoin/bitcoin/issues/36153), which trips two
       # static_asserts in src/test/util_not_null_tests.cpp, so they are removed.
+      #
+      # MSVC does not treat a returned local variable as an rvalue when the return
+      # type is reached through a conversion function, so returning a local
+      # util::NotNullUniquePtr as a std::unique_ptr fails with C2440 since
+      # bitcoin/bitcoin#36451. The two returns get an explicit std::move().
       - name: Patch Bitcoin Core for cl.exe
         run: |
           git apply --verbose nightly/patches/windows-msvc-werror-flag.patch
           git apply --verbose nightly/patches/windows-msvc-not-null-static-assert.patch
+          git apply --verbose nightly/patches/windows-msvc-not-null-return.patch
 
       - name: Generate CTest configuration
         run: |
