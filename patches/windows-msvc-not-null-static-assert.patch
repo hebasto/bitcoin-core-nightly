@@ -1,3 +1,12 @@
+test: Remove two NotNull static_asserts that MSVC cannot evaluate
+
+MSVC does not reject a failed constant evaluation in a
+requires-expression (https://github.com/bitcoin/bitcoin/issues/36153),
+which trips two static_asserts in src/test/util_not_null_tests.cpp, so
+they are removed.
+
+Applied by .github/workflows/windows-cl-x86_64.yml.
+
 diff --git a/src/test/util_not_null_tests.cpp b/src/test/util_not_null_tests.cpp
 index 53dce02..b5b7d58 100644
 --- a/src/test/util_not_null_tests.cpp

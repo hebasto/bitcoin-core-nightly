@@ -42,18 +42,11 @@ jobs:
         with:
           path: nightly
 
-      # libzmq 4.3.5 does not build for aarch64-w64-mingw32 with a
-      # GCC-compatible compiler. The fix is in libzmq master but not in any
-      # release, and is carried here rather than upstream because Bitcoin
-      # Core neither builds nor tests this platform.
+      # Fix the libzmq 4.3.5 build for aarch64-w64-mingw32; see the patch header.
       - name: Patch depends
         run: git apply --verbose nightly/patches/windows-arm64-zeromq.patch
 
-      # Files opened via fsbridge::fopen() are inherited by the -*notify child
-      # processes, which can keep debug.log open after bitcoind has exited and
-      # make the functional test framework's cleanup fail with WinError 32.
-      # Temporary until https://github.com/bitcoin/bitcoin/issues/36668 is
-      # resolved upstream.
+      # Keep child processes from inheriting open files; see the patch header.
       - name: Patch Bitcoin Core
         run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
 

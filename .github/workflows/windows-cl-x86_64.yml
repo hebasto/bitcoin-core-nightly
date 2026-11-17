@@ -71,27 +71,11 @@ jobs:
         with:
           path: nightly
 
-      # Files opened via fsbridge::fopen() are inherited by the -*notify child
-      # processes, which can keep debug.log open after bitcoind has exited and
-      # make the functional test framework's cleanup fail with WinError 32.
-      # Temporary until https://github.com/bitcoin/bitcoin/issues/36668 is
-      # resolved upstream.
+      # Keep child processes from inheriting open files; see the patch header.
       - name: Patch Bitcoin Core
         run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
 
-      # bitcoin/bitcoin#31507 dropped MSVC support and tests compiler flags with
-      # -Werror only. cl.exe merely warns about an unknown option, so with -Werror
-      # every flag check passes and every Clang/GCC warning flag gets appended.
-      # With "/WX /options:strict", unknown options are errors and the checks work.
-      #
-      # MSVC does not reject a failed constant evaluation in a requires-expression
-      # (https://github.com/bitcoin/bitcoin/issues/36153), which trips two
-      # static_asserts in src/test/util_not_null_tests.cpp, so they are removed.
-      #
-      # MSVC does not treat a returned local variable as an rvalue when the return
-      # type is reached through a conversion function, so returning a local
-      # util::NotNullUniquePtr as a std::unique_ptr fails with C2440 since
-      # bitcoin/bitcoin#36451. The two returns get an explicit std::move().
+      # Work around MSVC incompatibilities; see the patch headers.
       - name: Patch Bitcoin Core for cl.exe
         run: |
           git apply --verbose nightly/patches/windows-msvc-werror-flag.patch
