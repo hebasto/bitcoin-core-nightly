@@ -39,7 +39,10 @@ jobs:
     name: 'NetBSD ${{ matrix.release }}, system libs, no GUI'
     runs-on: ubuntu-latest
     env:
-      SYSTEM_PACKAGES: 'boost sqlite3 pkgconf'
+      # `boost-libs` provides the CMake package configuration files. The
+      # `boost` meta-package would add about twenty packages that are not
+      # needed, among them `boost-docs`, `mpich` and another GCC.
+      JOB_PACKAGES: 'boost-headers boost-libs sqlite3 pkgconf ${{ matrix.sys_packages }}'
     defaults:
       run:
         shell: netbsd {0}
@@ -95,12 +98,45 @@ jobs:
           sync: no
           disable-cache: true
 
-      - name: Install packages
+      - &INSTALL_PACKAGES
+        name: Install packages
+        # A healthy run takes a few minutes. Do not let a bad mirror day
+        # hold the job for an hour.
+        timeout-minutes: 20
         run: |
           set -e
-          export PKG_PATH="https://ftp.netbsd.org/pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}/All;http://ftp.fr.NetBSD.org/pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}/All;https://ftp.jaist.ac.jp/pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}/All"
+          release_dir="pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}"
+          # pkg_add walks the whole PKG_PATH for every package, and a mirror
+          # that does not answer costs over a minute each time. Keep only
+          # the mirrors that answer now.
+          PKG_PATH=""
+          for mirror in https://ftp.netbsd.org http://ftp.fr.NetBSD.org https://ftp.jaist.ac.jp; do
+            if ftp -o /dev/null -q 15 "$mirror/$release_dir/" > /dev/null 2>&1; then
+              PKG_PATH="${PKG_PATH:+$PKG_PATH;}$mirror/$release_dir/All"
+            else
+              echo "Skipping $mirror: it does not answer."
+            fi
+          done
+          if [ -z "$PKG_PATH" ]; then
+            echo "No package mirror answers."
+            exit 1
+          fi
+          export PKG_PATH
+          echo "PKG_PATH=$PKG_PATH"
           pkg_info > packages_before
-          pkg_add -u ${{ env.PACKAGES }} ${{ env.SYSTEM_PACKAGES }} ${{ matrix.sys_packages }}
+          # A download that stalls ends pkg_add without a message (exit
+          # code 141). `pkg_add -u` skips what is already installed, so
+          # another attempt resumes where the last one stopped.
+          attempt=1
+          until pkg_add -u ${{ env.PACKAGES }} ${{ env.JOB_PACKAGES }}; do
+            if [ "$attempt" -ge 4 ]; then
+              echo "pkg_add failed $attempt times."
+              exit 1
+            fi
+            echo "pkg_add failed (attempt $attempt). Retrying in 30 seconds."
+            attempt=$((attempt + 1))
+            sleep 30
+          done
           pkg_info > packages_after
           diff -w packages_before packages_after | grep '^>' | sort
 
@@ -334,7 +370,7 @@ jobs:
     name: 'NetBSD ${{ matrix.release }}, depends, no GUI'
     runs-on: ubuntu-latest
     env:
-      DEP_PACKAGES: 'gmake perl'
+      JOB_PACKAGES: 'gmake perl ${{ matrix.dep_packages }}'
     defaults:
       run:
         shell: netbsd {0}
@@ -344,14 +380,7 @@ jobs:
       - *ANNOTATE_WORKFLOW_INPUTS
       - *START_VM
 
-      - name: Install packages
-        run: |
-          set -e
-          export PKG_PATH="https://ftp.netbsd.org/pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}/All;http://ftp.fr.NetBSD.org/pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}/All;https://ftp.jaist.ac.jp/pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}/All"
-          pkg_info > packages_before
-          pkg_add -u ${{ env.PACKAGES }} ${{ env.DEP_PACKAGES }} ${{ matrix.dep_packages }}
-          pkg_info > packages_after
-          diff -w packages_before packages_after | grep '^>' | sort
+      - *INSTALL_PACKAGES
 
       - *FETCH_SOURCE
       - *PATCH_SOURCE
