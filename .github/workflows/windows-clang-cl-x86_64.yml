@@ -71,6 +71,26 @@ jobs:
       - name: Patch Bitcoin Core
         run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
 
+      - name: Install CMake nightly build
+        run: |
+          $base = "https://cmake.org/files/dev"
+          # The directory keeps about a year of builds and has no "latest"
+          # alias. In `cmake-<major>.<minor>.<YYYYMMDD>-g<hash>-...` the third
+          # dot-separated field starts with the build date.
+          $listing = (curl.exe --fail --silent --show-error --location --retry 5 --retry-delay 30 --retry-all-errors "$base/") -join "`n"
+          $zip = [regex]::Matches($listing, 'href="(cmake-[^"]*-windows-x86_64\.zip)"') |
+            ForEach-Object { $_.Groups[1].Value } | Sort-Object { $_.Split('.')[2] } | Select-Object -Last 1
+          if (-not $zip) { throw "No CMake nightly build found at $base/" }
+          curl.exe --fail --silent --show-error --location --retry 5 --retry-delay 30 --retry-all-errors --output "$env:RUNNER_TEMP\$zip" "$base/$zip"
+          tar -xf "$env:RUNNER_TEMP\$zip" -C "$env:RUNNER_TEMP"
+          # Takes precedence over the CMake that the runner image provides.
+          "$env:RUNNER_TEMP\$($zip -replace '\.zip$')\bin" >> $env:GITHUB_PATH
+
+      - name: CMake version
+        run: |
+          (Get-Command cmake, ctest).Source
+          cmake --version | Tee-Object -FilePath cmake_version.txt
+
       - name: Generate CTest configuration
         run: |
           $config = @'
@@ -115,6 +135,14 @@ jobs:
             "--toolchain $ENV{VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
             "-DVCPKG_MANIFEST_MODE=OFF"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
+            # Temporary: CMake 4.5 reports directory-scoped directives
+            # (include_directories(), add_compile_options(), etc.) under the
+            # new "non-target-directive" dev warning category, which the
+            # dev-mode preset makes fatal. Bitcoin Core and its secp256k1
+            # subtree still use them. Keep the warning visible, but non-fatal.
+            # Remove once fixed upstream; see
+            # https://github.com/bitcoin-core/secp256k1/pull/1996.
+            "-Wno-error=non-target-directive"
           )
           ctest_start(APPEND)
           ctest_configure(OPTIONS "${configure_opts}")
@@ -154,4 +182,5 @@ jobs:
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
+          set(CTEST_NOTES_FILES "$ENV{GITHUB_WORKSPACE}/cmake_version.txt")
           ctest_submit()
