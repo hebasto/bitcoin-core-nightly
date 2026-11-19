@@ -57,6 +57,25 @@ jobs:
         run: |
           gmake -C depends -j $(nproc) HOST=${HOST} NO_QT=1 LOG=1
 
+      - name: Install CMake nightly build
+        run: |
+          base="https://cmake.org/files/dev"
+          # The directory keeps about a year of builds and has no "latest"
+          # alias. In `cmake-<major>.<minor>.<YYYYMMDD>-g<hash>-...` the third
+          # dot-separated field starts with the build date.
+          tarball="$(curl --fail --silent --show-error --location --retry 5 --retry-delay 30 --retry-all-errors "${base}/" \
+            | grep -o 'href="cmake-[^"]*-linux-x86_64\.tar\.gz"' | cut -d '"' -f 2 | sort -t . -k 3 | tail -1)"
+          [ -n "${tarball}" ]
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 30 --retry-all-errors --output "${RUNNER_TEMP}/${tarball}" "${base}/${tarball}"
+          tar -xzf "${RUNNER_TEMP}/${tarball}" -C "${RUNNER_TEMP}"
+          # Takes precedence over the CMake that the runner image provides.
+          echo "${RUNNER_TEMP}/${tarball%.tar.gz}/bin" >> "$GITHUB_PATH"
+
+      - name: CMake version
+        run: |
+          command -v cmake ctest
+          cmake --version | tee cmake_version.txt
+
       - name: Generate CTest configuration
         run: |
           cat << 'EOF' > ctest_config.cmake
@@ -149,6 +168,7 @@ jobs:
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
+          set(CTEST_NOTES_FILES "$ENV{GITHUB_WORKSPACE}/cmake_version.txt")
           ctest_submit()
 
       - name: Install functional test dependencies
