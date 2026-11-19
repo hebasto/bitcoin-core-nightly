@@ -78,6 +78,26 @@ jobs:
       - name: Patch Bitcoin Core
         run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
 
+      - name: Install CMake nightly build
+        run: |
+          $base = "https://cmake.org/files/dev"
+          # The directory keeps about a year of builds and has no "latest"
+          # alias. In `cmake-<major>.<minor>.<YYYYMMDD>-g<hash>-...` the third
+          # dot-separated field starts with the build date.
+          $listing = (curl.exe --fail --silent --show-error --location --retry 5 --retry-delay 30 --retry-all-errors "$base/") -join "`n"
+          $zip = [regex]::Matches($listing, 'href="(cmake-[^"]*-windows-arm64\.zip)"') |
+            ForEach-Object { $_.Groups[1].Value } | Sort-Object { $_.Split('.')[2] } | Select-Object -Last 1
+          if (-not $zip) { throw "No CMake nightly build found at $base/" }
+          curl.exe --fail --silent --show-error --location --retry 5 --retry-delay 30 --retry-all-errors --output "$env:RUNNER_TEMP\$zip" "$base/$zip"
+          tar -xf "$env:RUNNER_TEMP\$zip" -C "$env:RUNNER_TEMP"
+          # Takes precedence over the CMake that the runner image provides.
+          "$env:RUNNER_TEMP\$($zip -replace '\.zip$')\bin" >> $env:GITHUB_PATH
+
+      - name: CMake version
+        run: |
+          (Get-Command cmake, ctest).Source
+          cmake --version | Tee-Object -FilePath cmake_version.txt
+
       - name: Generate CTest configuration
         run: |
           $config = @'
@@ -170,6 +190,7 @@ jobs:
         run: |
           include("$ENV{GITHUB_WORKSPACE}/ctest_config.cmake")
           ctest_start(APPEND)
+          set(CTEST_NOTES_FILES "$ENV{GITHUB_WORKSPACE}/cmake_version.txt")
           ctest_submit()
 
       - name: Run functional tests
