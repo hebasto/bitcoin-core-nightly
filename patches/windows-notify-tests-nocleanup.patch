@@ -1,0 +1,33 @@
+test: Do not clean up after the tests that run -*notify commands
+
+On Windows, a -*notify child process inherits the node's standard output
+and standard error, which the functional test framework redirects to
+files in the test directory. bitcoind does not wait for such a child,
+so one that outlives it keeps those files open, and the framework's
+cleanup of the test directory fails with WinError 32 although every
+test case passed.
+
+Pass --nocleanup to the three tests that make the node run a shell
+command, so that they leave their test directories behind.
+
+The hunks carry no context lines, as the test list changes often. Apply
+with `git apply --unidiff-zero`.
+
+Temporary until https://github.com/bitcoin/bitcoin/issues/28529 is
+resolved upstream.
+
+Applied by the Windows workflows that run the functional tests.
+
+diff --git a/test/functional/test_runner.py b/test/functional/test_runner.py
+index f88dcd0..df094cb 100755
+--- a/test/functional/test_runner.py
++++ b/test/functional/test_runner.py
+@@ -270 +270 @@ BASE_SCRIPTS = [
+-    'feature_notifications.py',
++    'feature_notifications.py --nocleanup',
+@@ -280 +280 @@ BASE_SCRIPTS = [
+-    'feature_versionbits_warning.py',
++    'feature_versionbits_warning.py --nocleanup',
+@@ -309 +309 @@ BASE_SCRIPTS = [
+-    'feature_startupnotify.py',
++    'feature_startupnotify.py --nocleanup',
