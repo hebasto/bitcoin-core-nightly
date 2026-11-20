@@ -28,10 +28,16 @@ jobs:
 
     steps:
       - name: Checkout Bitcoin Core repo
-        id: checkout
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
+          # Temporary: test https://github.com/bitcoin/bitcoin/pull/36890.
+          ref: refs/pull/36890/merge
+          fetch-depth: 2
+
+      - name: Get master branch commit hash
+        id: master_commit
+        run: echo "commit=$(git rev-parse HEAD~1)" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: |
@@ -75,7 +81,7 @@ jobs:
           # check is skipped on every runner, whether or not git is installed
           # and whether or not the tree has been patched.
           set(CTEST_UPDATE_COMMAND not-run/git)
-          set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.checkout.outputs.commit }}")
+          set(CTEST_UPDATE_VERSION_OVERRIDE "${{ steps.master_commit.outputs.commit }}")
           ctest_update()
 
       - name: CDash -- Configure
@@ -85,8 +91,6 @@ jobs:
           set(configure_opts
             "--preset dev-mode"
             "--toolchain depends/x86_64-pc-linux-gnu/toolchain.cmake"
-            # Revert once https://github.com/bitcoin-core/secp256k1/pull/1998 reaches Bitcoin Core:
-            "-DAPPEND_CFLAGS=-Wno-error=unsequenced"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
           )
           ctest_start(APPEND)
