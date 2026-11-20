@@ -71,7 +71,7 @@ The newest GCC development snapshot is built by the [GCC snapshot](https://githu
 
 ## [openSUSE](https://www.opensuse.org/)
 
-Releases: [Leap 16.0](https://get.opensuse.org/leap/) and [Tumbleweed](https://get.opensuse.org/tumbleweed/),
+Releases: [Leap 16.1](https://get.opensuse.org/leap/) and [Tumbleweed](https://get.opensuse.org/tumbleweed/),
 
 | Status | Notes |
 |--------|-------|

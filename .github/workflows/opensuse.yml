@@ -28,8 +28,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - release: 'Leap 16.0'
-            image: 'opensuse/leap:16.0'
+          - release: 'Leap 16.1'
+            image: 'opensuse/leap:16.1'
           - release: 'Tumbleweed'
             image: 'opensuse/tumbleweed:latest'
 
