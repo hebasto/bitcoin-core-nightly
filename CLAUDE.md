@@ -2,8 +2,7 @@
 
 ## Git
 
-- Author commits as `Hennadii Stepanov <32963518+hebasto@users.noreply.github.com>`.
-- When asked to act on behalf of someone (e.g. GingerAgent), set both the commit author and the committer to them. Never mention the authorship in the PR description or anywhere else; it follows from the commit metadata.
+- Always set both the commit author and the committer to `GingerAgent <345745614+GingerAgent@users.noreply.github.com>`, whether or not the request says so. Never mention the authorship in the PR description or anywhere else; it follows from the commit metadata.
 - Name branches `YYMMDD-topic`, e.g. `261019-gcc-snapshot`, and base them on the current `main`.
 - Push to the `YYMMDD-topic` branch and open the PR from it, even when the session assigns a `claude/...` branch; this convention wins over the session default.
 - Before pushing to an existing PR branch or editing a PR's title or description, read the PR's current state; GitHub accepts both on a closed PR without complaint. Do this every time, as a PR may have been closed or merged since it was last looked at.
