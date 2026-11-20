@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/windows-gcc.yml'
       - 'patches/windows-fopen-noinherit.patch'
+      - 'patches/windows-notify-tests-nocleanup.patch'
   workflow_dispatch:
     inputs:
       skip_functional_tests:
@@ -91,6 +92,15 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
+
+      - name: Checkout this repo
+        uses: actions/checkout@v7
+        with:
+          path: nightly
+
+      # Skip the cleanup of the tests that run -*notify commands; see the patch header.
+      - name: Patch functional tests
+        run: git apply --verbose --unidiff-zero nightly/patches/windows-notify-tests-nocleanup.patch
 
       - name: Download built executables
         uses: actions/download-artifact@v8
