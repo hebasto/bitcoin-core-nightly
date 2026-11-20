@@ -115,14 +115,6 @@ jobs:
             "-DREDUCE_EXPORTS=ON"
             "-DCMAKE_CXX_FLAGS=-Wno-psabi -Wno-error=maybe-uninitialized"
             "-DCMAKE_COMPILE_WARNING_AS_ERROR=ON"
-            # Temporary: CMake 4.5 reports directory-scoped directives
-            # (add_compile_definitions(), add_compile_options(), etc.) under
-            # the new "non-target-directive" dev warning category, which the
-            # dev-mode preset makes fatal. The secp256k1 subtree still uses
-            # them. Keep the warning visible, but non-fatal. Remove once fixed
-            # upstream; see
-            # https://github.com/bitcoin-core/secp256k1/pull/1996.
-            "-Wno-error=non-target-directive"
           )
           ctest_start(APPEND)
           ctest_configure(OPTIONS "${configure_opts}")
