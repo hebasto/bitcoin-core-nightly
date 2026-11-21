@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/windows-llvm-arm64.yml'
       - 'patches/windows-fopen-noinherit.patch'
+      - 'patches/windows-versionbits-warning-alerts.patch'
       - 'patches/windows-arm64-zeromq.patch'
   workflow_dispatch:
     inputs:
@@ -104,6 +105,15 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
+
+      - name: Checkout this repo
+        uses: actions/checkout@v7
+        with:
+          path: nightly
+
+      # Make feature_versionbits_warning.py wait for both alerts; see the patch header.
+      - name: Patch functional tests
+        run: git apply --verbose nightly/patches/windows-versionbits-warning-alerts.patch
 
       - name: Download built executables
         uses: actions/download-artifact@v8
