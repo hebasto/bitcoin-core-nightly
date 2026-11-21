@@ -34,6 +34,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
+          ref: refs/pull/36938/merge
 
       - name: Checkout this repo
         uses: actions/checkout@v7
@@ -91,6 +92,8 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: bitcoin/bitcoin
+          ref: refs/pull/36938/merge
+          fetch-depth: 2
 
       - name: Download built executables
         uses: actions/download-artifact@v8
@@ -119,14 +122,28 @@ jobs:
           (Get-Content "test\config.ini") -replace '(?<=^SRCDIR=).*', '${{ github.workspace }}' -replace '(?<=^BUILDDIR=).*', '${{ github.workspace }}' -replace '(?<=^RPCAUTH=).*', '${{ github.workspace }}\share\rpcauth\rpcauth.py' | Set-Content "test\config.ini"
           Get-Content "test\config.ini"
 
-      - name: Run functional tests
-        if: ${{ ! inputs.skip_functional_tests }}
+      # Control: the test as it is on master. Failures here show how often the
+      # cleanup race is hit and do not fail the job.
+      - name: Run feature_versionbits_warning.py from master 500 times
+        continue-on-error: true
         shell: bash
         env:
           PYTHONUTF8: 1
         run: |
-          py -3 -m pip install pyzmq
-          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=99999999 \
+          git show HEAD^1:test/functional/feature_versionbits_warning.py > test/functional/feature_versionbits_warning.py
+          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=1000 \
             --tmpdirprefix "$RUNNER_TEMP" \
-            --extended \
-            --timeout-factor=40
+            --timeout-factor=40 \
+            $(printf 'feature_versionbits_warning.py %.0s' $(seq 1 500))
+
+      - name: Run feature_versionbits_warning.py from bitcoin/bitcoin#36938 500 times
+        shell: bash
+        env:
+          PYTHONUTF8: 1
+        run: |
+          git checkout HEAD -- test/functional/feature_versionbits_warning.py
+          git diff --stat HEAD^1 HEAD
+          py -3 test/functional/test_runner.py -j $(($NUMBER_OF_PROCESSORS * 2)) --combinedlogslen=1000 \
+            --tmpdirprefix "$RUNNER_TEMP" \
+            --timeout-factor=40 \
+            $(printf 'feature_versionbits_warning.py %.0s' $(seq 1 500))
