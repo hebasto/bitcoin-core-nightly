@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/windows-clang-cl-arm64.yml'
       - 'patches/windows-fopen-noinherit.patch'
+      - 'patches/windows-versionbits-warning-alerts.patch'
   workflow_dispatch:
     inputs:
       skip_functional_tests:
@@ -77,6 +78,10 @@ jobs:
       # Keep child processes from inheriting open files; see the patch header.
       - name: Patch Bitcoin Core
         run: git apply --verbose nightly/patches/windows-fopen-noinherit.patch
+
+      # Make feature_versionbits_warning.py wait for both alerts; see the patch header.
+      - name: Patch functional tests
+        run: git apply --verbose nightly/patches/windows-versionbits-warning-alerts.patch
 
       - name: Install CMake nightly build
         run: |
