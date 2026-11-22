@@ -108,11 +108,14 @@ jobs:
           release_dir="pub/pkgsrc/packages/NetBSD/x86_64/${{ matrix.pkgsrc_release }}"
           # pkg_add walks the whole PKG_PATH for every package, and a mirror
           # that does not answer costs over a minute each time. Keep only
-          # the mirrors that answer now.
+          # the mirrors that answer now, and list them in `live_mirrors` for
+          # the later steps.
           PKG_PATH=""
+          : > live_mirrors
           for mirror in https://ftp.netbsd.org http://ftp.fr.NetBSD.org https://ftp.jaist.ac.jp; do
             if ftp -o /dev/null -q 15 "$mirror/$release_dir/" > /dev/null 2>&1; then
               PKG_PATH="${PKG_PATH:+$PKG_PATH;}$mirror/$release_dir/All"
+              echo "$mirror" >> live_mirrors
             else
               echo "Skipping $mirror: it does not answer."
             fi
@@ -145,10 +148,36 @@ jobs:
       - name: Build Cap'n Proto
         run: |
           set -e
-          pkg_admin -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities
+          # ftp.NetBSD.org and cdn.NetBSD.org are not always up. Download
+          # from the mirrors that answered in the "Install packages" step.
+          # pkg_admin takes its URL from a configuration file only.
+          fetched=""
+          for mirror in $(cat live_mirrors); do
+            echo "PKGVULNURL=$mirror/pub/NetBSD/packages/vulns/pkg-vulnerabilities.gz" > pkg_vulnerabilities.conf
+            if pkg_admin -C pkg_vulnerabilities.conf -K /usr/pkg/pkgdb fetch-pkg-vulnerabilities; then
+              fetched="$mirror"
+              break
+            fi
+          done
+          if [ -z "$fetched" ]; then
+            echo "No mirror served the vulnerability file."
+            exit 1
+          fi
+          echo "Fetched the vulnerability file from $fetched."
           pkg_add -u digest libtool-base mktools cwrappers
           # https://www.netbsd.org/docs/pkgsrc/getting.html#getting-via-tar
-          ftp ftp://ftp.NetBSD.org/pub/pkgsrc/stable/pkgsrc.tar.gz
+          fetched=""
+          for mirror in $(cat live_mirrors); do
+            if ftp -o pkgsrc.tar.gz "$mirror/pub/pkgsrc/stable/pkgsrc.tar.gz"; then
+              fetched="$mirror"
+              break
+            fi
+          done
+          if [ -z "$fetched" ]; then
+            echo "No mirror served pkgsrc.tar.gz."
+            exit 1
+          fi
+          echo "Fetched pkgsrc.tar.gz from $fetched."
           tar -xzf pkgsrc.tar.gz -C /usr \
             pkgsrc/devel/capnproto \
             pkgsrc/devel/libtool-base \
