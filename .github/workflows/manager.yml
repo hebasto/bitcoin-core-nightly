@@ -5,6 +5,7 @@ on:
       - '.github/workflows/manager.yml'
   schedule:
     - cron: '22 00 * * *'
+      timezone: 'UTC'
   workflow_dispatch:
 jobs:
   manager:
