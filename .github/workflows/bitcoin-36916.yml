@@ -1,0 +1,140 @@
+# NOT FOR MERGING.
+#
+# A demo for https://github.com/bitcoin/bitcoin/pull/36916.
+#
+# FreeBSD picks the source port of an outgoing connection from a range that
+# contains the ports of the functional test framework. A test that connects
+# to one of those ports while nobody listens on it can get the same port as
+# its source port, which connects the socket to itself.
+# `feature_framework_startup_failures.py` failed this way in the nightly run
+# https://github.com/hebasto/bitcoin-core-nightly/actions/runs/45370181442.
+#
+# With the default range, 10000..65535, this is too rare to tell a fix from
+# luck. Each job here narrows the range to a few dozen ports ending at the
+# port the test waits on, and runs the test many times: with master, and
+# with the pull request merged into master.
+name: 'bitcoin/bitcoin#36916'
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/bitcoin-36916.yml'
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # See https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-public-repositories.
+  CI_NCPU: 4
+
+jobs:
+  self-connect:
+    name: 'FreeBSD 15.1, ${{ matrix.code.name }}'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: freebsd {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        code:
+          - name: 'master'
+            ref: refs/heads/master
+          - name: 'bitcoin/bitcoin#36916'
+            ref: refs/pull/36916/merge
+
+    steps:
+      - name: Start FreeBSD 15.1 VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: '15.1'
+          prepare: |
+            pkg update
+            pkg install -y curl cmake-core ninja pkgconf python3 boost-libs
+          sync: no
+          disable-cache: true
+
+      - name: Fetch source tarball
+        run: |
+          set -e
+          curl --location --fail --retry 5 --retry-delay 30 --retry-all-errors --output source.tar.gz https://github.com/bitcoin/bitcoin/archive/${{ matrix.code.ref }}.tar.gz
+          mkdir bitcoin
+          tar -xf source.tar.gz -C bitcoin --strip-components=1
+          awk -F '"' '/^#define GIT_COMMIT_ID/ {print "Commit: " $2}' bitcoin/src/clientversion.cpp
+
+      - name: Build bitcoind
+        # The test needs nothing but a node.
+        run: |
+          set -e
+          cmake -S bitcoin -B build -G Ninja \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_CLI=OFF \
+            -DBUILD_BITCOIN_BIN=OFF \
+            -DENABLE_WALLET=OFF \
+            -DENABLE_IPC=OFF
+          cmake --build build -j ${{ env.CI_NCPU }}
+          build/bin/bitcoind -version
+
+      - name: Run the test once with the default port range
+        # Shows that the build and the test are sound before the port range
+        # is touched. With the default range, a failure here is as unlikely
+        # as in a nightly run.
+        run: |
+          set -e
+          sysctl net.inet.ip.portrange.first net.inet.ip.portrange.last
+          build/test/functional/feature_framework_startup_failures.py --portseed=6 --tmpdir=runs/default
+
+      - name: Run the test 100 times with a narrowed port range
+        run: |
+          # With --portseed=6, as in the failed nightly run, the test waits
+          # for RPC on 127.0.0.1:16072 while its node listens elsewhere. It
+          # makes about 55 attempts in the 3 seconds it waits, so with a
+          # range of WIDTH ports ending at PORT about half of the runs
+          # should see a connection from PORT to PORT.
+          PORT=16072
+          WIDTH=87
+          RUNS=100
+
+          first="$(sysctl -n net.inet.ip.portrange.first)"
+          last="$(sysctl -n net.inet.ip.portrange.last)"
+          sysctl net.inet.ip.portrange.first=$((PORT - WIDTH + 1)) net.inet.ip.portrange.last=$PORT || exit 1
+
+          mkdir -p runs
+          passed=0
+          self_connected=0
+          other=0
+          i=0
+          while [ "$i" -lt "$RUNS" ]; do
+            i=$((i + 1))
+            log="runs/narrowed_$i.log"
+            if build/test/functional/feature_framework_startup_failures.py --portseed=6 --tmpdir="runs/narrowed_$i" > "$log" 2>&1; then
+              passed=$((passed + 1))
+              echo "Run $i: passed"
+            elif grep -q 'http.client.BadStatusLine: POST / HTTP/1.1' "$log"; then
+              # The failure of the nightly run: the test got its own request
+              # back in place of a response.
+              self_connected=$((self_connected + 1))
+              echo "Run $i: failed, connected to itself"
+              if [ "$self_connected" -eq 1 ]; then cat "$log"; fi
+            else
+              other=$((other + 1))
+              echo "Run $i: failed for another reason"
+              cat "$log"
+            fi
+            # A failed run leaves its nodes behind, and they hold the ports
+            # of the next run.
+            if pkill -9 -x bitcoind; then sleep 1; fi
+          done
+
+          sysctl net.inet.ip.portrange.first="$first" net.inet.ip.portrange.last="$last"
+
+          summary="$RUNS runs with source ports $((PORT - WIDTH + 1))..$PORT: $passed passed, $self_connected connected to itself, $other failed for another reason"
+          echo "$summary"
+          echo "::notice title=FreeBSD 15.1 with ${{ matrix.code.name }}::$summary"
+          if [ "${{ matrix.code.ref }}" = refs/heads/master ]; then
+            # Master has to reproduce the failure, or the comparison says
+            # nothing.
+            if [ "$self_connected" -eq 0 ]; then exit 1; fi
+          else
+            if [ "$passed" -ne "$RUNS" ]; then exit 1; fi
+          fi
