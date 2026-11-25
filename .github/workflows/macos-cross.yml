@@ -1,0 +1,62 @@
+name: macOS, cross-build
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/macos-cross.yml'
+      - 'patches/macos-cross-cmake-snapshot.patch'
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Manager"]
+    types: [requested]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}${{ github.event_name != 'pull_request' && github.run_id || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos-cross:
+    name: 'macOS-cross to arm64, CMake nightly build'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Bitcoin Core repo
+        uses: actions/checkout@v7
+        with:
+          repository: bitcoin/bitcoin
+
+      - name: Checkout this repo
+        uses: actions/checkout@v7
+        with:
+          path: nightly
+
+      # Use the CMake nightly build and treat linker warnings as errors; see
+      # the patch header.
+      - name: Patch CI configuration
+        run: git apply --verbose nightly/patches/macos-cross-cmake-snapshot.patch
+
+      - name: Install CMake nightly build
+        # Unpacked into the source tree, which the CI scripts copy into the
+        # container. The patched CI configuration puts it on the PATH there.
+        run: |
+          base="https://cmake.org/files/dev"
+          # The directory keeps about a year of builds and has no "latest"
+          # alias. In `cmake-<major>.<minor>.<YYYYMMDD>-g<hash>-...` the third
+          # dot-separated field starts with the build date.
+          tarball="$(curl --fail --silent --show-error --location --retry 5 --retry-delay 30 --retry-all-errors "${base}/" \
+            | grep -o 'href="cmake-[^"]*-linux-x86_64\.tar\.gz"' | cut -d '"' -f 2 | sort -t . -k 3 | tail -1)"
+          [ -n "${tarball}" ]
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 30 --retry-all-errors --output "${RUNNER_TEMP}/${tarball}" "${base}/${tarball}"
+          mkdir cmake-snapshot
+          tar -xzf "${RUNNER_TEMP}/${tarball}" -C cmake-snapshot --strip-components=1
+
+      - name: CMake version
+        run: cmake-snapshot/bin/cmake --version
+
+      - name: Configure Docker
+        uses: ./.github/actions/configure-docker
+
+      - name: CI script
+        env:
+          FILE_ENV: ./ci/test/00_setup_env_mac_cross.sh
+        run: ./ci/test_run_all.sh

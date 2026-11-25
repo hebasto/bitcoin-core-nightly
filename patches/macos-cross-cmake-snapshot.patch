@@ -1,0 +1,39 @@
+ci: Use a CMake nightly build and treat linker warnings as errors in the macOS cross job
+
+The "macOS-cross to arm64" CI configuration is run with a CMake nightly
+build, which the workflow unpacks into `cmake-snapshot` in the source
+tree, and with `-DCMAKE_LINK_WARNING_AS_ERROR=ON`.
+
+`-DCMAKE_INSTALL_NAME_TOOL=true` is passed as well, as `depends` does
+for Qt. The tool is not used when cross-compiling for macOS, yet CMake
+fails the configuration if it is not found. Bitcoin Core works around
+that for CMake < 4.2 only. CMake >= 4.2 also accepts
+`llvm-install-name-tool`, which the container image does not provide
+under that name.
+
+`PATH` is exported from the environment file, because the CI scripts
+pass to the container only the variables that such files export. The
+value seen in the container therefore includes the runner's own `PATH`,
+whose extra entries do not exist there.
+
+Applied by .github/workflows/macos-cross.yml.
+
+diff --git a/ci/test/00_setup_env_mac_cross.sh b/ci/test/00_setup_env_mac_cross.sh
+index c823524..770f1fb 100755
+--- a/ci/test/00_setup_env_mac_cross.sh
++++ b/ci/test/00_setup_env_mac_cross.sh
+@@ -17,8 +17,13 @@ export OSX_SDK_SHA256=9600fa93644df674ee916b5e2c8a6ba8dacf631996a65dc922d003b98b
+ export RUN_UNIT_TESTS=false
+ export RUN_FUNCTIONAL_TESTS=false
+ export BUILD_TARGETS="all deploy"
++# The workflow unpacks a CMake nightly build into the source tree, which the CI
++# scripts copy to BASE_ROOT_DIR inside the container.
++export PATH="${BASE_ROOT_DIR}/cmake-snapshot/bin:${PATH}"
+ printf -v BITCOIN_CONFIG "%q " \
+  --preset=dev-mode \
+  -DWITH_USDT=OFF \
+- -DREDUCE_EXPORTS=ON
++ -DREDUCE_EXPORTS=ON \
++ -DCMAKE_LINK_WARNING_AS_ERROR=ON \
++ -DCMAKE_INSTALL_NAME_TOOL=true
+ export BITCOIN_CONFIG
