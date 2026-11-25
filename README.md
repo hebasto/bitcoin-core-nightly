@@ -69,6 +69,14 @@ The newest GCC development snapshot is built by the [GCC snapshot](https://githu
 |------------------|--------|-------|
 | macOS ARM64, Xcode 27 | [![macOS, arm64](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos.yml?query=event%3Aworkflow_run) | No depends |
 
+## macOS, cross-build
+
+Runs Bitcoin Core's own [`00_setup_env_mac_cross.sh`](https://github.com/bitcoin/bitcoin/blob/master/ci/test/00_setup_env_mac_cross.sh) CI configuration, patched to use a [CMake nightly build](https://cmake.org/files/dev/) and to treat linker warnings as errors.
+
+| Host OS | Toolchain | Status | Notes |
+|---------|-----------|--------|-------|
+| Debian | Clang, LLD, ARM64 | [![macOS, cross-build](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos-cross.yml/badge.svg?event=workflow_run)](https://github.com/hebasto/bitcoin-core-nightly/actions/workflows/macos-cross.yml?query=event%3Aworkflow_run) | USDT - N/A<br>No tests |
+
 ## [openSUSE](https://www.opensuse.org/)
 
 Releases: [Leap 16.1](https://get.opensuse.org/leap/) and [Tumbleweed](https://get.opensuse.org/tumbleweed/),
