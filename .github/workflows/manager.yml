@@ -3,11 +3,8 @@ on:
   pull_request:
     paths:
       - '.github/workflows/manager.yml'
-  # Dispatched daily at 00:22 UTC by an external scheduler (a Cloudflare
-  # Workers Cron Trigger), as GitHub's own `schedule` event is unreliable.
-  # schedule:
-  #   - cron: '22 00 * * *'
-  #     timezone: 'UTC'
+  # Meant to be dispatched daily by an external scheduler, as GitHub's own
+  # `schedule` event is unreliable.
   workflow_dispatch:
 jobs:
   manager:
